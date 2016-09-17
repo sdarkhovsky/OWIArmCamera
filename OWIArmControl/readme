@@ -1,0 +1,3 @@
+Building the OWIArmControl:
+./build.sh       or
+make
