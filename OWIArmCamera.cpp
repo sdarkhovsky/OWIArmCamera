@@ -6,7 +6,7 @@
 
 void execute_command(std::string cmd)
 {
-	status = std::system(cmd);
+	int status = std::system(cmd.c_str());
 	if (status)
 	{
 		std::cout << "command failed:" << cmd;
@@ -14,7 +14,7 @@ void execute_command(std::string cmd)
 	}
 }
 
-string joint_name[] = {"base_joint", "shoulder", "elbow", "wrist", "gripper_joint"};
+std::string joint_name[] = {"base_joint", "shoulder", "elbow", "wrist", "gripper_joint"};
 
 int main(int argc, char** argv)
 {
@@ -37,8 +37,9 @@ int main(int argc, char** argv)
  		int joint = joint_dis(gen);
 		int direction = direction_dis(gen);
 		
-		cmdOWIArmControl = "OWIArmControl " + joint_name[joint] + " " + std::string(direction); 
+		cmdOWIArmControl = "OWIArmControl " + joint_name[joint] + " " + std::to_string(direction); 
 		execute_command(cmdOWIArmControl);
-		cmdSuffix = joint_name[joint] + "_" + + std::string(direction);
+		cmdSuffix = joint_name[joint] + "_" + std::to_string(direction);
 	}
+	return status;
 }
