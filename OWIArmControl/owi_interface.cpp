@@ -11,6 +11,8 @@
 #define ARM_PRODUCT      0
 #define CMD_DATALEN      3
 
+bool verbose = false;
+
 libusb_device * owi_interface::find_arm(libusb_device **devs)
 {
 	libusb_device *dev;
@@ -243,13 +245,16 @@ int owi_interface::send_command()
 				return -1;
 		}
 	
-	  fprintf(stderr, "Sending %02X %02X %02X\n",
-	          (int)cmd[0],
-	          (int)cmd[1],
-	          (int)cmd[2]
-	  );
+		if (verbose)
+		{
+		  fprintf(stderr, "Sending %02X %02X %02X\n",
+			      (int)cmd[0],
+			      (int)cmd[1],
+			      (int)cmd[2]
+		  );
+		}
 
-	  r = libusb_control_transfer(devh,
+	  	r = libusb_control_transfer(devh,
 	                              0x40, //uint8_t 	bmRequestType,
 	                              6, //uint8_t 	bRequest,
 	                              0x100, //uint16_t 	wValue,
@@ -257,14 +262,17 @@ int owi_interface::send_command()
 	                              cmd,
 	                              CMD_DATALEN,
 	                              0	 
-	  );
+	  	);
 	  
-	  if(r != CMD_DATALEN)
-	  {
+	  	if(r != CMD_DATALEN)
+	  	{
 	      fprintf(stderr, "Write err %d\n",r);
-	  }
+	  	}
 
-	  fprintf(stderr, "Done\n");
+		if (verbose)
+		{
+		  fprintf(stderr, "Done\n");
+		}
 
 		return r;
 }

@@ -1,0 +1,8 @@
+./CameraCapture/CameraCapture 1 ./TrainingSamples/img0.png
+./OWIArmControl/OWIArmControl base_joint <state>
+./OWIArmControl/OWIArmControl shoulder <state>
+./OWIArmControl/OWIArmControl elbow <state>
+./OWIArmControl/OWIArmControl wrist <state>
+./OWIArmControl/OWIArmControl gripper_joint <state>
+./OWIArmControl/OWIArmControl led <state>
+where state is 0 for stop, 1 and 2 to move in a direction or turn on led
