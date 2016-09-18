@@ -1,0 +1,5 @@
+# http://stackoverflow.com/questions/26592577/installing-opencv-in-ubuntu-14-10
+sudo apt-get install ffmpeg
+#sudo apt-get install gstreamer
+sudo apt-get install libopencv-dev
+
