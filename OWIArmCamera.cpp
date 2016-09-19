@@ -3,6 +3,7 @@
 #include <iostream>
 #include <string>
 #include <random>
+#include <algorithm>
 
 void execute_command(std::string cmd)
 {
@@ -20,11 +21,17 @@ void execute_command(std::string cmd)
 
 std::string joint_name[] = 
 {
-//	"base_joint", 
-	"shoulder", 
-	"elbow", 
-//	"wrist", 
-//	"gripper_joint"
+//	"base_joint1", 
+	"shoulder 1", 
+	"elbow 1", 
+//	"wrist1", 
+//	"gripper_joint1",
+//	"base_joint1", 
+	"shoulder 2", 
+	"elbow 2", 
+//	"wrist1", 
+//	"gripper_joint1"
+
 };
 
 // Run the program with administrator privileges as sending a commmand 
@@ -37,11 +44,17 @@ int main(int argc, char** argv)
 	std::string cmdCameraCapturePrefix = "./CameraCapture/CameraCapture 1 ./TrainingSamples/img";
     int num_samples=2;
 	int joint_name_count = sizeof(joint_name)/sizeof(*joint_name);
-    std::random_device rd;
-    std::mt19937 gen(rd());
-    std::uniform_int_distribution<> joint_dis(0, joint_name_count-1);
-    std::uniform_int_distribution<> direction_dis(1, 2);
+    
+    std::default_random_engine generator;
+    std::uniform_int_distribution<> distrib(0, joint_name_count-1);
+/*
+    for (int i=0; i < 30; i++)
+	{
+		std::cout << joint_name[distrib(generator)] << std::endl;
+	}
 
+	exit(1);
+*/
 	if (argc > 1) num_samples=std::atoi(argv[1]);
     for (int i=0; i < num_samples; i++)
 	{
@@ -52,12 +65,12 @@ int main(int argc, char** argv)
 			break;
 		
 		// randomly select the move and describe it in the suffix
- 		int joint = joint_dis(gen);
-		int direction = direction_dis(gen);
+ 		int joint = distrib(generator);
 		
-		cmdOWIArmControl = "./OWIArmControl/OWIArmControl " + joint_name[joint] + " " + std::to_string(direction); 
+		cmdOWIArmControl = "./OWIArmControl/OWIArmControl " + joint_name[joint]; 
 		execute_command(cmdOWIArmControl);
-		cmdSuffix = "_" + joint_name[joint] + "_" + std::to_string(direction);
+		cmdSuffix = " " + joint_name[joint];
+		std::replace( cmdSuffix.begin(), cmdSuffix.end(), ' ', '_'); 
 	}
 	return status;
 }
