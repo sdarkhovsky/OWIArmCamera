@@ -121,6 +121,19 @@ int main(int argc, char** argv)
 		cv::putText(img_to_show, "Image Path: " + img_path, cv::Point(5, 65), cv::FONT_HERSHEY_SIMPLEX, 1., cv::Scalar(255, 100, 0), 2);
         cv::imshow("OWIFeatCalcPrediction", img_to_show);
 		cv::waitKey(0);
+
+		// select yellow pixels
+		cv::Mat feat_img;
+/*
+		Vec3b bgrPixel = img.at<Vec3b>(row, col);
+        bgrPixel.val[0] = pixelPtr[i*foo.cols*cn + j*cn + 0]; // B
+        bgrPixel.val[1] = pixelPtr[i*foo.cols*cn + j*cn + 1]; // G
+        bgrPixel.val[2] = pixelPtr[i*foo.cols*cn + j*cn + 2]; // R
+*/
+		// OpenCV channels's order is BGR, not RGB
+		cv::inRange(img, cv::Scalar(65,125,150), cv::Scalar(102,167,205), feat_img);
+		cv::imshow("Yellow regions", feat_img);
+		cv::waitKey(0);
 	}
 
 	return result;
