@@ -13,6 +13,7 @@
 //#include "opencv2/core/cuda.hpp"
 //#include "opencv2/highgui.hpp"
 //#include "opencv2/objdetect.hpp"
+//#include "opencv2/imgcodecs.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 
 #include <unistd.h>
@@ -164,6 +165,7 @@ int main(int argc, char** argv)
 	        upper_bound = cv::Scalar(45/2,255,255);
 		}
 		cv::inRange(img, lower_bound, upper_bound, feat_img);
+
 		img_to_show = feat_img;
 		cv::putText(img_to_show, *it, cv::Point(5, 65), cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(255, 100, 0), 2);
 		cv::imshow(winname, img_to_show);
@@ -183,6 +185,25 @@ int main(int argc, char** argv)
 		cv::imshow(winname, img_to_show);
 		cv::waitKey(0);
 */
+
+		cv::Mat labelImage(feat_img.size(), CV_32S);
+		int nLabels = cv::connectedComponents(feat_img, labelImage, 8);
+		std::vector<cv::Vec3b> colors(nLabels);
+		colors[0] = cv::Vec3b(0, 0, 0);//background
+		for(int label = 1; label < nLabels; ++label){
+		    colors[label] = cv::Vec3b( (rand()&255), (rand()&255), (rand()&255) );
+		}
+		cv::Mat dst(feat_img.size(), CV_8UC3);
+		for(int r = 0; r < dst.rows; ++r){
+		    for(int c = 0; c < dst.cols; ++c){
+		        int label = labelImage.at<int>(r, c);
+		        cv::Vec3b &pixel = dst.at<cv::Vec3b>(r, c);
+		        pixel = colors[label];
+		     }
+		}
+
+	    cv::imshow( "Connected Components", dst );
+		cv::waitKey(0);
 	}
 
 	return result;
