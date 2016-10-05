@@ -23,12 +23,12 @@ std::string joint_name[] =
 {
 //	"base_joint1", 
 	"shoulder 1", 
-	"elbow 1", 
+//	"elbow 1", 
 //	"wrist1", 
 //	"gripper_joint1",
 //	"base_joint1", 
 	"shoulder 2", 
-	"elbow 2", 
+//	"elbow 2", 
 //	"wrist1", 
 //	"gripper_joint1"
 

@@ -72,7 +72,8 @@ read a training image
 apply a feature selecting yellow regions
 build predictor: yellow_region(t), joint_command(t) => yellow_region(t+1)
 test the predictor on the training samples
-command line: OWIFeatCalcPrediction [<training_samples_directory>]   (without terminating slash)
+command line: OWIFeatCalcPrediction [<training_samples_directory>]   # Without terminating slash. 
+May need: export LD_LIBRARY_PATH=/usr/local/lib before running the program
 */
 int main(int argc, char** argv)
 {
@@ -135,10 +136,12 @@ int main(int argc, char** argv)
 		cv::Mat feat_img;
 
 		// debugging
+		#define DEBUG_DATA
 		#ifdef DEBUG_DATA 
 		{
-			int row = 180;
-			int col = 289;
+			int row = 290;
+			int col = 280;
+            // 93 48 24
             cv::Mat dbg_img = orig_img;
 			cv::Vec3b bgrPixel = dbg_img.at<cv::Vec3b>(row, col);
 
@@ -161,8 +164,8 @@ int main(int argc, char** argv)
         if (make_hsv)
 		{
 			// In HSV color space the hue range is [0,360] degrees, but for 8-bit images H stores H/2 to fit 0 to 255
-			lower_bound = cv::Scalar(35/2,0.3*255,0.3*255);
-	        upper_bound = cv::Scalar(45/2,255,255);
+			lower_bound = cv::Scalar(0/2,0.0*255,0.14*255);
+	        upper_bound = cv::Scalar(360/2,255,0.24*255);
 		}
 		cv::inRange(img, lower_bound, upper_bound, feat_img);
 
