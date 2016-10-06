@@ -4,6 +4,7 @@
 #include <string>
 
 #include <algorithm>
+#include <functional>
 #include <vector>
 #include <dirent.h>
 #include <sys/types.h>
@@ -66,40 +67,58 @@ std::vector <std::string> read_directory( const std::string& path = std::string(
   return result;
 }
 
-void get_connected_components(cv::Mat src, cv::Mat dst)
+void get_connected_components(cv::Mat src, cv::Mat& labelImage, std::vector<cv::Vec2i>& component_areas)
 {
-		cv::Mat labelImage(src.size(), CV_32S);
-		int nLabels = cv::connectedComponents(src, labelImage, 8);
+		labelImage = cv::Mat(src.size(), CV_32S);
+        cv::Mat stats, centroids;
+		int nLabels = cv::connectedComponentsWithStats(src, labelImage, stats, centroids, 8);
+
+		component_areas.resize(nLabels);
 		std::vector<cv::Vec3b> colors(nLabels);
-		colors[0] = cv::Vec3b(0, 0, 0);//background
-		for(int label = 1; label < nLabels; ++label){
-			colors[label] = cv::Vec3b( (rand()&255), (rand()&255), (rand()&255) );
+
+		for(int label = 0; label < nLabels; ++label){
+			if (label == 0)
+				colors[label] = cv::Vec3b(0, 0, 0);//background
+			else
+				colors[label] = cv::Vec3b( (rand()&255), (rand()&255), (rand()&255) );
+			component_areas[label] = cv::Vec2i(label, stats.at<int>(label, cv::CC_STAT_AREA));
 		}
-		dst = cv::Mat(src.size(), CV_8UC3);
-		for(int r = 0; r < dst.rows; ++r){
-			for(int c = 0; c < dst.cols; ++c){
+		// sort component_areas by area
+		struct {
+		    bool operator()(cv::Vec2i a, cv::Vec2i b)
+		    {   
+		        return a.val[1] > b.val[1];
+		    }   
+		} sort_by_area;
+	    std::sort(component_areas.begin(), component_areas.end(), sort_by_area);
+
+        cv::Mat connected_components = cv::Mat(src.size(), CV_8UC3);
+		for(int r = 0; r < connected_components.rows; ++r){
+			for(int c = 0; c < connected_components.cols; ++c){
 				int label = labelImage.at<int>(r, c);
-				cv::Vec3b &pixel = dst.at<cv::Vec3b>(r, c);
+				cv::Vec3b &pixel = connected_components.at<cv::Vec3b>(r, c);
 				pixel = colors[label];
 			 }
 		}
-		cv::imshow( "Connected Components", dst );
+		cv::imshow( "Connected Components", connected_components );
 		cv::waitKey(0);
 }
 
-void img_convexHull(cv::Mat src, cv::Mat dst)
+void img_convexHull(cv::Mat src)
 {
-	dst = cv::Mat(src.size(), CV_8UC3);
+	cv::Mat dst = cv::Mat(src.size(), CV_8UC3, cv::Vec3b(0,0,0));
+	cv::imshow( "Convex Hull1", dst );
+
 	for(int r = 0; r < dst.rows; ++r){
 		int start=-1,end=-1;
 		for(int c = 0; c < dst.cols; ++c){
-			cv::Vec3b &pixel_start = src.at<cv::Vec3b>(r, c);
-			cv::Vec3b &pixel_end = src.at<cv::Vec3b>(r, dst.cols-c-1);
-			if (start == -1 && pixel_start.val[0]!=0 && pixel_start.val[1]!=0 && pixel_start.val[2]!=0)
+			int pixel_start = src.at<int>(r, c);
+			int pixel_end = src.at<int>(r, dst.cols-c-1);
+			if (start == -1 && pixel_start!=0)
 			{
 				start=c;
 			}
-			if (end == -1 && pixel_end.val[0]!=0 && pixel_end.val[1]!=0 && pixel_end.val[2]!=0)
+			if (end == -1 && pixel_end!=0)
 			{
 				end = dst.cols-c-1;
 			}
@@ -223,9 +242,6 @@ int main(int argc, char** argv)
 		cv::imshow("feat_img", img_to_show);
 		cv::waitKey(0);
 
-		cv::Mat connected_components;
-//		get_connected_components(feat_img, connected_components);
-
 		// opencv uses the saturation arithmetics: min(max(round(r),0),255)
 		if (!prev_feat_img.empty())
 		{
@@ -236,10 +252,25 @@ int main(int argc, char** argv)
 			cv::imshow("diff_feat_img", img_to_show);
 			cv::waitKey(0);
 
-			get_connected_components(diff_feat_img, connected_components);
 
-			cv::Mat convex_diff_feat_img;
-			img_convexHull(diff_feat_img, convex_diff_feat_img);
+			// find convex hull for major connected components
+			std::vector<cv::Vec2i> component_areas;
+			cv::Mat labelImage;
+			get_connected_components(diff_feat_img, labelImage, component_areas);
+			for (int area_label=1; area_label < std::min(3, (int)component_areas.size()); area_label++)
+			{
+				cv::Mat component_img = labelImage;
+				for(int r = 0; r < labelImage.rows; ++r){
+					for(int c = 0; c < labelImage.cols; ++c){
+						int label = labelImage.at<int>(r, c);
+						if (label != area_label)
+							component_img.at<int>(r, c) = 0;
+					 }
+				}
+
+				img_convexHull(component_img);
+			}
+
 /*
 			cv::Mat kernel;
 		    int kernel_size = 5;
