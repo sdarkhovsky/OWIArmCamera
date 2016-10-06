@@ -66,6 +66,57 @@ std::vector <std::string> read_directory( const std::string& path = std::string(
   return result;
 }
 
+void get_connected_components(cv::Mat src, cv::Mat dst)
+{
+		cv::Mat labelImage(src.size(), CV_32S);
+		int nLabels = cv::connectedComponents(src, labelImage, 8);
+		std::vector<cv::Vec3b> colors(nLabels);
+		colors[0] = cv::Vec3b(0, 0, 0);//background
+		for(int label = 1; label < nLabels; ++label){
+			colors[label] = cv::Vec3b( (rand()&255), (rand()&255), (rand()&255) );
+		}
+		dst = cv::Mat(src.size(), CV_8UC3);
+		for(int r = 0; r < dst.rows; ++r){
+			for(int c = 0; c < dst.cols; ++c){
+				int label = labelImage.at<int>(r, c);
+				cv::Vec3b &pixel = dst.at<cv::Vec3b>(r, c);
+				pixel = colors[label];
+			 }
+		}
+		cv::imshow( "Connected Components", dst );
+		cv::waitKey(0);
+}
+
+void img_convexHull(cv::Mat src, cv::Mat dst)
+{
+	dst = cv::Mat(src.size(), CV_8UC3);
+	for(int r = 0; r < dst.rows; ++r){
+		int start=-1,end=-1;
+		for(int c = 0; c < dst.cols; ++c){
+			cv::Vec3b &pixel_start = src.at<cv::Vec3b>(r, c);
+			cv::Vec3b &pixel_end = src.at<cv::Vec3b>(r, dst.cols-c-1);
+			if (start == -1 && pixel_start.val[0]!=0 && pixel_start.val[1]!=0 && pixel_start.val[2]!=0)
+			{
+				start=c;
+			}
+			if (end == -1 && pixel_end.val[0]!=0 && pixel_end.val[1]!=0 && pixel_end.val[2]!=0)
+			{
+				end = dst.cols-c-1;
+			}
+			if (start != -1 && end != -1) break;
+	 	}
+		if (start == -1 && end == -1) continue;
+
+		cv::Vec3b fill(255, 255, 255);
+		for(int c = start; c <= end; ++c){
+			cv::Vec3b &pixel = dst.at<cv::Vec3b>(r, c);
+			pixel = fill;
+		}
+	}
+
+	cv::imshow( "Convex Hull", dst );
+	cv::waitKey(0);
+}
 
 /*
 read a training image
@@ -105,7 +156,7 @@ int main(int argc, char** argv)
 	}
 
 	std::vector <std::string> img_files = read_directory(training_samples_directory);
-
+	cv::Mat prev_feat_img;
  	for (std::vector<std::string>::iterator it = img_files.begin() ; it != img_files.end(); ++it)
 	{
 		cv::Mat orig_img, img, img_aux, img_to_show;
@@ -130,13 +181,11 @@ int main(int argc, char** argv)
         if (resize_src) cv::resize(img_aux, img, cv::Size(img.cols*width_scale, img.rows*height_scale));
         else img = img_aux;
 
-		std::string winname = "OWIFeatCalcPrediction";
-
 		// select yellow pixels
 		cv::Mat feat_img;
 
 		// debugging
-		#define DEBUG_DATA
+		//#define DEBUG_DATA
 		#ifdef DEBUG_DATA 
 		{
 			int row = 290;
@@ -164,49 +213,56 @@ int main(int argc, char** argv)
         if (make_hsv)
 		{
 			// In HSV color space the hue range is [0,360] degrees, but for 8-bit images H stores H/2 to fit 0 to 255
-			lower_bound = cv::Scalar(0/2,0.0*255,0.14*255);
-	        upper_bound = cv::Scalar(360/2,255,0.24*255);
+			lower_bound = cv::Scalar(0/2,0.0*255,0.10*255);
+	        upper_bound = cv::Scalar(360/2,255,0.35*255);
 		}
 		cv::inRange(img, lower_bound, upper_bound, feat_img);
-
+		 
 		img_to_show = feat_img;
-		cv::putText(img_to_show, *it, cv::Point(5, 65), cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(255, 100, 0), 2);
-		cv::imshow(winname, img_to_show);
+//		cv::putText(img_to_show, *it, cv::Point(5, 65), cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(255, 100, 0), 2);
+		cv::imshow("feat_img", img_to_show);
 		cv::waitKey(0);
+
+		cv::Mat connected_components;
+//		get_connected_components(feat_img, connected_components);
+
+		// opencv uses the saturation arithmetics: min(max(round(r),0),255)
+		if (!prev_feat_img.empty())
+		{
+			cv::Mat diff_feat_img;
+			cv::absdiff(feat_img,prev_feat_img, diff_feat_img);
+			img_to_show = diff_feat_img;
+//			cv::putText(img_to_show, *it, cv::Point(5, 65), cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(255, 100, 0), 2);
+			cv::imshow("diff_feat_img", img_to_show);
+			cv::waitKey(0);
+
+			get_connected_components(diff_feat_img, connected_components);
+
+			cv::Mat convex_diff_feat_img;
+			img_convexHull(diff_feat_img, convex_diff_feat_img);
 /*
-		// create clusters from the points with the distance from each other not more than a certain value
-		cv::Mat kernel;
-        int kernel_size = 5;
-		kernel = cv::Mat::ones( kernel_size, kernel_size, CV_32F )/ (float)(kernel_size*kernel_size);
-		cv::Mat smooth_feat_img;
-		cv::filter2D(feat_img, smooth_feat_img,-1, kernel);
-		cv::Mat thresh_feat_img;
-		cv::threshold(smooth_feat_img, thresh_feat_img, 100, 255, cv::THRESH_BINARY);
- 
-		img_to_show = thresh_feat_img;
-		cv::putText(img_to_show, "Image: " + *it, cv::Point(5, 65), cv::FONT_HERSHEY_SIMPLEX, 1.0, cv::Scalar(255, 100, 0), 2);
-		cv::imshow(winname, img_to_show);
-		cv::waitKey(0);
+			cv::Mat kernel;
+		    int kernel_size = 5;
+			kernel = cv::Mat::ones( kernel_size, kernel_size, CV_32F )/ (float)(kernel_size*kernel_size);
+			cv::Mat smooth_diff_feat_img;
+			cv::filter2D(diff_feat_img, smooth_diff_feat_img,-1, kernel);
+			cv::Mat thresh_diff_feat_img;
+			cv::threshold(smooth_diff_feat_img, thresh_diff_feat_img, 225, 255, cv::THRESH_BINARY);
+	 
+			img_to_show = thresh_diff_feat_img;
+			cv::imshow("thresh_diff_feat_img", img_to_show);
+			cv::waitKey(0);
+
+			// find feature regions in the image which are part of the thresh_diff_feat_img
+			cv::Mat moving_feat_img;
+			cv::bitwise_and(thresh_diff_feat_img, feat_img, moving_feat_img);
+			img_to_show = moving_feat_img;
+			cv::imshow("moving_feat_img", img_to_show);
+			cv::waitKey(0);
 */
-
-		cv::Mat labelImage(feat_img.size(), CV_32S);
-		int nLabels = cv::connectedComponents(feat_img, labelImage, 8);
-		std::vector<cv::Vec3b> colors(nLabels);
-		colors[0] = cv::Vec3b(0, 0, 0);//background
-		for(int label = 1; label < nLabels; ++label){
-		    colors[label] = cv::Vec3b( (rand()&255), (rand()&255), (rand()&255) );
-		}
-		cv::Mat dst(feat_img.size(), CV_8UC3);
-		for(int r = 0; r < dst.rows; ++r){
-		    for(int c = 0; c < dst.cols; ++c){
-		        int label = labelImage.at<int>(r, c);
-		        cv::Vec3b &pixel = dst.at<cv::Vec3b>(r, c);
-		        pixel = colors[label];
-		     }
 		}
 
-	    cv::imshow( "Connected Components", dst );
-		cv::waitKey(0);
+		prev_feat_img = feat_img;
 	}
 
 	return result;
