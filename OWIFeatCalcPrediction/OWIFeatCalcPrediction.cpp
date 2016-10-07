@@ -189,51 +189,64 @@ void drawAxis(cv::Mat& img, cv::Point p, cv::Point q, cv::Scalar colour, const f
     cv::line(img, p, q, colour, 1, CV_AA);
 }
 
-void calc_event_mc_and_orientation(cv::Mat feat_event)
+void calc_event_mc_and_orientation(cv::Mat event)
 {
-	int feat_event_area = 0;
-	for(int r = 0; r < feat_event.rows; ++r){
-		for(int c = 0; c < feat_event.cols; ++c){
-			if (feat_event.at<int>(r, c) != 0)
-				feat_event_area++;
-		 }
-	}
+    cv::Point cntr(0,0);
+	int event_area = 0;
 
-    cv::Mat data_pts = cv::Mat(feat_event_area, 2, CV_64FC1);
-	int i = 0;
-	for(int r = 0; r < feat_event.rows; ++r){
-		for(int c = 0; c < feat_event.cols; ++c){
-			if (feat_event.at<int>(r, c) != 0)
+	//could use calcCovarMatrix instead to calculate the mass center and the scatter (covariance) matrix
+	// using cv::PCA directly crashes system sometimes probably because teh number of points is too large
+
+	for(int r = 0; r < event.rows; ++r){
+		for(int c = 0; c < event.cols; ++c){
+			if (event.at<int>(r, c) != 0)
 			{
-				data_pts.at<double>(i, 0) = c;
-				data_pts.at<double>(i, 1) = r;
-				i++;
-			}
+				cntr = cntr + cv::Point(c,r);
+				event_area++;
+			}	
 		 }
 	}
+	cntr = cntr/event_area;
+    
+	cv::Mat scatter_matrix(2,2,CV_64FC1, cv::Scalar(0));
+	double& s00 = scatter_matrix.at<double>(0, 0);
+	double& s01 = scatter_matrix.at<double>(0, 1);
+	double& s10 = scatter_matrix.at<double>(1, 0);
+	double& s11 = scatter_matrix.at<double>(1, 1);
 
-    //Perform PCA analysis
-    cv::PCA pca_analysis(data_pts, cv::Mat(), CV_PCA_DATA_AS_ROW);
-    //Store the center of the object
-    cv::Point cntr = cv::Point(static_cast<int>(pca_analysis.mean.at<double>(0, 0)),
-                      static_cast<int>(pca_analysis.mean.at<double>(0, 1)));
+	for(int r = 0; r < event.rows; ++r){
+		for(int c = 0; c < event.cols; ++c){
+			if (event.at<int>(r, c) != 0)
+			{
+				s00 += (c-cntr.x)*(c-cntr.x);
+				s01 += (c-cntr.x)*(r-cntr.y);
+				s10 += (r-cntr.y)*(c-cntr.x);
+				s11 += (r-cntr.y)*(r-cntr.y);
+			}	
+		 }
+	}
+	scatter_matrix /= event_area;  // Opencv seems to divide be (event_area-1), but it doesn't matter for the eigen values
+	
+	cv::Mat eigenvalues, eigenvectors;
+	cv::eigen(scatter_matrix, eigenvalues, eigenvectors);
+
     //Store the eigenvalues and eigenvectors
     std::vector<cv::Point2d> eigen_vecs(2);
     std::vector<double> eigen_val(2);
     for (int i = 0; i < 2; ++i)
     {
-        eigen_vecs[i] = cv::Point2d(pca_analysis.eigenvectors.at<double>(i, 0),
-                                pca_analysis.eigenvectors.at<double>(i, 1));
-        eigen_val[i] = pca_analysis.eigenvalues.at<double>(0, i);
+        eigen_vecs[i] = cv::Point2d(eigenvectors.at<double>(i, 0),
+                                eigenvectors.at<double>(i, 1));
+        eigen_val[i] = eigenvalues.at<double>(0, i);
     }
     // Draw the principal components
-    cv::circle(feat_event, cntr, 3, cv::Scalar(80), 2);
+    cv::circle(event, cntr, 3, cv::Scalar(80), 2);
     cv::Point p1 = cntr + 0.02 * cv::Point(static_cast<int>(eigen_vecs[0].x * eigen_val[0]), static_cast<int>(eigen_vecs[0].y * eigen_val[0]));
     cv::Point p2 = cntr - 0.02 * cv::Point(static_cast<int>(eigen_vecs[1].x * eigen_val[1]), static_cast<int>(eigen_vecs[1].y * eigen_val[1]));
-    drawAxis(feat_event, cntr, p1, cv::Scalar(80), 1);
-    drawAxis(feat_event, cntr, p2, cv::Scalar(80), 5);
+    drawAxis(event, cntr, p1, cv::Scalar(80), 1);
+    drawAxis(event, cntr, p2, cv::Scalar(80), 5);
     double angle = atan2(eigen_vecs[0].y, eigen_vecs[0].x); // orientation in radians
-	cv::imshow("feat_event", feat_event);
+	cv::imshow("event", event);
 	cv::waitKey(0);
 }
 
@@ -398,5 +411,37 @@ int main(int argc, char** argv)
 
 		// output text
 		cv::putText(img_to_show, *it, cv::Point(5, 65), cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(255, 100, 0), 2);
+
+		// PCA
+		cv::Mat data_pts = cv::Mat(event_area, 2, CV_64FC1);
+		int i = 0;
+		for(int r = 0; r < event.rows; ++r){
+			for(int c = 0; c < event.cols; ++c){
+				if (event.at<int>(r, c) != 0)
+				{
+					data_pts.at<double>(i, 0) = c;
+					data_pts.at<double>(i, 1) = r;
+					i++;
+				}
+			 }
+		}
+
+		//Perform PCA analysis
+		// calculate mass center
+
+		cv::PCA pca_analysis(data_pts, cv::Mat(), CV_PCA_DATA_AS_ROW);
+		//Store the center of the object
+		cv::Point cntr = cv::Point(static_cast<int>(pca_analysis.mean.at<double>(0, 0)),
+		                  static_cast<int>(pca_analysis.mean.at<double>(0, 1)));
+		//Store the eigenvalues and eigenvectors
+		std::vector<cv::Point2d> eigen_vecs(2);
+		std::vector<double> eigen_val(2);
+		for (int i = 0; i < 2; ++i)
+		{
+		    eigen_vecs[i] = cv::Point2d(pca_analysis.eigenvectors.at<double>(i, 0),
+		                            pca_analysis.eigenvectors.at<double>(i, 1));
+		    eigen_val[i] = pca_analysis.eigenvalues.at<double>(0, i);
+		}
+
 
 #endif
