@@ -42,6 +42,16 @@ std::string joint_name[] =
 //   Always check the value of the global 'errno' variable after using this
 //   function to see if anything went wrong. (It will be zero if all is well.)
 //
+int get_file_number(std::string a)
+{
+	if (a.size()>3) a = a.substr(3);
+
+	std::size_t found = a.find("_");
+	if (found >= 0) a = a.substr(0,found);
+
+	return std::stoi(a);
+}
+
 std::vector <std::string> read_directory( const std::string& path = std::string() )
 {
   std::vector <std::string> result;
@@ -62,7 +72,17 @@ std::vector <std::string> read_directory( const std::string& path = std::string(
       result.push_back(s);
       }
     closedir( dp );
-    std::sort( result.begin(), result.end() );
+
+	struct {
+	    bool operator()(std::string a, std::string b)
+	    {   
+			int a1 = get_file_number(a);
+			int b1 = get_file_number(b);
+	        return a1 < b1;
+	    }   
+	} sort_by_names;
+
+    std::sort( result.begin(), result.end(), sort_by_names );
     }
   return result;
 }
@@ -100,14 +120,15 @@ void get_connected_components(cv::Mat src, cv::Mat& labelImage, std::vector<cv::
 				pixel = colors[label];
 			 }
 		}
+/*
 		cv::imshow( "Connected Components", connected_components );
 		cv::waitKey(0);
+*/
 }
 
-void img_convexHull(cv::Mat src)
+void calc_convexHull(cv::Mat src, cv::Mat& dst)
 {
-	cv::Mat dst = cv::Mat(src.size(), CV_8UC3, cv::Vec3b(0,0,0));
-	cv::imshow( "Convex Hull1", dst );
+	dst = cv::Mat(src.size(), CV_8U, cv::Scalar(0));
 
 	for(int r = 0; r < dst.rows; ++r){
 		int start=-1,end=-1;
@@ -126,15 +147,24 @@ void img_convexHull(cv::Mat src)
 	 	}
 		if (start == -1 && end == -1) continue;
 
-		cv::Vec3b fill(255, 255, 255);
 		for(int c = start; c <= end; ++c){
-			cv::Vec3b &pixel = dst.at<cv::Vec3b>(r, c);
-			pixel = fill;
+
+/*
+			If matrix is of type CV_8U then use Mat.at<uchar>(y,x).
+			If matrix is of type CV_8S then use Mat.at<schar>(y,x).
+			If matrix is of type CV_16U then use Mat.at<ushort>(y,x).
+			If matrix is of type CV_16S then use Mat.at<short>(y,x).
+			If matrix is of type CV_32S then use Mat.at<int>(y,x).
+			If matrix is of type CV_32F then use Mat.at<float>(y,x).
+			If matrix is of type CV_64F then use Mat.at<double>(y,x).
+*/
+			dst.at<uchar>(r,c) = 255;
 		}
 	}
-
+/*
 	cv::imshow( "Convex Hull", dst );
 	cv::waitKey(0);
+*/
 }
 
 /*
@@ -178,7 +208,7 @@ int main(int argc, char** argv)
 	cv::Mat prev_feat_img;
  	for (std::vector<std::string>::iterator it = img_files.begin() ; it != img_files.end(); ++it)
 	{
-		cv::Mat orig_img, img, img_aux, img_to_show;
+		cv::Mat orig_img, img, img_aux;
 
 		std::string img_path =  training_samples_directory + "/" + *it;
 		orig_img = cv::imread(img_path);
@@ -203,28 +233,6 @@ int main(int argc, char** argv)
 		// select yellow pixels
 		cv::Mat feat_img;
 
-		// debugging
-		//#define DEBUG_DATA
-		#ifdef DEBUG_DATA 
-		{
-			int row = 290;
-			int col = 280;
-            // 93 48 24
-            cv::Mat dbg_img = orig_img;
-			cv::Vec3b bgrPixel = dbg_img.at<cv::Vec3b>(row, col);
-
-			uint8_t* pixelPtr = (uint8_t*)dbg_img.data;
-			int cn = dbg_img.channels();
-
-			cv::Scalar_<uint8_t> bgrPixel1;
-			bgrPixel1.val[0] = pixelPtr[row*dbg_img.cols*cn + col*cn + 0]; // B
-			bgrPixel1.val[1] = pixelPtr[row*dbg_img.cols*cn + col*cn + 1]; // G
-			bgrPixel1.val[2] = pixelPtr[row*dbg_img.cols*cn + col*cn + 2]; // R
-			int dummy=0;
-			dummy++;
-		}
-		#endif
-
 		// OpenCV channels's order is BGR, not RGB
         // select yellow pixels
 		cv::Scalar lower_bound = cv::Scalar(43,81,100);
@@ -237,9 +245,7 @@ int main(int argc, char** argv)
 		}
 		cv::inRange(img, lower_bound, upper_bound, feat_img);
 		 
-		img_to_show = feat_img;
-//		cv::putText(img_to_show, *it, cv::Point(5, 65), cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(255, 100, 0), 2);
-		cv::imshow("feat_img", img_to_show);
+		cv::imshow("feat_img", feat_img);
 		cv::waitKey(0);
 
 		// opencv uses the saturation arithmetics: min(max(round(r),0),255)
@@ -247,17 +253,17 @@ int main(int argc, char** argv)
 		{
 			cv::Mat diff_feat_img;
 			cv::absdiff(feat_img,prev_feat_img, diff_feat_img);
-			img_to_show = diff_feat_img;
-//			cv::putText(img_to_show, *it, cv::Point(5, 65), cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(255, 100, 0), 2);
-			cv::imshow("diff_feat_img", img_to_show);
+/*
+			cv::imshow("diff_feat_img", diff_feat_img);
 			cv::waitKey(0);
-
+*/
 
 			// find convex hull for major connected components
 			std::vector<cv::Vec2i> component_areas;
 			cv::Mat labelImage;
 			get_connected_components(diff_feat_img, labelImage, component_areas);
-			for (int area_label=1; area_label < std::min(3, (int)component_areas.size()); area_label++)
+            int max_num_components=1;
+			for (int area_label=1; area_label < std::min(max_num_components+1, (int)component_areas.size()); area_label++)
 			{
 				cv::Mat component_img = labelImage;
 				for(int r = 0; r < labelImage.rows; ++r){
@@ -268,29 +274,13 @@ int main(int argc, char** argv)
 					 }
 				}
 
-				img_convexHull(component_img);
+				cv::Mat component_hull;
+				calc_convexHull(component_img, component_hull);
+				cv::Mat event;
+				cv::bitwise_and(feat_img, component_hull, event);
+				cv::imshow("event", event);
+				cv::waitKey(0);
 			}
-
-/*
-			cv::Mat kernel;
-		    int kernel_size = 5;
-			kernel = cv::Mat::ones( kernel_size, kernel_size, CV_32F )/ (float)(kernel_size*kernel_size);
-			cv::Mat smooth_diff_feat_img;
-			cv::filter2D(diff_feat_img, smooth_diff_feat_img,-1, kernel);
-			cv::Mat thresh_diff_feat_img;
-			cv::threshold(smooth_diff_feat_img, thresh_diff_feat_img, 225, 255, cv::THRESH_BINARY);
-	 
-			img_to_show = thresh_diff_feat_img;
-			cv::imshow("thresh_diff_feat_img", img_to_show);
-			cv::waitKey(0);
-
-			// find feature regions in the image which are part of the thresh_diff_feat_img
-			cv::Mat moving_feat_img;
-			cv::bitwise_and(thresh_diff_feat_img, feat_img, moving_feat_img);
-			img_to_show = moving_feat_img;
-			cv::imshow("moving_feat_img", img_to_show);
-			cv::waitKey(0);
-*/
 		}
 
 		prev_feat_img = feat_img;
@@ -298,3 +288,43 @@ int main(int argc, char** argv)
 
 	return result;
 }
+
+#if 0
+		int row = 290;
+		int col = 280;
+        // 93 48 24
+        cv::Mat dbg_img = orig_img;
+		cv::Vec3b bgrPixel = dbg_img.at<cv::Vec3b>(row, col);
+
+		uint8_t* pixelPtr = (uint8_t*)dbg_img.data;
+		int cn = dbg_img.channels();
+
+		cv::Scalar_<uint8_t> bgrPixel1;
+		bgrPixel1.val[0] = pixelPtr[row*dbg_img.cols*cn + col*cn + 0]; // B
+		bgrPixel1.val[1] = pixelPtr[row*dbg_img.cols*cn + col*cn + 1]; // G
+		bgrPixel1.val[2] = pixelPtr[row*dbg_img.cols*cn + col*cn + 2]; // R
+
+
+	    // filtering
+		cv::Mat kernel;
+	    int kernel_size = 5;
+		kernel = cv::Mat::ones( kernel_size, kernel_size, CV_32F )/ (float)(kernel_size*kernel_size);
+		cv::Mat smooth_diff_feat_img;
+		cv::filter2D(diff_feat_img, smooth_diff_feat_img,-1, kernel);
+		cv::Mat thresh_diff_feat_img;
+		cv::threshold(smooth_diff_feat_img, thresh_diff_feat_img, 225, 255, cv::THRESH_BINARY);
+ 
+		cv::imshow("thresh_diff_feat_img", thresh_diff_feat_img);
+		cv::waitKey(0);
+
+		// find feature regions in the image which are part of the thresh_diff_feat_img
+		cv::Mat moving_feat_img;
+		cv::bitwise_and(thresh_diff_feat_img, feat_img, moving_feat_img);
+		cv::imshow("moving_feat_img", moving_feat_img);
+		cv::waitKey(0);
+
+
+		// output text
+		cv::putText(img_to_show, *it, cv::Point(5, 65), cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(255, 100, 0), 2);
+
+#endif
