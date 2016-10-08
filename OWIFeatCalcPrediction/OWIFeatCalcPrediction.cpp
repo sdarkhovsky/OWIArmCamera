@@ -195,11 +195,11 @@ void calc_event_mc_and_orientation(cv::Mat event)
 	int event_area = 0;
 
 	//could use calcCovarMatrix instead to calculate the mass center and the scatter (covariance) matrix
-	// using cv::PCA directly crashes system sometimes probably because teh number of points is too large
+	// using cv::PCA directly crashes system sometimes probably because the number of points is too large
 
 	for(int r = 0; r < event.rows; ++r){
 		for(int c = 0; c < event.cols; ++c){
-			if (event.at<int>(r, c) != 0)
+			if (event.at<uchar>(r, c) != 0)
 			{
 				cntr = cntr + cv::Point(c,r);
 				event_area++;
@@ -216,7 +216,7 @@ void calc_event_mc_and_orientation(cv::Mat event)
 
 	for(int r = 0; r < event.rows; ++r){
 		for(int c = 0; c < event.cols; ++c){
-			if (event.at<int>(r, c) != 0)
+			if (event.at<uchar>(r, c) != 0)
 			{
 				s00 += (c-cntr.x)*(c-cntr.x);
 				s01 += (c-cntr.x)*(r-cntr.y);
@@ -417,7 +417,7 @@ int main(int argc, char** argv)
 		int i = 0;
 		for(int r = 0; r < event.rows; ++r){
 			for(int c = 0; c < event.cols; ++c){
-				if (event.at<int>(r, c) != 0)
+				if (event.at<uchar>(r, c) != 0)
 				{
 					data_pts.at<double>(i, 0) = c;
 					data_pts.at<double>(i, 1) = r;
