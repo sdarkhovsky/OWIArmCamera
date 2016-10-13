@@ -19,20 +19,7 @@ void execute_command(std::string cmd)
 	}
 }
 
-std::string joint_name[] = 
-{
-//	"base_joint1", 
-	"shoulder 1", 
-//	"elbow 1", 
-//	"wrist1", 
-//	"gripper_joint1",
-//	"base_joint1", 
-	"shoulder 2", 
-//	"elbow 2", 
-//	"wrist1", 
-//	"gripper_joint1"
-
-};
+std::vector<std::string> get_joint_commands();
 
 // Run the program with administrator privileges as sending a commmand 
 // to the OWI Arm USB controller requires to send data to its USB device:
@@ -43,14 +30,16 @@ int main(int argc, char** argv)
 	std::string cmdCameraCapture, cmdOWIArmControl, cmdSuffix;
 	std::string cmdCameraCapturePrefix = "./CameraCapture/CameraCapture 1 ./TrainingSamples/img";
     int num_samples=2;
-	int joint_name_count = sizeof(joint_name)/sizeof(*joint_name);
+
+	std::vector<std::string> joint_commands = get_joint_commands();	
+	int joint_commands_count = joint_commands.size();
     
     std::default_random_engine generator;
-    std::uniform_int_distribution<> distrib(0, joint_name_count-1);
+    std::uniform_int_distribution<> distrib(0, joint_commands_count-1);
 /*
     for (int i=0; i < 30; i++)
 	{
-		std::cout << joint_name[distrib(generator)] << std::endl;
+		std::cout << joint_commands[distrib(generator)] << std::endl;
 	}
 
 	exit(1);
@@ -65,11 +54,11 @@ int main(int argc, char** argv)
 			break;
 		
 		// randomly select the move and describe it in the suffix
- 		int joint = distrib(generator);
+ 		int icmd = distrib(generator);
 		
-		cmdOWIArmControl = "./OWIArmControl/OWIArmControl " + joint_name[joint]; 
+		cmdOWIArmControl = "./OWIArmControl/OWIArmControl " + joint_commands[icmd]; 
 		execute_command(cmdOWIArmControl);
-		cmdSuffix = " " + joint_name[joint];
+		cmdSuffix = " " + joint_commands[icmd];
 		std::replace( cmdSuffix.begin(), cmdSuffix.end(), ' ', '_'); 
 	}
 	return status;

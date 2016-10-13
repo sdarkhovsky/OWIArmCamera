@@ -19,20 +19,16 @@
 
 #include <unistd.h>
 
-std::string joint_name[] = 
+class owi_history
 {
-//	"base_joint1", 
-	"shoulder 1", 
-	"elbow 1", 
-//	"wrist1", 
-//	"gripper_joint1",
-//	"base_joint1", 
-	"shoulder 2", 
-	"elbow 2", 
-//	"wrist1", 
-//	"gripper_joint1"
-
+public:
+	std::vector <double> event_orientations;
+	std::vector <cv::Point> event_centers;
+	std::vector <int> joint_commands;
 };
+
+
+std::vector<std::string> get_joint_commands();
 
 // found at http://www.cplusplus.com/forum/unices/3548/
 // read_directory()
@@ -189,10 +185,11 @@ void drawAxis(cv::Mat& img, cv::Point p, cv::Point q, cv::Scalar colour, const f
     cv::line(img, p, q, colour, 1, CV_AA);
 }
 
-void calc_event_mc_and_orientation(cv::Mat event,  std::vector <cv::Point>& event_centers, std::vector <double>& event_orientations)
+void calc_event_mc_and_orientation(cv::Mat event,  owi_history& history)
 {
     cv::Point cntr(0,0);
 	int event_area = 0;
+	double angle = 0.0;
 
 	//could use calcCovarMatrix instead to calculate the mass center and the scatter (covariance) matrix
 	// using cv::PCA directly crashes system sometimes probably because the number of points is too large
@@ -206,6 +203,14 @@ void calc_event_mc_and_orientation(cv::Mat event,  std::vector <cv::Point>& even
 			}	
 		 }
 	}
+	if (event_area == 0)
+	{
+		history.event_centers.push_back(cntr);
+		history.event_orientations.push_back(angle);
+
+    	return;
+	}
+
 	cntr = cntr/event_area;
     
 	cv::Mat scatter_matrix(2,2,CV_64FC1, cv::Scalar(0));
@@ -245,13 +250,13 @@ void calc_event_mc_and_orientation(cv::Mat event,  std::vector <cv::Point>& even
     cv::Point p2 = cntr - 0.02 * cv::Point(static_cast<int>(eigen_vecs[1].x * eigen_val[1]), static_cast<int>(eigen_vecs[1].y * eigen_val[1]));
     drawAxis(event, cntr, p1, cv::Scalar(80), 1);
     drawAxis(event, cntr, p2, cv::Scalar(80), 5);
-    double angle = atan2(eigen_vecs[0].y, eigen_vecs[0].x); // orientation in radians
+    angle = atan2(eigen_vecs[0].y, eigen_vecs[0].x); // orientation in radians
 
 	cv::imshow("event", event);
-	cv::waitKey(1000);
+	cv::waitKey(1);
 
-	event_centers.push_back(cntr);
-	event_orientations.push_back(angle);
+	history.event_centers.push_back(cntr);
+	history.event_orientations.push_back(angle);
 }
 
 /*
@@ -271,6 +276,14 @@ int main(int argc, char** argv)
     bool resize_src = false;
 	float width_scale = 0.2f;
     float height_scale = 0.2f;
+	owi_history history;
+
+	std::vector<std::string> joint_commands = get_joint_commands();
+	
+	for (auto& s : joint_commands)
+	{
+		std::replace( s.begin(), s.end(), ' ', '_'); 
+	}
 
 	if (argc == 1)
 	{
@@ -293,9 +306,6 @@ int main(int argc, char** argv)
 
 	std::vector <std::string> img_files = read_directory(training_samples_directory);
 	cv::Mat prev_feat_img;
-
-	std::vector <double> event_orientations;
-	std::vector <cv::Point> event_centers;
 
  	for (std::vector<std::string>::iterator it = img_files.begin() ; it != img_files.end(); ++it)
 	{
@@ -373,7 +383,21 @@ int main(int argc, char** argv)
 				cv::imshow("feat_event", feat_event);
 				cv::waitKey(0);
 */
-				calc_event_mc_and_orientation(feat_event, event_centers, event_orientations);
+				calc_event_mc_and_orientation(feat_event, history);
+			}
+			
+			std::size_t found1 = (*it).find("_");
+			std::size_t found2 = (*it).find(".");
+			std::string cmd_name;
+
+			if (found1 >= 0 && found2 >= 0 && found2 > found1) cmd_name=(*it).substr(found1+1,found2-found1-1);
+			for (size_t icmd=0; icmd < joint_commands.size(); icmd++)
+			{
+				if (joint_commands[icmd]==cmd_name)
+				{
+					history.joint_commands.push_back(icmd);
+					break;
+				}
 			}
 		}
 

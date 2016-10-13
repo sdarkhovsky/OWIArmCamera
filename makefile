@@ -1,5 +1,5 @@
 PROG ?= OWIArmCamera
-SRCS=OWIArmCamera.cpp
+SRCS=OWIArmCamera.cpp joint_commands.cpp
 OBJS=$(subst .cpp,.o,$(SRCS))
 CPPFLAGS=-c -O0 -g3 -Wall -fmessage-length=0 -std=c++11
 LDFLAGS=-O0 -g3 -Wall -fmessage-length=0 -std=c++11
