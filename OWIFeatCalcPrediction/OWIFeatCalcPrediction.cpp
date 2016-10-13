@@ -189,7 +189,7 @@ void drawAxis(cv::Mat& img, cv::Point p, cv::Point q, cv::Scalar colour, const f
     cv::line(img, p, q, colour, 1, CV_AA);
 }
 
-void calc_event_mc_and_orientation(cv::Mat event)
+void calc_event_mc_and_orientation(cv::Mat event,  std::vector <cv::Point>& event_centers, std::vector <double>& event_orientations)
 {
     cv::Point cntr(0,0);
 	int event_area = 0;
@@ -246,8 +246,12 @@ void calc_event_mc_and_orientation(cv::Mat event)
     drawAxis(event, cntr, p1, cv::Scalar(80), 1);
     drawAxis(event, cntr, p2, cv::Scalar(80), 5);
     double angle = atan2(eigen_vecs[0].y, eigen_vecs[0].x); // orientation in radians
+
 	cv::imshow("event", event);
-	cv::waitKey(0);
+	cv::waitKey(1000);
+
+	event_centers.push_back(cntr);
+	event_orientations.push_back(angle);
 }
 
 /*
@@ -289,6 +293,10 @@ int main(int argc, char** argv)
 
 	std::vector <std::string> img_files = read_directory(training_samples_directory);
 	cv::Mat prev_feat_img;
+
+	std::vector <double> event_orientations;
+	std::vector <cv::Point> event_centers;
+
  	for (std::vector<std::string>::iterator it = img_files.begin() ; it != img_files.end(); ++it)
 	{
 		cv::Mat orig_img, img, img_aux;
@@ -327,10 +335,10 @@ int main(int argc, char** argv)
 	        upper_bound = cv::Scalar(360/2,255,0.35*255);
 		}
 		cv::inRange(img, lower_bound, upper_bound, feat_img);
-		 
+/*		 
 		cv::imshow("feat_img", feat_img);
 		cv::waitKey(0);
-
+*/
 		// opencv uses the saturation arithmetics: min(max(round(r),0),255)
 		if (!prev_feat_img.empty())
 		{
@@ -361,10 +369,11 @@ int main(int argc, char** argv)
 				calc_convexHull(component_img, component_hull);
 				cv::Mat feat_event;
 				cv::bitwise_and(feat_img, component_hull, feat_event);
+/*
 				cv::imshow("feat_event", feat_event);
 				cv::waitKey(0);
-
-				calc_event_mc_and_orientation(feat_event);
+*/
+				calc_event_mc_and_orientation(feat_event, event_centers, event_orientations);
 			}
 		}
 
