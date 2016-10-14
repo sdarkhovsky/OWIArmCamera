@@ -19,16 +19,11 @@
 
 #include <unistd.h>
 
-class owi_history
-{
-public:
-	std::vector <double> event_orientations;
-	std::vector <cv::Point> event_centers;
-	std::vector <int> joint_commands;
-};
-
+#include "owi_history.h"
+#include "../OWIArmControl/owi_arm_control.h"
 
 std::vector<std::string> get_joint_commands();
+void predict(owi_history& history);
 
 // found at http://www.cplusplus.com/forum/unices/3548/
 // read_directory()
@@ -396,6 +391,7 @@ int main(int argc, char** argv)
 				if (joint_commands[icmd]==cmd_name)
 				{
 					history.joint_commands.push_back(icmd);
+					history.event_times.push_back((double)(OWI_COMMAND_DURATION_MILLISECONDS*get_file_number(*it)));
 					break;
 				}
 			}
@@ -404,77 +400,9 @@ int main(int argc, char** argv)
 		prev_feat_img = feat_img;
 	}
 
+	predict(history);
+
 	return result;
 }
 
-#if 0
-		int row = 290;
-		int col = 280;
-        // 93 48 24
-        cv::Mat dbg_img = orig_img;
-		cv::Vec3b bgrPixel = dbg_img.at<cv::Vec3b>(row, col);
 
-		uint8_t* pixelPtr = (uint8_t*)dbg_img.data;
-		int cn = dbg_img.channels();
-
-		cv::Scalar_<uint8_t> bgrPixel1;
-		bgrPixel1.val[0] = pixelPtr[row*dbg_img.cols*cn + col*cn + 0]; // B
-		bgrPixel1.val[1] = pixelPtr[row*dbg_img.cols*cn + col*cn + 1]; // G
-		bgrPixel1.val[2] = pixelPtr[row*dbg_img.cols*cn + col*cn + 2]; // R
-
-
-	    // filtering
-		cv::Mat kernel;
-	    int kernel_size = 5;
-		kernel = cv::Mat::ones( kernel_size, kernel_size, CV_32F )/ (float)(kernel_size*kernel_size);
-		cv::Mat smooth_diff_feat_img;
-		cv::filter2D(diff_feat_img, smooth_diff_feat_img,-1, kernel);
-		cv::Mat thresh_diff_feat_img;
-		cv::threshold(smooth_diff_feat_img, thresh_diff_feat_img, 225, 255, cv::THRESH_BINARY);
- 
-		cv::imshow("thresh_diff_feat_img", thresh_diff_feat_img);
-		cv::waitKey(0);
-
-		// find feature regions in the image which are part of the thresh_diff_feat_img
-		cv::Mat moving_feat_img;
-		cv::bitwise_and(thresh_diff_feat_img, feat_img, moving_feat_img);
-		cv::imshow("moving_feat_img", moving_feat_img);
-		cv::waitKey(0);
-
-
-		// output text
-		cv::putText(img_to_show, *it, cv::Point(5, 65), cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(255, 100, 0), 2);
-
-		// PCA
-		cv::Mat data_pts = cv::Mat(event_area, 2, CV_64FC1);
-		int i = 0;
-		for(int r = 0; r < event.rows; ++r){
-			for(int c = 0; c < event.cols; ++c){
-				if (event.at<uchar>(r, c) != 0)
-				{
-					data_pts.at<double>(i, 0) = c;
-					data_pts.at<double>(i, 1) = r;
-					i++;
-				}
-			 }
-		}
-
-		//Perform PCA analysis
-		// calculate mass center
-
-		cv::PCA pca_analysis(data_pts, cv::Mat(), CV_PCA_DATA_AS_ROW);
-		//Store the center of the object
-		cv::Point cntr = cv::Point(static_cast<int>(pca_analysis.mean.at<double>(0, 0)),
-		                  static_cast<int>(pca_analysis.mean.at<double>(0, 1)));
-		//Store the eigenvalues and eigenvectors
-		std::vector<cv::Point2d> eigen_vecs(2);
-		std::vector<double> eigen_val(2);
-		for (int i = 0; i < 2; ++i)
-		{
-		    eigen_vecs[i] = cv::Point2d(pca_analysis.eigenvectors.at<double>(i, 0),
-		                            pca_analysis.eigenvectors.at<double>(i, 1));
-		    eigen_val[i] = pca_analysis.eigenvalues.at<double>(0, i);
-		}
-
-
-#endif

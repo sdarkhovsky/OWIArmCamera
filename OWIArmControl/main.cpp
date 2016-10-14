@@ -6,6 +6,8 @@
 //#include <unistd.h>
 #include <time.h>
 
+#include "owi_arm_control.h"
+
 // to build: g++ main.cpp owi_interface.cpp `pkg-config --libs libusb-1.0` -g -o OWIArmControl
 
 void usage()
@@ -53,7 +55,7 @@ int main(int ac, char **av)
 //		sleep(1);
 		struct timespec ts;
 		ts.tv_sec = 0;
-		ts.tv_nsec = 200000000;
+		ts.tv_nsec = OWI_COMMAND_DURATION_MILLISECONDS*1000000;
 		nanosleep(&ts, NULL);
 
 		owi.stop();
