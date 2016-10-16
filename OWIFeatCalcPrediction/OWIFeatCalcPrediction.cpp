@@ -180,7 +180,7 @@ void drawAxis(cv::Mat& img, cv::Point p, cv::Point q, cv::Scalar colour, const f
     cv::line(img, p, q, colour, 1, CV_AA);
 }
 
-void calc_event_mc_and_orientation(cv::Mat event,  owi_history& history)
+void calc_event_mc_and_orientation(cv::Mat event,  owi_history& history, double time)
 {
     cv::Point cntr(0,0);
 	int event_area = 0;
@@ -200,9 +200,7 @@ void calc_event_mc_and_orientation(cv::Mat event,  owi_history& history)
 	}
 	if (event_area == 0)
 	{
-		history.event_centers.push_back(cntr);
-		history.event_orientations.push_back(angle);
-
+		history.b_events.push_back(b_event(time, cntr, angle));
     	return;
 	}
 
@@ -250,8 +248,7 @@ void calc_event_mc_and_orientation(cv::Mat event,  owi_history& history)
 	cv::imshow("event", event);
 	cv::waitKey(1);
 
-	history.event_centers.push_back(cntr);
-	history.event_orientations.push_back(angle);
+	history.b_events.push_back(b_event(time, cntr, angle));
 }
 
 /*
@@ -272,6 +269,7 @@ int main(int argc, char** argv)
 	float width_scale = 0.2f;
     float height_scale = 0.2f;
 	owi_history history;
+	double cur_time = 0.0;
 
 	std::vector<std::string> joint_commands = get_joint_commands();
 	
@@ -347,6 +345,23 @@ int main(int argc, char** argv)
 		// opencv uses the saturation arithmetics: min(max(round(r),0),255)
 		if (!prev_feat_img.empty())
 		{
+			// add history record for the g_command
+			std::size_t found1 = (*it).find("_");
+			std::size_t found2 = (*it).find(".");
+			std::string cmd_name;
+
+			if (found1 >= 0 && found2 >= 0 && found2 > found1) cmd_name=(*it).substr(found1+1,found2-found1-1);
+			for (size_t icmd=0; icmd < joint_commands.size(); icmd++)
+			{
+				if (joint_commands[icmd]==cmd_name)
+				{
+					history.g_events.push_back(g_command_event(cur_time, icmd));
+					break;
+				}
+			}
+			// the image is taken after the command
+			cur_time += (double)(OWI_COMMAND_DURATION_MILLISECONDS*get_file_number(*it));
+
 			cv::Mat diff_feat_img;
 			cv::absdiff(feat_img,prev_feat_img, diff_feat_img);
 /*
@@ -378,22 +393,7 @@ int main(int argc, char** argv)
 				cv::imshow("feat_event", feat_event);
 				cv::waitKey(0);
 */
-				calc_event_mc_and_orientation(feat_event, history);
-			}
-			
-			std::size_t found1 = (*it).find("_");
-			std::size_t found2 = (*it).find(".");
-			std::string cmd_name;
-
-			if (found1 >= 0 && found2 >= 0 && found2 > found1) cmd_name=(*it).substr(found1+1,found2-found1-1);
-			for (size_t icmd=0; icmd < joint_commands.size(); icmd++)
-			{
-				if (joint_commands[icmd]==cmd_name)
-				{
-					history.joint_commands.push_back(icmd);
-					history.event_times.push_back((double)(OWI_COMMAND_DURATION_MILLISECONDS*get_file_number(*it)));
-					break;
-				}
+				calc_event_mc_and_orientation(feat_event, history, cur_time);
 			}
 		}
 
