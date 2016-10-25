@@ -1,2 +1,2 @@
-g++ -L/usr/local/lib -I/usr/local/include/opencv2 -O0 -g3 -Wall -fmessage-length=0 -std=c++11 -o OWIFeatCalcPrediction OWIFeatCalcPrediction.cpp owi_prediction.cpp ../joint_commands.cpp -lopencv_core -lopencv_objdetect -lopencv_imgproc -lopencv_highgui -lopencv_videoio -lopencv_imgcodecs
+g++ -L/usr/local/lib -I/usr/local/include/opencv2 -O0 -g3 -Wall -fmessage-length=0 -std=c++11 -o OWIFeatCalcPrediction OWIFeatCalcPrediction.cpp owi_history.cpp owi_prediction.cpp  ais_event.cpp ../joint_commands.cpp -lopencv_core -lopencv_objdetect -lopencv_imgproc -lopencv_highgui -lopencv_videoio -lopencv_imgcodecs
 

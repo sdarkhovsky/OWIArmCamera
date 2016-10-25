@@ -20,6 +20,8 @@
 #include <unistd.h>
 
 #include "owi_history.h"
+#include "ais_event.h"
+#include "owi_prediction.h"
 #include "../OWIArmControl/owi_arm_control.h"
 
 std::vector<std::string> get_joint_commands();
@@ -200,7 +202,7 @@ void calc_event_mc_and_orientation(cv::Mat event,  owi_history& history, double 
 	}
 	if (event_area == 0)
 	{
-		history.b_events.push_back(b_event(time, cntr, angle));
+		history.add_event(ais::b_event(time, cntr, angle));
     	return;
 	}
 
@@ -248,7 +250,7 @@ void calc_event_mc_and_orientation(cv::Mat event,  owi_history& history, double 
 	cv::imshow("event", event);
 	cv::waitKey(1);
 
-	history.b_events.push_back(b_event(time, cntr, angle));
+	history.add_event(b_event(time, cntr, angle));
 }
 
 /*
@@ -303,6 +305,7 @@ int main(int argc, char** argv)
  	for (std::vector<std::string>::iterator it = img_files.begin() ; it != img_files.end(); ++it)
 	{
 		cv::Mat orig_img, img, img_aux;
+		std::vector<event> predicted_events;
 
 		std::string img_path =  training_samples_directory + "/" + *it;
 		orig_img = cv::imread(img_path);
@@ -355,10 +358,15 @@ int main(int argc, char** argv)
 			{
 				if (joint_commands[icmd]==cmd_name)
 				{
-					history.g_events.push_back(g_command_event(cur_time, icmd));
+					history.add_event(ais::g_event(cur_time, icmd));
 					break;
 				}
 			}
+
+
+			// predict upcoming events
+    		ais::predict_events(cur_time, history, &predicted_events);
+
 			// the image is taken after the command
 			cur_time += (double)(OWI_COMMAND_DURATION_MILLISECONDS*get_file_number(*it));
 
@@ -398,9 +406,10 @@ int main(int argc, char** argv)
 		}
 
 		prev_feat_img = feat_img;
-	}
 
-	predict(history);
+		// interpret (correctly classify) the observed events by comparing them with the predicted events 
+		ais::update_prediction_functions(cur_time, history, predicted_events);
+	}
 
 	return result;
 }
