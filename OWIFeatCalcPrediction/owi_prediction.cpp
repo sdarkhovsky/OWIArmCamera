@@ -4,6 +4,23 @@
 namespace ais {
 	std::vector<prediction_function> prediction_functions;
 
+
+	void find_events_causing_the_event(event& _event, owi_history& history, std::set<EVENT_TYPE>& causing_event_types)
+	{
+		// see the notebook 12, p.34
+		double n11, n01;
+		std::vector<event> preceding_events;
+		
+		causing_events.clear();
+		history.get_events_preceding_the_event(_event, preceding_events);
+
+		for (std::vector<event>::iterator it = preceding_events.begin() ; it != preceding_events.end(); ++it) {
+			history.get_event_counts(_event, *it, n11, n01);
+#define CAUSING_THRESHOLD 0.8
+			if (n11/(n11+n01) > CAUSING_THRESHOLD) causing_event_types.insert(it->event_type);
+		}
+	}
+
 	void update_prediction_functions(double cur_time, owi_history& history, std::vector<event>& predicted_events)
 	{
 		// check whether the events were correctly predicted
@@ -16,8 +33,14 @@ namespace ais {
 				found = it->compare_with_predicted_event(*pred_it);
 				if (found) break;
 			}
-			if (!found) 1111111111111111111111111
+			if (found) continue;
 
+			// the event was not predicted, create a prediction function for the actual event type
+			
+			find_events_causing_the_event(*it, history);
+
+			// the prediction function is created in run time
+			map_the_causing_events_parameters_to_the_event_parameters();
 		}
 	}
 

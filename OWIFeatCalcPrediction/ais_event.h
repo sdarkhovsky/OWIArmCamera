@@ -18,7 +18,7 @@ public:
 		time = _time;
 		event_type = _event_type;
 	}
-	bool compare_events(event& another_event) =0;
+	virtual bool compare_events(event& another_event) =0;
 
 	double time;
 	EVENT_TYPE event_type;
