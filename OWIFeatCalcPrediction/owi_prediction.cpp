@@ -4,8 +4,7 @@
 namespace ais {
 	std::vector<prediction_function> prediction_functions;
 
-
-	void find_events_causing_the_event(event& _event, owi_history& history, std::set<EVENT_TYPE>& causing_event_types)
+	void find_events_causing_the_event(event& _event, owi_history& history, std::set<event>& causing_event_types)
 	{
 		// see the notebook 12, p.34
 		double n11, n01;
@@ -17,30 +16,59 @@ namespace ais {
 		for (std::vector<event>::iterator it = preceding_events.begin() ; it != preceding_events.end(); ++it) {
 			history.get_event_counts(_event, *it, n11, n01);
 #define CAUSING_THRESHOLD 0.8
-			if (n11/(n11+n01) > CAUSING_THRESHOLD) causing_event_types.insert(it->event_type);
+			if (n11/(n11+n01) > CAUSING_THRESHOLD) {
+				event causing_event = *it;
+				causing_event.time = (*it).time - _event.time;
+				causing_event_types.insert(*it);
+			}
 		}
+	}
+
+	bool map_cause_parameters_to_effect_parameters(owi_history& history, std::set<event>& cause_event_types, event effect_type)
+	{
+		// assume for now that an event has only one scalar parameter besides time and possibly address
+		// get samples of effect_param, cause_params, time difference between the effect and cause events 
+		// and resolve the linear regression of the effect parameters on the rest of data
+		std::vector<vector<double>> cause_samples;
+		std::vector<double> cause_sample;
+		cause_sample.resize(cause_types.size());
+
+		event effect_event;
+		std::vector<event> cause_events;
+		std::vector<std::vector<event>> all_cause_events; 
+		std::vector<event> all_efect_events;
+		if (!history.get_last_event_of_type(effect_type, effect_event)) return false;
+		while(true) {
+			if (history.get_cause_events_for_effect_event(effect_event, cause_event_types, cause_events)) {
+				// copy parameters from cause_events
+				all_cause_events.push_back(cause_events);
+				all_efect_events.push_back(effect_event);
+			}
+			
+			if (!history.get_previous_event_of_same_type(effect_event, effect_event)) break;
+		}
+1111111111111111111111111
+		// build prediction function based on the statistics in all_cause_events and all_efect_events
 	}
 
 	void update_prediction_functions(double cur_time, owi_history& history, std::vector<event>& predicted_events)
 	{
 		// check whether the events were correctly predicted
-		// this implementation checks only the latest events, rather than any history event
-		std::vector<ais::event> latest_events = history.get_events_by_time(cur_time);
-		// compare the actual events and the predicted events
-		for (std::vector<event>::iterator it = latest_events.begin() ; it != latest_events.end(); ++it) {
-			bool found = false;
-			for (std::vector<event>::iterator pred_it = predicted_events.begin() ; pred_it != predicted_events.end(); ++pred_it) {
-				found = it->compare_with_predicted_event(*pred_it);
-				if (found) break;
-			}
-			if (found) continue;
+		for (std::vector<event>::iterator pred_it = predicted_events.begin() ; pred_it != predicted_events.end(); ++pred_it) {
+			if (history.event_occurred(*pred_it)) continue;
 
 			// the event was not predicted, create a prediction function for the actual event type
-			
-			find_events_causing_the_event(*it, history);
+			std::set<event> causing_event_types;
+			find_events_causing_the_event(*it, history, causing_event_types);
 
 			// the prediction function is created in run time
-			map_the_causing_events_parameters_to_the_event_parameters();
+			map_cause_parameters_to_effect_parameters(history, causing_event_types, *it);
+		
+111111111111111111111111111111111111 
+	typedef void prediction_function(double time, owi_history& history, std::vector<event>& predicted_events);
+
+
+
 		}
 	}
 
@@ -52,16 +80,6 @@ namespace ais {
 		}
 	}
 }
-
-
-
-
-
-
-
-
-
-
 
 
 

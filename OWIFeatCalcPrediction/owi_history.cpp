@@ -12,12 +12,52 @@ std::vector<event>& owi_history::get_events_by_time(double time) {
 }
 
 
-std::vector<event>& owi_history::get_events_by_type(event& _event) {
-	std::vector<event> selected_events;
-	for (std::vector<event>::iterator it = events.begin() ; it != events.end(); ++it) {
-		if (it->event_type == _event->event_type) selected_events.push_back(*it);
+bool owi_history::get_last_event_of_type(EVENT_TYPE _event_type, event& _event) {
+	for (vector<event>::reverse_iterator rit = events.rbegin(); rit != events.rend(); ++rit ) { 
+		if (rit->event_type == _event_type) {
+		_event = *rit;
+		return true;
 	}
-	return selected_events;
+	return false;
+}
+
+bool owi_history::get_previous_event_of_same_type(event& _event, event& prev_event) {
+	if (_event.h_ind == 0) return false;
+	for (size_t i=_event.h_ind-1; i>0; i-- ) { 
+		if (events[i].event_type == _event.event_type) {
+			prev_event = events[i];
+			return true;
+		}
+	}
+	return false;
+}
+
+bool owi_history::get_cause_events_for_effect_event(event& effect_event, std::set<event>& cause_types, std::vector<event> cause_events) {
+	if (effect_event.h_ind == 0) return false;
+	cause_events = cause_types;
+	size_t found_cause_events = 0;
+	for (size_t ict=0; ict < cause_types.size(); ict++) {
+		for (size_t i=effect_event.h_ind-1; i>0; i-- ) { 
+			if (effect_event.time + cause_types[ict].time == events[i].time && cause_types[ict].event_type == events[i].event_type) {
+				cause_events[ict] = events[i];
+				found_cause_events++;
+				break;
+			}
+			// limit search by time
+			if (effect_event.time + cause_types[ict].time < events[i].time) break;
+	}
+
+	if (found_cause_events == cause_types.size()) return true;
+
+	return false;
+}
+
+
+bool owi_history::event_occurred(event& _event) {
+	for (std::vector<event>::iterator it = events.begin() ; it != events.end(); ++it) {
+		if (it->compare_events(*pred_it) return true;
+	}
+	return false;
 }
 
 void owi_history::get_events_preceding_the_event(event& _event, std::vector<event>& preceding_events) {
@@ -72,6 +112,7 @@ void owi_history::get_event_counts(event& effect, event& cause, int& n11, int& n
 
 
 void owi_history::add_event(event _event) {
+	_event.h_ind = events.size();
 	events.push_back(_event);
 }
 

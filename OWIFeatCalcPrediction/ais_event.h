@@ -20,8 +20,9 @@ public:
 	}
 	virtual bool compare_events(event& another_event) =0;
 
-	double time;
+	double time; // event occurrence time in history, or time relative to an effect event if used in the cause-effect context
 	EVENT_TYPE event_type;
+	size_t h_ind; // index in the history.events
 };
 
 
