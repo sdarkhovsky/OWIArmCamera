@@ -275,7 +275,6 @@ int main(int argc, char** argv)
     bool resize_src = false;
 	float width_scale = 0.2f;
     float height_scale = 0.2f;
-	owi_history history;
 	double cur_time = 0.0;
 
 	std::vector<std::string> joint_commands = get_joint_commands();
