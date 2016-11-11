@@ -202,7 +202,6 @@ void calc_event_mc_and_orientation(cv::Mat event,  owi_history& history, double 
 	}
 	if (event_area == 0)
 	{
-		history.add_event(ais::b_event(time, cntr, angle));
     	return;
 	}
 
@@ -250,7 +249,13 @@ void calc_event_mc_and_orientation(cv::Mat event,  owi_history& history, double 
 	cv::imshow("event", event);
 	cv::waitKey(1);
 
-	history.add_event(b_event(time, cntr, angle));
+	std::vector<double> param_value;
+	param_value.push_back(cntr.x);
+	param_value.push_back(cntr.y);
+	history.add_event(c_event(time, MC_EVENT, param_value));
+	param_value.clear();
+	param_value.push_back(angle);
+	history.add_event(c_event(time, B_EVENT, param_value));
 }
 
 /*
@@ -358,7 +363,10 @@ int main(int argc, char** argv)
 			{
 				if (joint_commands[icmd]==cmd_name)
 				{
-					history.add_event(ais::g_event(cur_time, icmd));
+					std::vector<double> param_value;
+					param_value.push_back(icmd);
+					history.add_event(c_event(time, G_EVENT, param_value));
+
 					break;
 				}
 			}
@@ -408,7 +416,7 @@ int main(int argc, char** argv)
 		prev_feat_img = feat_img;
 
 		// interpret (correctly classify) the observed events by comparing them with the predicted events 
-		ais::update_prediction_functions(cur_time, history, predicted_events);
+		ais::update_prediction_map(cur_time, history, predicted_events);
 	}
 
 	return result;

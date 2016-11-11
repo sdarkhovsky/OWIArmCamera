@@ -19,6 +19,11 @@ public:
 	void get_events_preceding_the_event(event& _event, std::vector<event>& preceding_events);
 	void get_events_by_time_interval(double start_time, double end_time, std::vector<event>& events);
 	void get_event_counts(event& effect, event& cause, int& n11, int& n01);
+
+	bool get_event(EVENT_TYPE event_type, double time, c_event& event);
+	bool get_first_event(EVENT_TYPE event_type, c_event& event);
+	bool get_next_event(EVENT_TYPE event_type, c_event& prev_event, c_event& event);
+
 	void add_event(ais::event _event);
 };
 

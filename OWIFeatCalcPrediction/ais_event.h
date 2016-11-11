@@ -8,51 +8,28 @@
 
 namespace ais {
 
-enum EVENT_TYPE { B_EVENT, GC_EVENT };
+enum EVENT_TYPE { UNDEFINED_EVENT, B_EVENT, GC_EVENT, MC_EVENT, W_EVENT, U_EVENT };
 
-class event
+class c_event
 {
 public:
-	event(double _time, EVENT_TYPE _event_type)
-	{
-		time = _time;
+	c_event() {
+			event_type = UNDEFINED_EVENT;
+			time = 0;
+			param_value = 0;
+	}
+
+	c_event(double _time, EVENT_TYPE _event_type, std::vector<double> _param_value)	{
 		event_type = _event_type;
+		time = _time;
+		param_value = _param_value;
 	}
 	virtual bool compare_events(event& another_event) =0;
 
 	double time; // event occurrence time in history, or time relative to an effect event if used in the cause-effect context
 	EVENT_TYPE event_type;
+	std::vector<double> param_value;
 	size_t h_ind; // index in the history.events
-};
-
-
-//#include "opencv2/highgui/highgui.hpp"
-#include "opencv2/imgproc/imgproc.hpp"
-
-class b_event : event
-{
-public:
-	b_event(double _time, cv::Point _center, double _orientation) : event(_time, B_EVENT)
-	{
-		center = _center;
-		orientation = _orientation;
-	}
-	bool compare_events(event& another_event);
-
-	cv::Point center;
-	double orientation;
-};
-
-class g_event : event
-{
-public:
-	g_event(double _time, int _joint_command) : event(_time, GC_EVENT)
-	{
-		joint_command = _joint_command;
-	}
-	bool compare_events(event& another_event);
-
-	int joint_command;
 };
 
 

@@ -1,22 +1,14 @@
 
 namespace ais {
 
-bool b_event::compare_events(event& another_event)
+bool c_event::compare_events(event& another_event)
 {
 	if (event_type != another_event.event_type) return false;
-	b_event& event2 = (b_event&)another_event;
+	if (param_value.size() != another_event.param_value.size()) return false;
+	for (size_t i = 0; i < param_value.size(); i++) {
+		if (param_value[i] != another_event.param_value[i]) return false;
+	} 
 
-	if (center == event2.center && orientation == event2.orientation) return true;
-	return false;
-}
-
-bool g_event::compare_events(event& another_event)
-{
-	if (event_type != another_event.event_type) return false;
-	g_event& event2 = (g_event&)another_event;
-
-	if (joint_command == event2.joint_command) return true;
-
-	return false;
+	return true;
 }
 

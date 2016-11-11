@@ -109,7 +109,34 @@ void owi_history::get_event_counts(event& effect, event& cause, int& n11, int& n
 	}
 }
 
+bool owi_history::get_event(EVENT_TYPE event_type, double time, c_event& event) {
+	for (vector<event>::iterator it = events.begin(); it != events.end(); ++it ) { 
+		if (it->event_type == event_type && it->time == time) {
+			event = *it;
+			return true;
+	}
+	return false;
+}
 
+bool owi_history::get_first_event(EVENT_TYPE event_type, c_event& event) {
+	for (vector<event>::iterator it = events.begin(); it != events.end(); ++it ) { 
+		if (it->event_type == event_type) {
+			event = *it;
+			return true;
+		}
+	}
+	return false;
+}
+
+bool owi_history::get_next_event(EVENT_TYPE event_type, c_event& prev_event, c_event& event) {
+	for (size_t i = prev_event.h_ind+1; i < events.size(); i++) {
+		if (events[i].event_type == event_type) {
+			event = events[i];
+			return true;
+		}
+	}
+	return false;
+}
 
 void owi_history::add_event(event _event) {
 	_event.h_ind = events.size();
