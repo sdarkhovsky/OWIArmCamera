@@ -1,5 +1,5 @@
 PROG ?= OWIFeatCalcPrediction
-SRCS=OWIFeatCalcPrediction.cpp owi_history.cpp owi_prediction.cpp ais_event.cpp ../joint_commands.cpp
+SRCS=OWIFeatCalcPrediction.cpp ais_history.cpp ais_prediction.cpp ais_event.cpp ../joint_commands.cpp
 OBJS=$(subst .cpp,.o,$(SRCS))
 CPPFLAGS=-I/usr/local/include/opencv2 -O0 -g3 -Wall -c -fmessage-length=0 -std=c++11
 LDFLAGS=-L/usr/local/lib -O0 -g3 -Wall -fmessage-length=0 -std=c++11

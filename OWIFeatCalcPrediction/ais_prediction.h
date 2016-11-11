@@ -4,8 +4,6 @@
 #include <vector>
 
 namespace ais {
-	typedef void prediction_function(double time, owi_history& history, std::vector<event>& predicted_events);
-
 	class c_cause {
 	public:
 		c_cause(EVENT_TYPE _event_type, std::vector<double>& _param_value) {
@@ -39,15 +37,11 @@ namespace ais {
 	public:
 		std::map<c_cause, c_effect> map;
 		bool add_cause_effect_sample(event& cause_event, event& effect_event);
-
-		computational_procedure();
-		(cause, parameter), (cause, parameter), (effect, parameter) {body}
 	};
 
 
 	void update_prediction_map(double cur_time, owi_history& history);
 	void predict_events(double cur_time, owi_history& history, std::vector<event>& predicted_events);
-	void find_events_causing_the_event(event& _event, owi_history& history, std::set<EVENT_TYPE>& causing_event_types)
 }
 
 #endif

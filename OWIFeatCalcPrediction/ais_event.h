@@ -24,7 +24,7 @@ public:
 		time = _time;
 		param_value = _param_value;
 	}
-	virtual bool compare_events(event& another_event) =0;
+	bool compare_events(event& another_event);
 
 	double time; // event occurrence time in history, or time relative to an effect event if used in the cause-effect context
 	EVENT_TYPE event_type;
