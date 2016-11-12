@@ -11,8 +11,8 @@ namespace ais {
 class c_ais
 {
 public:
-	c_history& get_history();
-	c_prediction_map& get_c_prediction_map();
+	c_prediction_map prediction_map;
+	c_history history;
 };
 
 

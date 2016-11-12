@@ -252,10 +252,10 @@ void calc_event_mc_and_orientation(cv::Mat event,  owi_history& history, double 
 	std::vector<double> param_value;
 	param_value.push_back(cntr.x);
 	param_value.push_back(cntr.y);
-	history.add_event(c_event(time, MC_EVENT, param_value));
+	history.add_event(c_event(time, CENTER_POSITION_EVENT, param_value));
 	param_value.clear();
 	param_value.push_back(angle);
-	history.add_event(c_event(time, B_EVENT, param_value));
+	history.add_event(c_event(time, ORIENTATION_EVENT, param_value));
 }
 
 /*
@@ -415,10 +415,9 @@ int main(int argc, char** argv)
 		prev_feat_img = feat_img;
 
 		// interpret (correctly classify) the observed events by comparing them with the predicted events 
-		ais::update_prediction_map(cur_time, history, predicted_events);
+		ais::update_prediction_map(cur_time, predicted_events);
 	}
 
 	return result;
 }
-
 

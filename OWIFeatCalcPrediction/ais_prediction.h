@@ -37,11 +37,12 @@ namespace ais {
 	public:
 		std::map<c_cause, c_effect> map;
 		bool add_cause_effect_sample(event& cause_event, event& effect_event);
+		bool predict_effect_event(event& cause_event, event& effect_event);
 	};
 
 
-	void update_prediction_map(double cur_time, owi_history& history);
-	void predict_events(double cur_time, owi_history& history, std::vector<event>& predicted_events);
+	void update_prediction_map(double cur_time);
+	void predict_events(double cur_time, std::vector<event>& predicted_events);
 }
 
 #endif
