@@ -2,7 +2,7 @@
 #define AIS_H
 
 #include "ais_history.h"
-#include "aid_prediction.h"
+#include "ais_prediction.h"
 
 // see the notebook #12 for more information
 

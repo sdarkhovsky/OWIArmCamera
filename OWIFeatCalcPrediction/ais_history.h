@@ -20,7 +20,7 @@ public:
 	bool get_first_event(double time, c_event& event);
 	bool get_next_event(double time, c_event& event);
 
-	std::vector<c_event>& get_latest_events(EVENT_TYPE event_type, size_t num_events);
+	bool get_last_events(EVENT_TYPE event_type, size_t num_events, std::vector<c_event>& last_events);
 
 	void add_event(c_event _event);
 };

@@ -1,7 +1,8 @@
+#include "ais_event.h"
 
 namespace ais {
 
-bool c_event::compare_events(event& another_event)
+bool c_event::compare_events(c_event& another_event)
 {
 	if (event_type != another_event.event_type) return false;
 	if (param_value.size() != another_event.param_value.size()) return false;
@@ -12,3 +13,4 @@ bool c_event::compare_events(event& another_event)
 	return true;
 }
 
+}

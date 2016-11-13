@@ -2,24 +2,25 @@
 
 namespace ais {
 
-bool c_history::event_occurred(event& _event) {
-	for (std::vector<event>::iterator it = events.begin() ; it != events.end(); ++it) {
-		if (it->compare_events(*pred_it) return true;
+bool c_history::event_occurred(c_event& _event) {
+	for (std::vector<c_event>::iterator it = events.begin() ; it != events.end(); ++it) {
+		if (it->compare_events(*it)) return true;
 	}
 	return false;
 }
 
 bool c_history::get_event(EVENT_TYPE event_type, double time, c_event& event) {
-	for (vector<event>::iterator it = events.begin(); it != events.end(); ++it ) { 
+	for (std::vector<c_event>::iterator it = events.begin(); it != events.end(); ++it ) { 
 		if (it->event_type == event_type && it->time == time) {
 			event = *it;
 			return true;
+		}
 	}
 	return false;
 }
 
 bool c_history::get_first_event(EVENT_TYPE event_type, c_event& event) {
-	for (vector<event>::iterator it = events.begin(); it != events.end(); ++it ) { 
+	for (std::vector<c_event>::iterator it = events.begin(); it != events.end(); ++it ) { 
 		if (it->event_type == event_type) {
 			event = *it;
 			return true;
@@ -39,7 +40,7 @@ bool c_history::get_next_event(EVENT_TYPE event_type, c_event& event) {
 }
 
 bool c_history::get_first_event(double time, c_event& event) {
-	for (vector<event>::iterator it = events.begin(); it != events.end(); ++it ) { 
+	for (std::vector<c_event>::iterator it = events.begin(); it != events.end(); ++it ) { 
 		if (it->time == time) {
 			event = *it;
 			return true;
@@ -58,15 +59,17 @@ bool c_history::get_next_event(double time, c_event& event) {
 	return false;
 }
 
-std::vector<c_event>& c_history::get_latest_events(EVENT_TYPE event_type, size_t num_events) {
-	std::vector<c_event> latest_events;
-	for (vector<c_event>::reverse_iterator rit = events.rbegin(); rit != events.rend(); ++rit ) { 
+bool c_history::get_last_events(EVENT_TYPE event_type, size_t num_events, std::vector<c_event>& last_events) {
+	last_events.resize(num_events);
+	size_t i = num_events-1;
+	for (std::vector<c_event>::reverse_iterator rit = events.rbegin(); rit != events.rend(); ++rit ) { 
 		if (rit->event_type == event_type) {
-			latest_events.push_back(*rit);
-			if (latest_events.size() == num_events) break;
+			last_events[i]=*rit;
+			if (i == 0) return true;
+			i--;
 		}
 	}
-	return latest_events;
+	return false;
 }
 
 void c_history::add_event(c_event _event) {

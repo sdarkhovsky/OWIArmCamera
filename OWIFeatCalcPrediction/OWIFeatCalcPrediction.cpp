@@ -19,13 +19,14 @@
 
 #include <unistd.h>
 
-#include "owi_history.h"
-#include "ais_event.h"
-#include "owi_prediction.h"
+#include "ais.h"
 #include "../OWIArmControl/owi_arm_control.h"
 
 std::vector<std::string> get_joint_commands();
-void predict(owi_history& history);
+
+namespace ais {
+	extern c_ais g_ais;
+}
 
 // found at http://www.cplusplus.com/forum/unices/3548/
 // read_directory()
@@ -182,7 +183,7 @@ void drawAxis(cv::Mat& img, cv::Point p, cv::Point q, cv::Scalar colour, const f
     cv::line(img, p, q, colour, 1, CV_AA);
 }
 
-void calc_event_mc_and_orientation(cv::Mat event,  owi_history& history, double time)
+void calc_event_mc_and_orientation(cv::Mat event,  double time)
 {
     cv::Point cntr(0,0);
 	int event_area = 0;
@@ -252,10 +253,10 @@ void calc_event_mc_and_orientation(cv::Mat event,  owi_history& history, double 
 	std::vector<double> param_value;
 	param_value.push_back(cntr.x);
 	param_value.push_back(cntr.y);
-	history.add_event(c_event(time, CENTER_POSITION_EVENT, param_value));
+	ais::g_ais.history.add_event(ais::c_event(time, ais::CENTER_POSITION_EVENT, param_value));
 	param_value.clear();
 	param_value.push_back(angle);
-	history.add_event(c_event(time, ORIENTATION_EVENT, param_value));
+	ais::g_ais.history.add_event(ais::c_event(time, ais::ORIENTATION_EVENT, param_value));
 }
 
 /*
@@ -309,7 +310,7 @@ int main(int argc, char** argv)
  	for (std::vector<std::string>::iterator it = img_files.begin() ; it != img_files.end(); ++it)
 	{
 		cv::Mat orig_img, img, img_aux;
-		std::vector<event> predicted_events;
+		std::vector<ais::c_event> predicted_events;
 
 		std::string img_path =  training_samples_directory + "/" + *it;
 		orig_img = cv::imread(img_path);
@@ -364,7 +365,7 @@ int main(int argc, char** argv)
 				{
 					std::vector<double> param_value;
 					param_value.push_back(icmd);
-					history.add_event(c_event(time, G_EVENT, param_value));
+					ais::g_ais.history.add_event(ais::c_event(cur_time, ais::GC_EVENT, param_value));
 
 					break;
 				}
@@ -372,7 +373,7 @@ int main(int argc, char** argv)
 
 
 			// predict upcoming events
-    		ais::predict_events(cur_time, history, &predicted_events);
+    		ais::predict_events(cur_time, predicted_events);
 
 			// the image is taken after the command
 			cur_time += (double)(OWI_COMMAND_DURATION_MILLISECONDS*get_file_number(*it));
@@ -408,7 +409,7 @@ int main(int argc, char** argv)
 				cv::imshow("feat_event", feat_event);
 				cv::waitKey(0);
 */
-				calc_event_mc_and_orientation(feat_event, history, cur_time);
+				calc_event_mc_and_orientation(feat_event, cur_time);
 			}
 		}
 

@@ -16,7 +16,7 @@ public:
 	c_event() {
 			event_type = UNDEFINED_EVENT;
 			time = 0;
-			param_value = 0;
+			param_value.clear();
 	}
 
 	c_event(double _time, EVENT_TYPE _event_type, std::vector<double> _param_value)	{
@@ -24,7 +24,7 @@ public:
 		time = _time;
 		param_value = _param_value;
 	}
-	bool compare_events(event& another_event);
+	bool compare_events(c_event& another_event);
 
 	double time; // event occurrence time in history, or time relative to an effect event if used in the cause-effect context
 	EVENT_TYPE event_type;
