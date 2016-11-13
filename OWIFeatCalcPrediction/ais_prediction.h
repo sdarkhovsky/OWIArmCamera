@@ -2,6 +2,7 @@
 #define OWI_PREDICTION_H
 
 #include <vector>
+#include <list>
 #include <map>
 
 namespace ais {
@@ -55,8 +56,8 @@ namespace ais {
 	};
 
 
-	void update_prediction_map(double cur_time, std::vector<c_event>& predicted_events);
-	void predict_events(double cur_time, std::vector<c_event>& predicted_events);
+	void update_prediction_map(double cur_time, std::list<c_event>& predicted_events);
+	void predict_events(double cur_time, std::list<c_event>& predicted_events);
 }
 
 #endif

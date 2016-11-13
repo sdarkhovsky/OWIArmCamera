@@ -68,19 +68,38 @@ namespace ais {
 		g_ais.history.add_event(c_event(last_events[1].time, derived_event_type, param_value));
 	}
 
-	void update_prediction_map(double cur_time, std::vector<c_event>& predicted_events)
+	void update_prediction_map(double cur_time, std::list<c_event>& predicted_events)
 	{
 		create_ANGULAR_VELOCITY_EVENT_for_the_latest_ORIENTATION_EVENT();
 
-		// check whether the events were correctly predicted
-		for (std::vector<c_event>::iterator pred_it = predicted_events.begin() ; pred_it != predicted_events.end(); ++pred_it) {
-			if (g_ais.history.event_occurred(*pred_it)) continue;
+		c_event cur_event;
+ 		if (!g_ais.history.get_first_event(cur_time, cur_event)) return;
+		while(true) {
+			// check whether the event was predicted
+			bool event_was_predicted = false;
+			for (std::list<c_event>::iterator it = predicted_events.begin() ; it != predicted_events.end(); ++it) {
+				if (cur_event.compare_events(*it)) {
+					predicted_events.erase(it);
+					event_was_predicted = true;
+					break;
+				}
+			}
 
-			update_binary_prediction_map(*pred_it);
+			if (!event_was_predicted) {
+11111111111111111111111 modify update_binary_prediction_map to detect causes of cur_event
+				update_binary_prediction_map(cur_event);
+			}
+
+	 		if (!g_ais.history.get_next_event(cur_time, cur_event)) break;
+		}
+
+		for (std::list<c_event>::iterator it = predicted_events.begin() ; it != predicted_events.end(); ++it) {
+1111111111111111111111111111111111111111
+update prediction_map for teh predicted but not ocurred events
 		}
 	}
 
-    void predict_events(double cur_time, std::vector<c_event>& predicted_events)
+    void predict_events(double cur_time, std::list<c_event>& predicted_events)
 	{
 		// check which prediction maps are applicable and apply them;
 		c_event cause_event;

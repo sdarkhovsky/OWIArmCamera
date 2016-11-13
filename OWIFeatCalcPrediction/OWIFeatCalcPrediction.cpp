@@ -310,7 +310,7 @@ int main(int argc, char** argv)
  	for (std::vector<std::string>::iterator it = img_files.begin() ; it != img_files.end(); ++it)
 	{
 		cv::Mat orig_img, img, img_aux;
-		std::vector<ais::c_event> predicted_events;
+		std::list<ais::c_event> predicted_events;
 
 		std::string img_path =  training_samples_directory + "/" + *it;
 		orig_img = cv::imread(img_path);
