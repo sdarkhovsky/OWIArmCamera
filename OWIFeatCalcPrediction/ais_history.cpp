@@ -1,4 +1,6 @@
 #include "ais.h"
+
+#define MAIN_LOGGER
 #include "logger.hpp"
 
 namespace ais {

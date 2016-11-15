@@ -1,6 +1,8 @@
 #include "ais.h"
 #include <limits>       // std::numeric_limits
 
+#include "logger.hpp"
+
 namespace ais {
 	extern c_ais g_ais;
 
@@ -134,7 +136,10 @@ namespace ais {
 
 		create_ANGULAR_VELOCITY_EVENT_for_the_latest_ORIENTATION_EVENT();
 
+
+#ifdef LOGGING
 		g_ais.history.print();
+#endif
 
 		c_event cur_event;
  		if (!g_ais.history.get_first_event(cur_time, cur_event)) return;

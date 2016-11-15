@@ -4,8 +4,11 @@
 #define LOGGER_HPP
 
 #include "log.hpp"
-
+#ifdef MAIN_LOGGER
 logging::logger< logging::file_log_policy > log_inst( "execution.log" );
+#else
+extern logging::logger< logging::file_log_policy > log_inst;
+#endif
 
 #ifdef LOGGING_LEVEL_1
 #define LOGGING
