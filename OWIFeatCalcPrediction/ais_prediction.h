@@ -79,7 +79,7 @@ namespace ais {
 		bool find_cause_effect_map(c_cause& cause, EVENT_TYPE effect_event_type, std::list<c_cause_effect_pair>::iterator& map_iterator);
 		bool add_cause_effect_sample(c_event& cause_event, c_event& effect_event);
 		bool compare_causes(const c_cause& a, const c_cause& b) const ;
-		void get_predictions(c_event& cause_event, std::list<std::list<c_cause_effect_pair>::iterator>& predictions);
+		void get_predictions(c_event& cause_event, std::list<c_cause_effect_pair>& predictions);
 	};
 
 	void interpret_observed_events_and_update_prediction_map(double cur_time);

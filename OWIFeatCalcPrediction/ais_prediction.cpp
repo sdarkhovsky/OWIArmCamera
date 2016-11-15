@@ -75,13 +75,13 @@ namespace ais {
 	}
 
 	// append cause-effect pairs to predictions
-	void c_prediction_map::get_predictions(c_event& cause_event, std::list<std::list<c_cause_effect_pair>::iterator>& predictions) {
+	void c_prediction_map::get_predictions(c_event& cause_event, std::list<c_cause_effect_pair>& predictions) {
 		c_cause cause(cause_event);
 
 		for (auto it = std::begin(binary_map); it != std::end(binary_map); ++it) {
 			if (compare_causes(it->cause, cause)) {
 				it->temp_binary_map_iterator = it;
-				predictions.push_back(it);
+				predictions.push_back(*it);
 			}
 		}
 	}
@@ -158,7 +158,7 @@ namespace ais {
 		}
 	}
 
-    void predict_events(double time, std::list<std::list<c_cause_effect_pair>::iterator>& predictions)
+    void predict_events(double time, std::list<c_cause_effect_pair>& predictions)
 	{
 		predictions.clear();
 
