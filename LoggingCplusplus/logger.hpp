@@ -5,9 +5,10 @@
 
 #include "log.hpp"
 
-static logging::logger< logging::file_log_policy > log_inst( "execution.log" );
+logging::logger< logging::file_log_policy > log_inst( "execution.log" );
 
 #ifdef LOGGING_LEVEL_1
+#define LOGGING
 #define LOG log_inst.print< logging::severity_type::debug >
 #define LOG_ERR log_inst.print< logging::severity_type::error >
 #define LOG_WARN log_inst.print< logging::severity_type::warning >
@@ -18,6 +19,7 @@ static logging::logger< logging::file_log_policy > log_inst( "execution.log" );
 #endif
 
 #ifdef LOGGING_LEVEL_2
+#define LOGGING
 #define ELOG log_inst.print< logging::severity_type::debug >
 #define ELOG_ERR log_inst.print< logging::severity_type::error >
 #define ELOG_WARN log_inst.print< logging::severity_type::warning >

@@ -133,6 +133,9 @@ namespace ais {
 		predict_events(prev_time, predictions);
 
 		create_ANGULAR_VELOCITY_EVENT_for_the_latest_ORIENTATION_EVENT();
+
+		g_ais.history.print();
+
 		c_event cur_event;
  		if (!g_ais.history.get_first_event(cur_time, cur_event)) return;
 		while(true) {

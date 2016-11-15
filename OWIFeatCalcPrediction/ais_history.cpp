@@ -1,4 +1,5 @@
-#include "ais_history.h"
+#include "ais.h"
+#include "logger.hpp"
 
 namespace ais {
 
@@ -85,6 +86,15 @@ bool c_history::get_prev_time(double time, double& prev_time) {
 void c_history::add_event(c_event _event) {
 	_event.h_ind = events.size();
 	events.push_back(_event);
+}
+
+void c_history::print() {
+#ifdef LOGGING
+	for (std::vector<c_event>::iterator it = events.begin(); it != events.end(); ++it ) { 
+		if (it->param_value.size() > 0) LOG("time=", it->time , "  event_type=", it->event_type, "  param_value=", it->param_value[0]);
+		else LOG("time=", it->time , "  event_type=", it->event_type);
+	}
+#endif
 }
 
 }

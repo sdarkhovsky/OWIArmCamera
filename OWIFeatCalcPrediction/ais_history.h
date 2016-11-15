@@ -24,6 +24,8 @@ public:
 
 	bool get_prev_time(double time, double& prev_time);
 
+	void print();
+
 	void add_event(c_event _event);
 };
 

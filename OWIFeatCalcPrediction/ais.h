@@ -4,7 +4,6 @@
 #include "ais_history.h"
 #include "ais_prediction.h"
 
-// see the notebook #12 for more information
 
 namespace ais {
 
