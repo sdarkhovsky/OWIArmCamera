@@ -310,7 +310,6 @@ int main(int argc, char** argv)
  	for (std::vector<std::string>::iterator it = img_files.begin() ; it != img_files.end(); ++it)
 	{
 		cv::Mat orig_img, img, img_aux;
-		std::list<ais::c_event> predicted_events;
 
 		std::string img_path =  training_samples_directory + "/" + *it;
 		orig_img = cv::imread(img_path);
@@ -365,15 +364,12 @@ int main(int argc, char** argv)
 				{
 					std::vector<double> param_value;
 					param_value.push_back(icmd);
-					ais::g_ais.history.add_event(ais::c_event(cur_time, ais::GC_EVENT, param_value));
+					ais::g_ais.history.add_event(ais::c_event(cur_time, ais::ACTUATOR_COMMAND_EVENT, param_value));
 
 					break;
 				}
 			}
 
-
-			// predict upcoming events
-    		ais::predict_events(cur_time, predicted_events);
 
 			// the image is taken after the command
 			cur_time += (double)(OWI_COMMAND_DURATION_MILLISECONDS*get_file_number(*it));
@@ -416,7 +412,8 @@ int main(int argc, char** argv)
 		prev_feat_img = feat_img;
 
 		// interpret (correctly classify) the observed events by comparing them with the predicted events 
-		ais::update_prediction_map(cur_time, predicted_events);
+		ais::interpret_observed_events_and_update_prediction_map(cur_time);
+
 	}
 
 	return result;

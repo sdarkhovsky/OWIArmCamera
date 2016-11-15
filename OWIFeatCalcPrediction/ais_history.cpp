@@ -72,6 +72,16 @@ bool c_history::get_last_events(EVENT_TYPE event_type, size_t num_events, std::v
 	return false;
 }
 
+bool c_history::get_prev_time(double time, double& prev_time) {
+	for (std::vector<c_event>::reverse_iterator rit = events.rbegin(); rit != events.rend(); ++rit ) { 
+		if (rit->time < time) {
+			prev_time = rit->time;
+			return true;
+		}
+	}
+	return false;
+}
+
 void c_history::add_event(c_event _event) {
 	_event.h_ind = events.size();
 	events.push_back(_event);

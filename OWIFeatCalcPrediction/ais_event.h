@@ -8,7 +8,7 @@
 
 namespace ais {
 
-enum EVENT_TYPE { UNDEFINED_EVENT, ORIENTATION_EVENT, GC_EVENT, CENTER_POSITION_EVENT, ANGULAR_VELOCITY_EVENT, U_EVENT };
+enum EVENT_TYPE { UNDEFINED_EVENT, ORIENTATION_EVENT, ACTUATOR_COMMAND_EVENT, CENTER_POSITION_EVENT, ANGULAR_VELOCITY_EVENT, ANGULAR_ACCELERATION_EVENT };
 
 class c_event
 {
@@ -25,6 +25,10 @@ public:
 		param_value = _param_value;
 	}
 	bool compare_events(c_event& another_event);
+
+	bool predictable() {
+		return (event_type != UNDEFINED_EVENT && event_type != ACTUATOR_COMMAND_EVENT);
+	}
 
 	double time; // event occurrence time in history, or time relative to an effect event if used in the cause-effect context
 	EVENT_TYPE event_type;

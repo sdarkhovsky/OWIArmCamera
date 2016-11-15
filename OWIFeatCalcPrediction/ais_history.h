@@ -22,6 +22,8 @@ public:
 
 	bool get_last_events(EVENT_TYPE event_type, size_t num_events, std::vector<c_event>& last_events);
 
+	bool get_prev_time(double time, double& prev_time);
+
 	void add_event(c_event _event);
 };
 

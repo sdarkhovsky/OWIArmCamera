@@ -1,4 +1,5 @@
 #include "ais.h"
+#include <limits>       // std::numeric_limits
 
 namespace ais {
 	extern c_ais g_ais;
@@ -24,33 +25,72 @@ namespace ais {
 		num_samples = num_samples+1;
 	}
 
-	bool c_prediction_map::add_cause_effect_sample(c_event& cause_event, c_event& effect_event) {
-		c_cause cause(cause_event.event_type, cause_event.param_value);
-		// this assumes that each cause has an effect with only one type of effect
-        // in general any pair of events should be allowed for the cause and effect events
-		c_effect& effect = map[cause];
-		if (effect.event_type != UNDEFINED_EVENT && effect.event_type != effect_event.event_type) return false;
-		effect.add_effect_sample(effect_event);
+	bool c_effect::compare(c_event& event, double& distance)
+	{
+		if (event_type != event.event_type) return false;
+		if (mean.size() != event.param_value.size()) return false;
+		distance = 0;
+		for (size_t i = 0; i < mean.size(); i++) {
+			distance += (mean[i] - event.param_value[i])*(mean[i] - event.param_value[i]);
+		}
+
 		return true;
 	}
 
-	bool c_prediction_map::predict_effect_event(c_event& cause_event, c_event& effect_event) {
-		c_cause cause(cause_event.event_type, cause_event.param_value);
-		c_effect& effect = map[cause];
-		if (effect.event_type == UNDEFINED_EVENT) return false;
-		effect_event = 	c_event(cause_event.time + effect.time_delay, effect.event_type, effect.mean);
-		return true;
+	bool c_prediction_map::compare_causes(const c_cause& a, const c_cause& b) const {
+		if (a.event_type != b.event_type) return false;
+		size_t a_size = a.param_value.size();
+		size_t b_size = b.param_value.size();
+		if (a_size != b_size) return false;
+		for (size_t i = 0; i < a_size; i++) {
+			if (a.param_value[i] != b.param_value[i]) return false;
+		}
+	    return true;
 	}
 
-	void update_binary_prediction_map(c_event& _event) {
-		c_event cause_event;
-		c_event effect_event;
- 		if (!g_ais.history.get_first_event(GC_EVENT, cause_event)) return;
-		while(true) {
-			if (g_ais.history.get_event(ANGULAR_VELOCITY_EVENT, cause_event.time, effect_event))	{
-				g_ais.prediction_map.add_cause_effect_sample(cause_event, effect_event);
+
+	bool c_prediction_map::find_cause_effect_map(c_cause& cause, EVENT_TYPE effect_event_type, std::list<c_cause_effect_pair>::iterator& map_iterator) {
+		for (auto it = std::begin(binary_map); it != std::end(binary_map); ++it) {
+			if (compare_causes(it->cause, cause) && it->effect.event_type == effect_event_type) {
+				map_iterator = it;
+				return true;
 			}
-	 		if (!g_ais.history.get_next_event(GC_EVENT, cause_event)) break;
+		}
+		return false;
+	}
+
+	bool c_prediction_map::add_cause_effect_sample(c_event& cause_event, c_event& effect_event) {
+		std::list<c_cause_effect_pair>::iterator map_iterator;
+		c_cause cause(cause_event);
+		if (!find_cause_effect_map(cause, effect_event.event_type, map_iterator)) {
+			c_effect effect(effect_event);
+
+			c_cause_effect_pair cause_effect_pair(cause, effect);
+			binary_map.push_back(cause_effect_pair);
+			return true;
+		}
+
+		map_iterator->effect.add_effect_sample(effect_event);
+		return true;
+	}
+
+	// append cause-effect pairs to predictions
+	void c_prediction_map::get_predictions(c_event& cause_event, std::list<std::list<c_cause_effect_pair>::iterator>& predictions) {
+		c_cause cause(cause_event);
+
+		for (auto it = std::begin(binary_map); it != std::end(binary_map); ++it) {
+			if (compare_causes(it->cause, cause)) {
+				it->temp_binary_map_iterator = it;
+				predictions.push_back(it);
+			}
+		}
+	}
+
+
+	void update_effect_event_prediction(c_event& effect_event) {
+		c_event cause_event;
+		if (g_ais.history.get_event(ACTUATOR_COMMAND_EVENT, effect_event.time, cause_event))	{
+				g_ais.prediction_map.add_cause_effect_sample(cause_event, effect_event);
 		}
 	}
 
@@ -68,47 +108,66 @@ namespace ais {
 		g_ais.history.add_event(c_event(last_events[1].time, derived_event_type, param_value));
 	}
 
-	void update_prediction_map(double cur_time, std::list<c_event>& predicted_events)
-	{
-		create_ANGULAR_VELOCITY_EVENT_for_the_latest_ORIENTATION_EVENT();
+	bool find_best_interpretation(c_event& event, std::list<c_cause_effect_pair>& predictions, std::list<c_cause_effect_pair>::iterator& best_it) {
+		double min_distance = std::numeric_limits<double>::max();
+		bool  found_interpretation = false;
+		for (std::list<c_cause_effect_pair>::iterator it = predictions.begin() ; it != predictions.end(); ++it) {
+			double distance;
+			if (it->effect.compare(event, distance) && distance < min_distance) {
+				min_distance = distance; 
+				best_it = it;
+				found_interpretation = true;
+			}
+		}
+		return found_interpretation;
+	}
 
+
+	void interpret_observed_events_and_update_prediction_map(double cur_time)
+	{
+		std::list<c_cause_effect_pair> predictions;
+
+		double prev_time;
+		if (!g_ais.history.get_prev_time(cur_time, prev_time)) return;
+
+		predict_events(prev_time, predictions);
+
+		create_ANGULAR_VELOCITY_EVENT_for_the_latest_ORIENTATION_EVENT();
 		c_event cur_event;
  		if (!g_ais.history.get_first_event(cur_time, cur_event)) return;
 		while(true) {
-			// check whether the event was predicted
-			bool event_was_predicted = false;
-			for (std::list<c_event>::iterator it = predicted_events.begin() ; it != predicted_events.end(); ++it) {
-				if (cur_event.compare_events(*it)) {
-					predicted_events.erase(it);
-					event_was_predicted = true;
-					break;
+			if (cur_event.predictable()) {
+				std::list<c_cause_effect_pair>::iterator best_it;
+				if (find_best_interpretation(cur_event, predictions, best_it)) {
+					best_it->temp_binary_map_iterator->effect.add_effect_sample(cur_event);
+					best_it->temp_binary_map_iterator->hit_counter++;
+					predictions.erase(best_it);
+				} 
+				else {
+					update_effect_event_prediction(cur_event);
 				}
-			}
-
-			if (!event_was_predicted) {
-11111111111111111111111 modify update_binary_prediction_map to detect causes of cur_event
-				update_binary_prediction_map(cur_event);
 			}
 
 	 		if (!g_ais.history.get_next_event(cur_time, cur_event)) break;
 		}
 
-		for (std::list<c_event>::iterator it = predicted_events.begin() ; it != predicted_events.end(); ++it) {
-1111111111111111111111111111111111111111
-update prediction_map for teh predicted but not ocurred events
+		for (std::list<c_cause_effect_pair>::iterator it = predictions.begin() ; it != predictions.end(); ++it) {
+			// update prediction_map for the predicted but not ocurred events
+			
+			it->temp_binary_map_iterator->miss_counter++;
 		}
 	}
 
-    void predict_events(double cur_time, std::list<c_event>& predicted_events)
+    void predict_events(double time, std::list<std::list<c_cause_effect_pair>::iterator>& predictions)
 	{
-		// check which prediction maps are applicable and apply them;
+		predictions.clear();
+
+		// find applicable prediction maps
 		c_event cause_event;
-		c_event effect_event;
-		predicted_events.clear();
- 		if (!g_ais.history.get_first_event(cur_time, cause_event)) return;
+ 		if (!g_ais.history.get_first_event(time, cause_event)) return;
 		while(true) {
-			if (g_ais.prediction_map.predict_effect_event(cause_event, effect_event)) predicted_events.push_back(effect_event);
-	 		if (!g_ais.history.get_next_event(cur_time, cause_event)) break;
+			g_ais.prediction_map.get_predictions(cause_event, predictions);
+	 		if (!g_ais.history.get_next_event(time, cause_event)) break;
 		}
 	}
 }
