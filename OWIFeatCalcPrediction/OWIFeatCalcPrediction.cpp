@@ -418,7 +418,7 @@ int main(int argc, char** argv)
 		ais::interpret_observed_events_and_update_prediction_map(cur_time);
 	}
 
-#ifdef LOGGING
+#if defined(LOGGING) && 0
 		ais::g_ais.history.print();
 #endif
 

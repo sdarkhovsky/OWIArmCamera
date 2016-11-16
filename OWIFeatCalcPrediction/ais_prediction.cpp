@@ -16,7 +16,7 @@ namespace ais {
 			mean.resize(param_size);
 			variance.resize(param_size);
 		}
-#ifdef LOGGING
+#if defined(LOGGING) && 0
 		if (effect_event.event_type == ANGULAR_VELOCITY_EVENT) {
 			LOG("time= ", effect_event.time, " mean before=", mean[0], " param_value=", effect_event.param_value[0]);
 		}
@@ -25,7 +25,7 @@ namespace ais {
 			mean[i] = mean[i]*(num_samples/(num_samples+1))+effect_event.param_value[i]/(num_samples+1);
 		}
 
-#ifdef LOGGING
+#if defined(LOGGING) && 0
 		if (effect_event.event_type == ANGULAR_VELOCITY_EVENT) {
 			LOG(" mean after=", mean[0]);
 		}
@@ -156,7 +156,7 @@ namespace ais {
 
 		predict_events(prev_time, predictions);
 
-#ifdef LOGGING
+#if defined(LOGGING) && 0
 		for (std::list<c_cause_effect_pair>::iterator it = predictions.begin() ; it != predictions.end(); ++it) {
 			it->print();
 		}
@@ -170,6 +170,12 @@ namespace ais {
 			if (cur_event.predictable()) {
 				std::list<c_cause_effect_pair>::iterator best_it;
 				if (find_best_interpretation(cur_event, predictions, best_it)) {
+					#if defined(LOGGING)
+						double ratio = best_it->effect.mean[0] != 0.0 ? best_it->effect.variance[0]/best_it->effect.mean[0] : 0; 
+						if (fabs(ratio)< 0.001) {
+							LOG("cur_event type=",cur_event.event_type, " ratio=", ratio, " param_value=",cur_event.param_value[0], " predicted param_value=", best_it->effect.mean[0]);
+						}
+					#endif
 					best_it->temp_binary_map_iterator->effect.add_effect_sample(cur_event);
 					best_it->temp_binary_map_iterator->hit_counter++;
 					predictions.erase(best_it);
