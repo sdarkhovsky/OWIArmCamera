@@ -38,6 +38,7 @@ namespace ais {
 		c_effect(EVENT_TYPE _event_type, std::vector<double>& _param_value) {
 			event_type = _event_type;
 			mean = _param_value;
+			variance.resize(mean.size());
 			time_delay = 0;
 			num_samples = 1;
 		}
@@ -45,6 +46,7 @@ namespace ais {
 		c_effect(c_event& effect_event) {
 			event_type = effect_event.event_type;
 			mean = effect_event.param_value;
+			variance.resize(mean.size());
 			time_delay = 0;
 			num_samples = 1;
 		}
@@ -66,6 +68,8 @@ namespace ais {
 			hit_counter = 1;
 			miss_counter = 0;		
 		}
+		void print();
+
 		c_cause cause;
 		c_effect effect;
 		double hit_counter;

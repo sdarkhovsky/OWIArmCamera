@@ -22,6 +22,8 @@
 #include "ais.h"
 #include "../OWIArmControl/owi_arm_control.h"
 
+#include "logger.hpp"
+
 std::vector<std::string> get_joint_commands();
 
 namespace ais {
@@ -311,6 +313,9 @@ int main(int argc, char** argv)
 	{
 		cv::Mat orig_img, img, img_aux;
 
+		// the image is taken after the command
+		cur_time = (double)(OWI_COMMAND_DURATION_MILLISECONDS*get_file_number(*it));
+
 		std::string img_path =  training_samples_directory + "/" + *it;
 		orig_img = cv::imread(img_path);
         if (orig_img.empty())
@@ -364,15 +369,13 @@ int main(int argc, char** argv)
 				{
 					std::vector<double> param_value;
 					param_value.push_back(icmd);
-					ais::g_ais.history.add_event(ais::c_event(cur_time, ais::ACTUATOR_COMMAND_EVENT, param_value));
+					// the image is taken after the command
+					double cmd_time=cur_time - (double)OWI_COMMAND_DURATION_MILLISECONDS;
+					ais::g_ais.history.add_event(ais::c_event(cmd_time, ais::ACTUATOR_COMMAND_EVENT, param_value));
 
 					break;
 				}
 			}
-
-
-			// the image is taken after the command
-			cur_time += (double)(OWI_COMMAND_DURATION_MILLISECONDS*get_file_number(*it));
 
 			cv::Mat diff_feat_img;
 			cv::absdiff(feat_img,prev_feat_img, diff_feat_img);
@@ -413,8 +416,11 @@ int main(int argc, char** argv)
 
 		// interpret (correctly classify) the observed events by comparing them with the predicted events 
 		ais::interpret_observed_events_and_update_prediction_map(cur_time);
-
 	}
+
+#ifdef LOGGING
+		ais::g_ais.history.print();
+#endif
 
 	return result;
 }

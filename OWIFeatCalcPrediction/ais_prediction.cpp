@@ -15,9 +15,21 @@ namespace ais {
 			mean.resize(param_size);
 			variance.resize(param_size);
 		}
+#ifdef LOGGING
+		if (effect_event.event_type == ANGULAR_VELOCITY_EVENT) {
+			LOG("time= ", effect_event.time, " mean before=", mean[0], " param_value=", effect_event.param_value[0]);
+		}
+#endif
 		for (i = 0; i < param_size; i++) {
 			mean[i] = mean[i]*(num_samples/(num_samples+1))+effect_event.param_value[i]/(num_samples+1);
 		}
+
+#ifdef LOGGING
+		if (effect_event.event_type == ANGULAR_VELOCITY_EVENT) {
+			LOG(" mean after=", mean[0]);
+		}
+#endif
+
 		if (num_samples>0) {
 			for (i = 0; i < param_size; i++) {
 				variance[i] = variance[i]*((num_samples-1)/num_samples)+prev_mean[i]*prev_mean[i]+
@@ -66,6 +78,7 @@ namespace ais {
 		c_cause cause(cause_event);
 		if (!find_cause_effect_map(cause, effect_event.event_type, map_iterator)) {
 			c_effect effect(effect_event);
+			effect.time_delay = effect_event.time - cause_event.time;
 
 			c_cause_effect_pair cause_effect_pair(cause, effect);
 			binary_map.push_back(cause_effect_pair);
@@ -88,10 +101,13 @@ namespace ais {
 		}
 	}
 
+	void c_cause_effect_pair::print() {
+		LOG("cause type=",cause.event_type, " param_value=",cause.param_value[0], " effect type=", effect.event_type, " mean=", effect.mean[0], " variance=", effect.variance[0], " var/mean ratio=", effect.mean[0] != 0.0 ? effect.variance[0]/effect.mean[0] : 0);
+	}
 
-	void update_effect_event_prediction(c_event& effect_event) {
+	void update_effect_event_prediction(double prev_time, c_event& effect_event) {
 		c_event cause_event;
-		if (g_ais.history.get_event(ACTUATOR_COMMAND_EVENT, effect_event.time, cause_event))	{
+		if (g_ais.history.get_event(ACTUATOR_COMMAND_EVENT, prev_time, cause_event))	{
 				g_ais.prediction_map.add_cause_effect_sample(cause_event, effect_event);
 		}
 	}
@@ -134,12 +150,13 @@ namespace ais {
 
 		predict_events(prev_time, predictions);
 
-		create_ANGULAR_VELOCITY_EVENT_for_the_latest_ORIENTATION_EVENT();
-
-
 #ifdef LOGGING
-		g_ais.history.print();
+		for (std::list<c_cause_effect_pair>::iterator it = predictions.begin() ; it != predictions.end(); ++it) {
+			it->print();
+		}
 #endif
+
+		create_ANGULAR_VELOCITY_EVENT_for_the_latest_ORIENTATION_EVENT();
 
 		c_event cur_event;
  		if (!g_ais.history.get_first_event(cur_time, cur_event)) return;
@@ -152,7 +169,7 @@ namespace ais {
 					predictions.erase(best_it);
 				} 
 				else {
-					update_effect_event_prediction(cur_event);
+					update_effect_event_prediction(prev_time, cur_event);
 				}
 			}
 
