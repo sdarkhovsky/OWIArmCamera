@@ -1,5 +1,6 @@
 #include "ais.h"
 #include <limits>       // std::numeric_limits
+#include <cmath>
 
 #include "logger.hpp"
 
@@ -119,6 +120,11 @@ namespace ais {
 		size_t num_events = 2;
 		std::vector<c_event> last_events;
 		if (!g_ais.history.get_last_events(event_type, num_events, last_events)) return;
+
+		// todo: this line was added temporarily to filter the outliers until the effect event's (mean,variance) model is replaced by a denisty estimation model
+		if (fabs(last_events[1].param_value[0]-1.5708)<0.0001 || fabs(last_events[0].param_value[0]-1.5708)<0.0001) return;
+		if (fabs(last_events[1].param_value[0])<0.0001 || fabs(last_events[0].param_value[0])<0.0001) return;
+
 
 		std::vector<double> param_value;
 		double angular_velocity = (last_events[1].param_value[0] - last_events[0].param_value[0])/(last_events[1].time - last_events[0].time);
