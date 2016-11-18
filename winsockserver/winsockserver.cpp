@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 //#include <tchar.h>
+#include <string>
 
 // Need to link with Ws2_32.lib
 #pragma comment (lib, "Ws2_32.lib")
@@ -16,7 +17,7 @@
 #define DEFAULT_BUFLEN 512
 #define DEFAULT_PORT "27015"
 
-void create_process(char* command_line)
+void create_process(const char* command_line)
 {
     STARTUPINFO si;
     PROCESS_INFORMATION pi;
@@ -27,7 +28,7 @@ void create_process(char* command_line)
 
     // Start the child process. 
     if (!CreateProcess(NULL,   // No module name (use command line)
-        command_line,        // Command line
+        (LPSTR)command_line,        // Command line
         NULL,           // Process handle not inheritable
         NULL,           // Thread handle not inheritable
         FALSE,          // Set handle inheritance to FALSE
@@ -42,15 +43,15 @@ void create_process(char* command_line)
         return;
     }
 
-    // Wait until child process exits.
-    WaitForSingleObject(pi.hProcess, INFINITE);
+// Wait until child process exits.
+WaitForSingleObject(pi.hProcess, INFINITE);
 
-    // Close process and thread handles. 
-    CloseHandle(pi.hProcess);
-    CloseHandle(pi.hThread);
+// Close process and thread handles. 
+CloseHandle(pi.hProcess);
+CloseHandle(pi.hThread);
 }
 
-int __cdecl main(void) 
+int __cdecl main(void)
 {
     WSADATA wsaData;
     int iResult;
@@ -64,9 +65,9 @@ int __cdecl main(void)
     int iSendResult;
     char recvbuf[DEFAULT_BUFLEN];
     int recvbuflen = DEFAULT_BUFLEN;
-    
+
     // Initialize Winsock
-    iResult = WSAStartup(MAKEWORD(2,2), &wsaData);
+    iResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
     if (iResult != 0) {
         printf("WSAStartup failed with error: %d\n", iResult);
         return 1;
@@ -80,7 +81,7 @@ int __cdecl main(void)
 
     // Resolve the server address and port
     iResult = getaddrinfo(NULL, DEFAULT_PORT, &hints, &result);
-    if ( iResult != 0 ) {
+    if (iResult != 0) {
         printf("getaddrinfo failed with error: %d\n", iResult);
         WSACleanup();
         return 1;
@@ -96,7 +97,7 @@ int __cdecl main(void)
     }
 
     // Setup the TCP listening socket
-    iResult = bind( ListenSocket, result->ai_addr, (int)result->ai_addrlen);
+    iResult = bind(ListenSocket, result->ai_addr, (int)result->ai_addrlen);
     if (iResult == SOCKET_ERROR) {
         printf("bind failed with error: %d\n", WSAGetLastError());
         freeaddrinfo(result);
@@ -133,14 +134,21 @@ int __cdecl main(void)
         iResult = recv(ClientSocket, recvbuf, recvbuflen, 0);
         if (iResult > 0) {
             char* kinect_depth_capture_message = "kinect_depth_capture_message";
+            int message_base_len = strlen(kinect_depth_capture_message);
             printf("Bytes received: %d\n", iResult);
-            if (iResult == strlen(kinect_depth_capture_message) && strcmp(recvbuf, kinect_depth_capture_message)) {
-                char* command_line = "..\\DepthBasics-D2D\\DepthBasics-D2D.exe";
-                create_process(command_line);
+            char* completed_message = "failed";
+            if (iResult > message_base_len && !strncmp(recvbuf, kinect_depth_capture_message, message_base_len)) {
+                std::string command_line = "..\\DepthBasics-D2D\\DepthBasics-D2D.exe";
+                std::string output_dir = "..\\KinectDepthImages";
+                if (CreateDirectory(output_dir.c_str(), NULL) || ERROR_ALREADY_EXISTS == GetLastError()) {
+                    std::string file_name((char*)recvbuf + message_base_len, iResult - message_base_len);
+                    command_line += " " + output_dir + "\\" + file_name;
+                    create_process(command_line.c_str());
+                    completed_message = "success";
+                }
             }
 
-        // Echo the buffer back to the sender
-            char* completed_message = "completed";
+            // Echo the buffer back to the sender
             iSendResult = send( ClientSocket, completed_message, strlen(completed_message), 0 );
             if (iSendResult == SOCKET_ERROR) {
                 printf("send failed with error: %d\n", WSAGetLastError());
