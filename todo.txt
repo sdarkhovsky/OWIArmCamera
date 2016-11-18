@@ -1,2 +1,5 @@
-Name TrainingSamples images 00, 01, 02,... or 000. 001, 002,... in OWIArmCamera.cpp 
+- replace (mean, variance) model of the effect with a density estimation model.
+- add voice generated commands, such as "angle fourty five" to control theta event.
+- add planning events using prediction maps.
+- Name TrainingSamples images 00, 01, 02,... or 000. 001, 002,... in OWIArmCamera.cpp 
 to get needed alphanumeric order of their names, so that img7 will not go after img69.
