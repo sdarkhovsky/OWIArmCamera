@@ -1,0 +1,10 @@
+#ifndef CLIENT_SHARED_H
+#define CLIENT_SHARED_H
+
+
+#define DEFAULT_PORT "27015"
+#define RETURN_SUCCESS_MESSAGE "ok"
+#define RETURN_FAILURE_MESSAGE "fail"
+
+
+#endif

@@ -9,13 +9,13 @@
 #include <stdio.h>
 //#include <tchar.h>
 #include <string>
+#include "client_shared.h"
 
 // Need to link with Ws2_32.lib
 #pragma comment (lib, "Ws2_32.lib")
 // #pragma comment (lib, "Mswsock.lib")
 
 #define DEFAULT_BUFLEN 512
-#define DEFAULT_PORT "27015"
 
 void create_process(const char* command_line)
 {
@@ -136,7 +136,7 @@ int __cdecl main(void)
             char* kinect_depth_capture_message = "kinect_depth_capture_message";
             int message_base_len = strlen(kinect_depth_capture_message);
             printf("Bytes received: %d\n", iResult);
-            char* completed_message = "failed";
+            std::string return_message = "fail";
             if (iResult > message_base_len && !strncmp(recvbuf, kinect_depth_capture_message, message_base_len)) {
                 std::string command_line = "..\\DepthBasics-D2D\\DepthBasics-D2D.exe";
                 std::string output_dir = "..\\KinectDepthImages";
@@ -144,12 +144,12 @@ int __cdecl main(void)
                     std::string file_name((char*)recvbuf + message_base_len, iResult - message_base_len);
                     command_line += " " + output_dir + "\\" + file_name;
                     create_process(command_line.c_str());
-                    completed_message = "success";
+                    return_message = "ok";
                 }
             }
 
             // Echo the buffer back to the sender
-            iSendResult = send( ClientSocket, completed_message, strlen(completed_message), 0 );
+            iSendResult = send( ClientSocket, return_message.c_str(), return_message.size(), 0 );
             if (iSendResult == SOCKET_ERROR) {
                 printf("send failed with error: %d\n", WSAGetLastError());
                 closesocket(ClientSocket);
