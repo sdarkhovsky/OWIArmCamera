@@ -4,6 +4,7 @@
 #include <string>
 #include <random>
 #include <algorithm>
+#include "winsockserver/client_shared.h"
 
 void execute_command(std::string cmd)
 {
@@ -32,7 +33,7 @@ enum CAPTURE_SRC_TYPE { CAMERA_CAPTURE_SRC, KINECT_DEPTH_CAPTURE_SRC};
 int main(int argc, char** argv)
 {
     int status = 0;
-	std::string cmdSuffix, capture_file_name, cmd;
+	std::string cmdSuffix, capture_file_name, cmd, message_header;
     int num_samples=2;
 	int capture_src=CAMERA_CAPTURE_SRC;
 
@@ -58,8 +59,8 @@ int main(int argc, char** argv)
 			case KINECT_DEPTH_CAPTURE_SRC:
 			{
 				capture_file_name = "img" + std::to_string(i) + cmdSuffix + ".kin";
-	            std::string kinect_depth_capture_message = "kinect_depth_capture_message";
-				std::string send_message = kinect_depth_capture_message + capture_file_name;
+	            message_header = KINECT_DEPTH_CAPTURE_MESSAGE;
+				std::string send_message = message_header + capture_file_name;
 				socket_send_recv(send_message.c_str(), send_message.size());
 				break;
 			}
@@ -83,5 +84,10 @@ int main(int argc, char** argv)
 		cmdSuffix = " " + joint_commands[icmd];
 		std::replace( cmdSuffix.begin(), cmdSuffix.end(), ' ', '_'); 
 	}
+
+    message_header = END_CAPTURE_MESSAGE;
+	std::string send_message = message_header;
+	socket_send_recv(send_message.c_str(), send_message.size());
+
 	return status;
 }
