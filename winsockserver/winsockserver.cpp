@@ -128,24 +128,34 @@ int __cdecl main(void)
     // No longer need server socket
     closesocket(ListenSocket);
 
-    // Receive until the peer shuts down the connection
+    // Receive until the peer sends END_CAPTURE_MESSAGE command
+    int message_header_len;
+    const char* message_header;
+    std::string return_message;
+    bool continue_loop = true;
     do {
 
         iResult = recv(ClientSocket, recvbuf, recvbuflen, 0);
         if (iResult > 0) {
-            char* kinect_depth_capture_message = "kinect_depth_capture_message";
-            int message_base_len = strlen(kinect_depth_capture_message);
-            printf("Bytes received: %d\n", iResult);
-            std::string return_message = "fail";
-            if (iResult > message_base_len && !strncmp(recvbuf, kinect_depth_capture_message, message_base_len)) {
+            message_header = KINECT_DEPTH_CAPTURE_MESSAGE;
+            message_header_len = strlen(message_header);
+            return_message = "fail";
+            if (iResult > message_header_len && !strncmp(recvbuf, message_header, message_header_len)) {
                 std::string command_line = "..\\DepthBasics-D2D\\DepthBasics-D2D.exe";
                 std::string output_dir = "..\\KinectDepthImages";
                 if (CreateDirectory(output_dir.c_str(), NULL) || ERROR_ALREADY_EXISTS == GetLastError()) {
-                    std::string file_name((char*)recvbuf + message_base_len, iResult - message_base_len);
+                    std::string file_name((char*)recvbuf + message_header_len, iResult - message_header_len);
                     command_line += " " + output_dir + "\\" + file_name;
                     create_process(command_line.c_str());
                     return_message = "ok";
                 }
+            }
+
+            message_header = END_CAPTURE_MESSAGE;
+            message_header_len = strlen(message_header);
+            if (iResult > message_header_len && !strncmp(recvbuf, message_header, message_header_len)) {
+                continue_loop = false;
+                return_message = "ok";
             }
 
             // Echo the buffer back to the sender
@@ -167,7 +177,7 @@ int __cdecl main(void)
             return 1;
         }
 
-    } while (iResult > 0);
+    } while (continue_loop);
 
     // shutdown the connection since we're done
     iResult = shutdown(ClientSocket, SD_SEND);
