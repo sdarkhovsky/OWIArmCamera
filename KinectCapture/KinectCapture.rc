@@ -1,9 +1,3 @@
-//------------------------------------------------------------------------------
-// <copyright file="DepthBasics.rc" company="Microsoft">
-//     Copyright (c) Microsoft Corporation.  All rights reserved.
-// </copyright>
-//------------------------------------------------------------------------------
-
 // Microsoft Visual C++ generated resource script.
 //
 #include "resource.h"
@@ -25,6 +19,7 @@
 
 #if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
 LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+#pragma code_page(1252)
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -35,20 +30,22 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 // remains consistent on all systems.
 IDI_APP                 ICON                    "app.ico"
 
+
 /////////////////////////////////////////////////////////////////////////////
 //
 // Dialog
 //
-IDD_APP DIALOGEX 0, 0, 512, 436
+
+IDD_APP DIALOGEX 0, 0, 640, 374
 STYLE DS_SETFONT | DS_FIXEDSYS | WS_MINIMIZEBOX | WS_CLIPCHILDREN | WS_CAPTION | WS_SYSMENU
 EXSTYLE WS_EX_CONTROLPARENT | WS_EX_APPWINDOW
-CAPTION "Depth Basics"
-CLASS "DepthBasicsAppDlgWndClass"
+CAPTION "Kinect Capture"
+CLASS "KinectCaptureAppDlgWndClass"
 FONT 8, "MS Shell Dlg", 400, 0, 0x1
 BEGIN
-    CONTROL         "",IDC_VIDEOVIEW,"Static",SS_BLACKFRAME,0,0,512,424
-    LTEXT           "",IDC_STATUS,0,425,412,11,SS_SUNKEN,0
-    DEFPUSHBUTTON   "Screenshot",IDC_BUTTON_SCREENSHOT,422,424,90,12
+    CONTROL         "",IDC_VIDEOVIEW,"Static",SS_BLACKFRAME,0,0,640,360
+    LTEXT           "",IDC_STATUS,0,361,540,11,SS_SUNKEN
+    DEFPUSHBUTTON   "Screenshot",IDC_BUTTON_SCREENSHOT,550,361,90,12
 END
 
 

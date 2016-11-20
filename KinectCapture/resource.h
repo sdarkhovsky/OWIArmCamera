@@ -1,18 +1,13 @@
-//------------------------------------------------------------------------------
-// <copyright file="Resource.h" company="Microsoft">
-//     Copyright (c) Microsoft Corporation.  All rights reserved.
-// </copyright>
-//------------------------------------------------------------------------------
-
 //{{NO_DEPENDENCIES}}
 // Microsoft Visual C++ generated include file.
-// Used by DepthBasics.rc
+// Used by KinectCapture.rc
 //
 #define IDI_APP                         100
 #define IDD_APP                         100
 #define IDC_VIDEOVIEW                   1000
 #define IDC_STATUS                      1001
 #define IDC_BUTTON_SCREENSHOT           1002
+
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED

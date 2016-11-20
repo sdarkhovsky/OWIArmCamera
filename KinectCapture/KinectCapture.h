@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// <copyright file="DepthBasics.h" company="Microsoft">
+// <copyright file="KinectCapture.h" company="Microsoft">
 //     Copyright (c) Microsoft Corporation.  All rights reserved.
 // </copyright>
 //------------------------------------------------------------------------------
@@ -9,28 +9,23 @@
 #include "resource.h"
 #include "ImageRenderer.h"
 
-struct DEPTHFILEHEADER {
-    INT64 nTime;
-    LONG lWidth;
-    LONG lHeight;
-    WORD wBitsPerPixel;
-};
-
-class CDepthBasics
+class CKinectCapture
 {
     static const int        cDepthWidth  = 512;
     static const int        cDepthHeight = 424;
+    static const int        cColorWidth  = 1920;
+    static const int        cColorHeight = 1080;
 
 public:
     /// <summary>
     /// Constructor
     /// </summary>
-    CDepthBasics();
+    CKinectCapture();
 
     /// <summary>
     /// Destructor
     /// </summary>
-    ~CDepthBasics();
+    ~CKinectCapture();
 
     /// <summary>
     /// Handles window messages, passes most to the class instance to handle
@@ -59,7 +54,7 @@ public:
     /// <param name="nCmdShow"></param>
     int                     Run(HINSTANCE hInstance, int nCmdShow);
 
-    LPWSTR                  m_pDepthFilePath;
+	LPWSTR                  m_pCaptureFilePath;
 
 private:
     HWND                    m_hWnd;
@@ -72,19 +67,23 @@ private:
 
     // Current Kinect
     IKinectSensor*          m_pKinectSensor;
+    ICoordinateMapper*      m_pCoordinateMapper;
+	CameraSpacePoint*        m_pCameraSpacePoints;
 
-    // Depth reader
-    IDepthFrameReader*      m_pDepthFrameReader;
+    // Frame reader
+    IMultiSourceFrameReader*m_pMultiSourceFrameReader;
 
     // Direct2D
-    ImageRenderer*          m_pDrawDepth;
+    ImageRenderer*          m_pDrawCoordinateMapping;
     ID2D1Factory*           m_pD2DFactory;
-    RGBQUAD*                m_pDepthRGBX;
+    RGBQUAD*                m_pOutputRGBX; 
+    RGBQUAD*                m_pBackgroundRGBX; 
+    RGBQUAD*                m_pColorRGBX;
 
     /// <summary>
     /// Main processing function
     /// </summary>
-    void                    Update(HWND hWndApp);
+    void                    Update();
 
     /// <summary>
     /// Initializes the default Kinect sensor
@@ -93,15 +92,18 @@ private:
     HRESULT                 InitializeDefaultSensor();
 
     /// <summary>
-    /// Handle new depth data
+    /// Handle new depth and color data
     /// <param name="nTime">timestamp of frame</param>
-    /// <param name="pBuffer">pointer to frame data</param>
-    /// <param name="nWidth">width (in pixels) of input image data</param>
-    /// <param name="nHeight">height (in pixels) of input image data</param>
-    /// <param name="nMinDepth">minimum reliable depth</param>
-    /// <param name="nMaxDepth">maximum reliable depth</param>
+    /// <param name="pDepthBuffer">pointer to depth frame data</param>
+    /// <param name="nDepthWidth">width (in pixels) of input depth image data</param>
+    /// <param name="nDepthHeight">height (in pixels) of input depth image data</param>
+    /// <param name="pColorBuffer">pointer to color frame data</param>
+    /// <param name="nColorWidth">width (in pixels) of input color image data</param>
+    /// <param name="nColorHeight">height (in pixels) of input color image data</param>
     /// </summary>
-    void                    ProcessDepth(INT64 nTime, const UINT16* pBuffer, int nHeight, int nWidth, USHORT nMinDepth, USHORT nMaxDepth);
+    void                    ProcessFrame(INT64 nTime, 
+                                         const UINT16* pDepthBuffer, int nDepthHeight, int nDepthWidth, 
+                                         const RGBQUAD* pColorBuffer, int nColorWidth, int nColorHeight);
 
     /// <summary>
     /// Set the status bar message
@@ -130,8 +132,9 @@ private:
     /// <param name="wBitsPerPixel">bits per pixel of image data</param>
     /// <param name="lpszFilePath">full file path to output bitmap to</param>
     /// <returns>indicates success or failure</returns>
+
     HRESULT                 SaveBitmapToFile(BYTE* pBitmapBits, LONG lWidth, LONG lHeight, WORD wBitsPerPixel, LPCWSTR lpszFilePath);
 
-    HRESULT SaveDepthToFile(INT64 nTime, const UINT16* pBuffer, LONG lWidth, LONG lHeight, WORD wBitsPerPixel, LPCWSTR lpszFilePath);
+	HRESULT SaveSpacePointsToXYZFile(CameraSpacePoint* pCameraSpacePoints, int nColorWidth, int nColorHeight, LPCWSTR lpszFilePath);
 };
 
