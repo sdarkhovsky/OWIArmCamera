@@ -50,6 +50,33 @@ int get_file_number(std::string a)
 	return std::stoi(a);
 }
 
+// returns -1 if no command is present in the file name
+int get_owi_command_from_file_name(std::string& file_name) {
+
+    std::size_t found1 = file_name.find("_");
+    std::size_t found2 = file_name.find(".");
+    std::string cmd_name;
+    int owi_command = -1;
+    
+	std::vector<std::string> joint_commands = get_joint_commands();
+	
+	for (auto& s : joint_commands)
+	{
+		std::replace( s.begin(), s.end(), ' ', '_'); 
+	}    
+
+    if (found1 >= 0 && found2 >= 0 && found2 > found1) cmd_name=file_name.substr(found1+1,found2-found1-1);
+    for (size_t icmd=0; icmd < joint_commands.size(); icmd++)
+    {
+        if (joint_commands[icmd]==cmd_name)
+        {
+            owi_command = icmd;
+            break;
+        }
+    }
+    return owi_command;
+}
+
 std::vector <std::string> read_directory( const std::string& path = std::string() )
 {
   std::vector <std::string> result;
@@ -95,13 +122,6 @@ int main(int argc, char** argv)
     int result = 0;
 	std::string training_samples_directory;
 
-	std::vector<std::string> joint_commands = get_joint_commands();
-	
-	for (auto& s : joint_commands)
-	{
-		std::replace( s.begin(), s.end(), ' ', '_'); 
-	}
-
 	if (argc == 1)
 	{
 		char buf[500]; 
@@ -130,78 +150,34 @@ int main(int argc, char** argv)
 
 		std::string img_path =  training_samples_directory + "/" + *it;
         
-		c_kinect_image orig_img;
-        if (!orig_img.read_file(img_path))
+		c_kinect_image kinect_img;
+        c_point_cloud point_cloud;
+        
+        if (!kinect_img.read_file( img_path, point_cloud ))
 		{
 			std::cout << "can't open image file: "  << *it << std::endl;
 			continue;
         }
+        
+        g_ais.world.add_observation(point_cloud );
+        
+        int owi_cmd = get_owi_command_from_file_name(*it);
+        if (owi_cmd >= 0) {
+            // todo: add the command event 
+            /*
+                std::vector<double> param_value;
+                param_value.push_back(owi_cmd);
+                // the image is taken after the command
+                double cmd_time=cur_time - (double)OWI_COMMAND_DURATION_MILLISECONDS;
+                ais::g_ais.history.add_event(ais::c_event(cmd_time, ais::ACTUATOR_COMMAND_EVENT, param_value));
+            */            
+        }
 
-		if (!prev_feat_img.empty())
-		{
-			// add history record for the g_command
-			std::size_t found1 = (*it).find("_");
-			std::size_t found2 = (*it).find(".");
-			std::string cmd_name;
-
-			if (found1 >= 0 && found2 >= 0 && found2 > found1) cmd_name=(*it).substr(found1+1,found2-found1-1);
-			for (size_t icmd=0; icmd < joint_commands.size(); icmd++)
-			{
-				if (joint_commands[icmd]==cmd_name)
-				{
-					std::vector<double> param_value;
-					param_value.push_back(icmd);
-					// the image is taken after the command
-					double cmd_time=cur_time - (double)OWI_COMMAND_DURATION_MILLISECONDS;
-					ais::g_ais.history.add_event(ais::c_event(cmd_time, ais::ACTUATOR_COMMAND_EVENT, param_value));
-
-					break;
-				}
-			}
-
-			cv::Mat diff_feat_img;
-			cv::absdiff(feat_img,prev_feat_img, diff_feat_img);
-/*
-			cv::imshow("diff_feat_img", diff_feat_img);
-			cv::waitKey(0);
-*/
-
-			// find convex hull for major connected components
-			std::vector<cv::Vec2i> component_areas;
-			cv::Mat labelImage;
-			get_connected_components(diff_feat_img, labelImage, component_areas);
-            int max_num_components=1;
-			for (int area_label=1; area_label < std::min(max_num_components+1, (int)component_areas.size()); area_label++)
-			{
-				cv::Mat component_img = labelImage;
-				for(int r = 0; r < labelImage.rows; ++r){
-					for(int c = 0; c < labelImage.cols; ++c){
-						int label = labelImage.at<int>(r, c);
-						if (label != area_label)
-							component_img.at<int>(r, c) = 0;
-					 }
-				}
-
-				cv::Mat component_hull;
-				calc_convexHull(component_img, component_hull);
-				cv::Mat feat_event;
-				cv::bitwise_and(feat_img, component_hull, feat_event);
-/*
-				cv::imshow("feat_event", feat_event);
-				cv::waitKey(0);
-*/
-				calc_event_mc_and_orientation(feat_event, cur_time);
-			}
-		}
-
-		prev_feat_img = feat_img;
-
-		// interpret (correctly classify) the observed events by comparing them with the predicted events 
-		ais::interpret_observed_events_and_update_prediction_map(cur_time);
+        g_ais.world.predict();
 	}
 
 #if defined(LOGGING) && 0
-		ais::g_ais.history.print();
+//		ais::g_ais.history.print();
 #endif
 
 	return result;

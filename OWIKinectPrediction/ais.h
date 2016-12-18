@@ -1,7 +1,7 @@
 #ifndef AIS_H
 #define AIS_H
 
-#include "geometry_representation.h"
+#include "world.h"
 
 
 namespace ais {
@@ -9,6 +9,7 @@ namespace ais {
 class c_ais
 {
 public:
+    c_world world;
 };
 
 
