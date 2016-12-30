@@ -52,12 +52,14 @@ int main(int ac, char **av)
 		owi.set_joint_state(av[1], (unsigned char)strtol(av[2],NULL,16));
 		owi.send_command();
 
-//		sleep(1);
+#ifdef _WINDOWS
+		Sleep(OWI_COMMAND_DURATION_MILLISECONDS);
+#else
 		struct timespec ts;
 		ts.tv_sec = 0;
 		ts.tv_nsec = OWI_COMMAND_DURATION_MILLISECONDS*1000000;
 		nanosleep(&ts, NULL);
-
+#endif
 		owi.stop();
 		owi.send_command();
 

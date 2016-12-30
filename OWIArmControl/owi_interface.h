@@ -4,7 +4,11 @@
 #include <string>
 #include <list>
 #include <map>
+#ifdef _WINDOWS
+#include <libusb\libusb.h>
+#else
 #include <libusb-1.0/libusb.h>
+#endif
 
 #define BASE_JOINT_NAME "base_joint"
 #define SHOULDER_NAME "shoulder"

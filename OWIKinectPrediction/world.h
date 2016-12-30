@@ -33,7 +33,7 @@ class c_world {
 public:
     
     void add_observation( c_point_cloud& point_cloud );
-    void match_observed_parts(std::unique_ptr<c_world_part> observed_part);
+    void match_world_parts(std::unique_ptr<c_world_part> world_part);
     void predict();
     
     std::vector < std::unique_ptr<c_world_part> > world_parts;
