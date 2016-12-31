@@ -110,88 +110,96 @@ int __cdecl main(void)
 
     freeaddrinfo(result);
 
-    iResult = listen(ListenSocket, SOMAXCONN);
-    if (iResult == SOCKET_ERROR) {
-        printf("listen failed with error: %d\n", WSAGetLastError());
-        closesocket(ListenSocket);
-        WSACleanup();
-        return 1;
-    }
+    bool continue_listen_loop = true;
 
-    // Accept a client socket
-    ClientSocket = accept(ListenSocket, NULL, NULL);
-    if (ClientSocket == INVALID_SOCKET) {
-        printf("accept failed with error: %d\n", WSAGetLastError());
-        closesocket(ListenSocket);
-        WSACleanup();
-        return 1;
-    }
-
-    // No longer need server socket
-    closesocket(ListenSocket);
-
-    // Receive until the peer sends END_CAPTURE_MESSAGE command
-    int message_header_len;
-    const char* message_header;
-    std::string return_message;
-    bool continue_loop = true;
     do {
 
-        iResult = recv(ClientSocket, recvbuf, recvbuflen, 0);
-        if (iResult > 0) {
-            message_header = KINECT_DEPTH_CAPTURE_MESSAGE;
-            message_header_len = strlen(message_header);
-            return_message = "fail";
-            if (iResult > message_header_len && !strncmp(recvbuf, message_header, message_header_len)) {
-                std::string command_line = "..\\KinectCapture\\KinectCapture.exe";
-                std::string output_dir = "..\\KinectDepthImages";
-                if (CreateDirectory(output_dir.c_str(), NULL) || ERROR_ALREADY_EXISTS == GetLastError()) {
-                    std::string file_name((char*)recvbuf + message_header_len, iResult - message_header_len);
-                    command_line += " " + output_dir + "\\" + file_name;
-                    create_process(command_line.c_str());
+        iResult = listen(ListenSocket, SOMAXCONN);
+        if (iResult == SOCKET_ERROR) {
+            printf("listen failed with error: %d\n", WSAGetLastError());
+            closesocket(ListenSocket);
+            WSACleanup();
+            return 1;
+        }
+
+        // Accept a client socket
+        ClientSocket = accept(ListenSocket, NULL, NULL);
+        if (ClientSocket == INVALID_SOCKET) {
+            printf("accept failed with error: %d\n", WSAGetLastError());
+            closesocket(ListenSocket);
+            WSACleanup();
+            return 1;
+        }
+
+        // Receive until the peer sends END_CAPTURE_MESSAGE command
+        int message_header_len;
+        const char* message_header;
+        std::string return_message;
+        bool continue_loop = true;
+        do {
+
+            iResult = recv(ClientSocket, recvbuf, recvbuflen, 0);
+            if (iResult > 0) {
+                message_header = KINECT_CAPTURE_MESSAGE;
+                message_header_len = strlen(message_header);
+                return_message = "fail";
+                if (iResult > message_header_len && !strncmp(recvbuf, message_header, message_header_len)) {
+                    std::string command_line = "..\\KinectCapture\\KinectCapture.exe";
+                    std::string output_dir = "..\\KinectImages";
+                    if (CreateDirectory(output_dir.c_str(), NULL) || ERROR_ALREADY_EXISTS == GetLastError()) {
+                        std::string file_name((char*)recvbuf + message_header_len, iResult - message_header_len);
+                        command_line += " " + output_dir + "\\" + file_name;
+                        create_process(command_line.c_str());
+                        return_message = "ok";
+                    }
+                }
+
+                message_header = END_CAPTURE_MESSAGE;
+                message_header_len = strlen(message_header);
+                if (iResult >= message_header_len && !strncmp(recvbuf, message_header, message_header_len)) {
+                    continue_listen_loop = false;
                     return_message = "ok";
                 }
-            }
 
-            message_header = END_CAPTURE_MESSAGE;
-            message_header_len = strlen(message_header);
-            if (iResult > message_header_len && !strncmp(recvbuf, message_header, message_header_len)) {
+                // Echo the buffer back to the sender
+                iSendResult = send(ClientSocket, return_message.c_str(), return_message.size(), 0);
+                if (iSendResult == SOCKET_ERROR) {
+                    printf("send failed with error: %d\n", WSAGetLastError());
+                    closesocket(ClientSocket);
+                    WSACleanup();
+                    return 1;
+                }
+                printf("Bytes sent: %d\n", iSendResult);
+            }
+            else if (iResult == 0) {
+                printf("Connection closing...\n");
                 continue_loop = false;
-                return_message = "ok";
             }
-
-            // Echo the buffer back to the sender
-            iSendResult = send( ClientSocket, return_message.c_str(), return_message.size(), 0 );
-            if (iSendResult == SOCKET_ERROR) {
-                printf("send failed with error: %d\n", WSAGetLastError());
+            else {
+                printf("recv failed with error: %d\n", WSAGetLastError());
                 closesocket(ClientSocket);
                 WSACleanup();
                 return 1;
             }
-            printf("Bytes sent: %d\n", iSendResult);
-        }
-        else if (iResult == 0)
-            printf("Connection closing...\n");
-        else  {
-            printf("recv failed with error: %d\n", WSAGetLastError());
+
+        } while (continue_loop);
+
+        // shutdown the connection since we're done
+        iResult = shutdown(ClientSocket, SD_SEND);
+        if (iResult == SOCKET_ERROR) {
+            printf("shutdown failed with error: %d\n", WSAGetLastError());
             closesocket(ClientSocket);
             WSACleanup();
             return 1;
         }
 
-    } while (continue_loop);
-
-    // shutdown the connection since we're done
-    iResult = shutdown(ClientSocket, SD_SEND);
-    if (iResult == SOCKET_ERROR) {
-        printf("shutdown failed with error: %d\n", WSAGetLastError());
+        // cleanup
         closesocket(ClientSocket);
-        WSACleanup();
-        return 1;
-    }
+    } while (continue_listen_loop);
 
-    // cleanup
-    closesocket(ClientSocket);
+    // No longer need server socket
+    closesocket(ListenSocket);
+
     WSACleanup();
 
     return 0;

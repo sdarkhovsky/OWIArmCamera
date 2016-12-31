@@ -556,6 +556,7 @@ void CKinectCapture::ProcessFrame(INT64 nTime,
 			{
 				hr = SaveSpacePointsToXYZFile(m_pCameraSpacePoints, nColorWidth, nColorHeight, m_pCaptureFilePath);
                 PostMessage(m_hWnd, WM_CLOSE, 0, 0);
+                return;
 			}
 
             if (m_bSaveScreenshot)

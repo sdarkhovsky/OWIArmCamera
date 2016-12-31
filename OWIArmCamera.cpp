@@ -59,7 +59,7 @@ int main(int argc, char** argv)
 			case KINECT_DEPTH_CAPTURE_SRC:
 			{
 				capture_file_name = "img" + std::to_string(i) + cmdSuffix + ".kin";
-	            message_header = KINECT_DEPTH_CAPTURE_MESSAGE;
+	            message_header = KINECT_CAPTURE_MESSAGE;
 				std::string send_message = message_header + capture_file_name;
 				socket_send_recv(send_message.c_str(), send_message.size());
 				break;
