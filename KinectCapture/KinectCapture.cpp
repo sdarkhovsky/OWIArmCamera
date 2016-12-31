@@ -1,9 +1,3 @@
-//------------------------------------------------------------------------------
-// <copyright file="KinectCapture.cpp" company="Microsoft">
-//     Copyright (c) Microsoft Corporation.  All rights reserved.
-// </copyright>
-//------------------------------------------------------------------------------
-
 #include "stdafx.h"
 #include <strsafe.h>
 #include <math.h>

@@ -1,9 +1,3 @@
-//------------------------------------------------------------------------------
-// <copyright file="KinectCapture.h" company="Microsoft">
-//     Copyright (c) Microsoft Corporation.  All rights reserved.
-// </copyright>
-//------------------------------------------------------------------------------
-
 #pragma once
 
 #include "resource.h"
@@ -135,6 +129,6 @@ private:
 
     HRESULT                 SaveBitmapToFile(BYTE* pBitmapBits, LONG lWidth, LONG lHeight, WORD wBitsPerPixel, LPCWSTR lpszFilePath);
 
-	HRESULT SaveSpacePointsToXYZFile(CameraSpacePoint* pCameraSpacePoints, int nColorWidth, int nColorHeight, LPCWSTR lpszFilePath);
+	HRESULT                 SaveSpacePointsToXYZFile(CameraSpacePoint* pCameraSpacePoints, int nColorWidth, int nColorHeight, LPCWSTR lpszFilePath);
 };
 
