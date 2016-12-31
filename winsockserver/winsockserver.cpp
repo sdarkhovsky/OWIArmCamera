@@ -143,7 +143,7 @@ int __cdecl main(void)
             message_header_len = strlen(message_header);
             return_message = "fail";
             if (iResult > message_header_len && !strncmp(recvbuf, message_header, message_header_len)) {
-                std::string command_line = "..\\DepthBasics-D2D\\DepthBasics-D2D.exe";
+                std::string command_line = "..\\KinectCapture\\KinectCapture.exe";
                 std::string output_dir = "..\\KinectDepthImages";
                 if (CreateDirectory(output_dir.c_str(), NULL) || ERROR_ALREADY_EXISTS == GetLastError()) {
                     std::string file_name((char*)recvbuf + message_header_len, iResult - message_header_len);

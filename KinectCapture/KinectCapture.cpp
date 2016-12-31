@@ -21,6 +21,8 @@ EXTERN_C IMAGE_DOS_HEADER __ImageBase;
 /// <param name="lpCmdLine">command line arguments</param>
 /// <param name="nCmdShow">whether to display minimized, maximized, or normally</param>
 /// <returns>status</returns>
+// if lpCmdLine is non empty string, then the program captures XYZRGB file with the name given as the argument and exits
+// Otherwise, the program displays the GUI and allows to save the bitmap file in the Picture directory by pressing the "Save screenshot" button. 
 int APIENTRY wWinMain(
     _In_ HINSTANCE hInstance,
     _In_opt_ HINSTANCE hPrevInstance,
@@ -550,9 +552,10 @@ void CKinectCapture::ProcessFrame(INT64 nTime,
             // Draw the data with Direct2D
             m_pDrawCoordinateMapping->Draw(reinterpret_cast<BYTE*>(m_pOutputRGBX), cColorWidth * cColorHeight * sizeof(RGBQUAD));
 
-			if (m_bSaveScreenshot)
+			if (wcslen(m_pCaptureFilePath)>0)
 			{
 				hr = SaveSpacePointsToXYZFile(m_pCameraSpacePoints, nColorWidth, nColorHeight, m_pCaptureFilePath);
+                PostMessage(m_hWnd, WM_CLOSE, 0, 0);
 			}
 
             if (m_bSaveScreenshot)
