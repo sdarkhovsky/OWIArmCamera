@@ -29,6 +29,7 @@ enum CAPTURE_SRC_TYPE { CAMERA_CAPTURE_SRC, KINECT_DEPTH_CAPTURE_SRC};
 // Run the program with administrator privileges as sending a commmand 
 // to the OWI Arm USB controller requires to send data to its USB device:
 // sudo ./OWIArmCamera <num_samples_to_generate> <capture_src> 
+// for example, for the Kinect capture of 3 images:  sudo ./OWIArmCamera 3 1
 // where capture_src's value is one of CAPTURE_SRC_TYPE
 int main(int argc, char** argv)
 {
