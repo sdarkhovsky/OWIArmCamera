@@ -129,6 +129,6 @@ private:
 
     HRESULT                 SaveBitmapToFile(BYTE* pBitmapBits, LONG lWidth, LONG lHeight, WORD wBitsPerPixel, LPCWSTR lpszFilePath);
 
-	HRESULT                 SaveSpacePointsToXYZFile(CameraSpacePoint* pCameraSpacePoints, int nColorWidth, int nColorHeight, LPCWSTR lpszFilePath);
+	HRESULT                 SaveKinectDataToFile(int nColorWidth, int nColorHeight, LPCWSTR lpszFilePath);
 };
 

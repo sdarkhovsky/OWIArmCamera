@@ -554,7 +554,7 @@ void CKinectCapture::ProcessFrame(INT64 nTime,
 
 			if (wcslen(m_pCaptureFilePath)>0)
 			{
-				hr = SaveSpacePointsToXYZFile(m_pCameraSpacePoints, nColorWidth, nColorHeight, m_pCaptureFilePath);
+				hr = SaveKinectDataToFile(nColorWidth, nColorHeight, m_pCaptureFilePath);
                 PostMessage(m_hWnd, WM_CLOSE, 0, 0);
                 return;
 			}
@@ -716,8 +716,18 @@ HRESULT CKinectCapture::SaveBitmapToFile(BYTE* pBitmapBits, LONG lWidth, LONG lH
 /// <param name="wBitsPerPixel">bits per pixel of image data</param>
 /// <param name="lpszFilePath">full file path to output bitmap to</param>
 /// <returns>indicates success or failure</returns>
-HRESULT CKinectCapture::SaveSpacePointsToXYZFile(CameraSpacePoint* pCameraSpacePoints, int nColorWidth, int nColorHeight, LPCWSTR lpszFilePath) {
+/*  See KinectFusionExplorer - D2D\KinectFusionExplorer.cpp from Kinect API for examples
+of how to store the point cloud or mesh data in the Stl, Obj and Ply formats:
+WriteBinarySTLMeshFile, WriteAsciiObjMeshFile, WriteAsciiPlyMeshFile
 
+Point Cloud library includes cloud viewer using the VTK for rendering.
+In turn, the VTK uses OpenGL 1.1 and OpenGL2.0 for rendering.
+*/
+HRESULT CKinectCapture::SaveKinectDataToFile(int nColorWidth, int nColorHeight, LPCWSTR lpszFilePath) {
+    std::string s;
+    bool bStoreXYZOnly = true;
+    CameraSpacePoint maxBox = {0.5,0.5,1.2}; // in mm
+    CameraSpacePoint minBox = {-0.5,-0.5, 0.5 }; // in mm
 	HANDLE hFile = CreateFileW(lpszFilePath, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 
 	// Return if error opening file
@@ -731,17 +741,28 @@ HRESULT CKinectCapture::SaveSpacePointsToXYZFile(CameraSpacePoint* pCameraSpaceP
 	for (int colorIndex = 0; colorIndex < (nColorWidth*nColorHeight); ++colorIndex)
 	{
 		CameraSpacePoint p = m_pCameraSpacePoints[colorIndex];
+        const RGBQUAD* pClr = m_pColorRGBX + colorIndex;
 
 		// Values that are negative infinity means it is an invalid color to depth mapping so we
 		// skip processing for this pixel
 		if (p.X != -std::numeric_limits<float>::infinity() && p.Y != -std::numeric_limits<float>::infinity() && p.Z != -std::numeric_limits<float>::infinity())
 		{
-			std::string s = std::to_string(p.X) + " " + std::to_string(p.Y) + " " + std::to_string(p.Z) + "\n";
-			if (!WriteFile(hFile, s.c_str(), s.size(), &dwBytesWritten, NULL))
-			{
-				CloseHandle(hFile);
-				return E_FAIL;
-			}
+            if (p.X > minBox.X && p.X < maxBox.X && p.Y > minBox.Y && p.Y < maxBox.Y && p.Z > minBox.Z && p.Z < maxBox.Z) {
+                if (bStoreXYZOnly) {
+                    s = std::to_string(p.X) + " " + std::to_string(p.Y) + " " + std::to_string(p.Z) + "\n";
+                }
+                else {
+                    s = std::to_string(p.X) + " " + std::to_string(p.Y) + " " + std::to_string(p.Z) + " " +
+                        std::to_string(pClr->rgbBlue) + " " + std::to_string(pClr->rgbGreen) + " " + std::to_string(pClr->rgbRed) +
+                        "\n";
+                }
+
+                if (!WriteFile(hFile, s.c_str(), s.size(), &dwBytesWritten, NULL))
+                {
+                    CloseHandle(hFile);
+                    return E_FAIL;
+                }
+            }
 		}
 	}
 
@@ -749,4 +770,3 @@ HRESULT CKinectCapture::SaveSpacePointsToXYZFile(CameraSpacePoint* pCameraSpaceP
 	CloseHandle(hFile);
 	return S_OK;
 }
-
