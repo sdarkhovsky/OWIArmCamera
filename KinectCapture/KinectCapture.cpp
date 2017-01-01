@@ -716,7 +716,9 @@ HRESULT CKinectCapture::SaveBitmapToFile(BYTE* pBitmapBits, LONG lWidth, LONG lH
 /// <param name="wBitsPerPixel">bits per pixel of image data</param>
 /// <param name="lpszFilePath">full file path to output bitmap to</param>
 /// <returns>indicates success or failure</returns>
-/*  See KinectFusionExplorer - D2D\KinectFusionExplorer.cpp from Kinect API for examples
+/*  
+See http://www.pointcloudviz.com/desktop/help/Using_SupportedFormats.html for xyz with color format
+See KinectFusionExplorer - D2D\KinectFusionExplorer.cpp from Kinect API for examples
 of how to store the point cloud or mesh data in the Stl, Obj and Ply formats:
 WriteBinarySTLMeshFile, WriteAsciiObjMeshFile, WriteAsciiPlyMeshFile
 
@@ -725,7 +727,7 @@ In turn, the VTK uses OpenGL 1.1 and OpenGL2.0 for rendering.
 */
 HRESULT CKinectCapture::SaveKinectDataToFile(int nColorWidth, int nColorHeight, LPCWSTR lpszFilePath) {
     std::string s;
-    bool bStoreXYZOnly = true;
+    bool bStoreXYZOnly = false;
     CameraSpacePoint maxBox = {0.5,0.5,1.2}; // in mm
     CameraSpacePoint minBox = {-0.5,-0.5, 0.5 }; // in mm
 	HANDLE hFile = CreateFileW(lpszFilePath, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
@@ -753,7 +755,7 @@ HRESULT CKinectCapture::SaveKinectDataToFile(int nColorWidth, int nColorHeight, 
                 }
                 else {
                     s = std::to_string(p.X) + " " + std::to_string(p.Y) + " " + std::to_string(p.Z) + " " +
-                        std::to_string(pClr->rgbBlue) + " " + std::to_string(pClr->rgbGreen) + " " + std::to_string(pClr->rgbRed) +
+                        std::to_string(pClr->rgbRed) + " " + std::to_string(pClr->rgbGreen) + " " + std::to_string(pClr->rgbBlue) +
                         "\n";
                 }
 
