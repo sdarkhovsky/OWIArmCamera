@@ -59,10 +59,13 @@ private:
     DWORD                   m_nFramesSinceUpdate;
     bool                    m_bSaveScreenshot;
 
+    CameraSpacePoint m_maxBox, m_minBox;
+
     // Current Kinect
     IKinectSensor*          m_pKinectSensor;
     ICoordinateMapper*      m_pCoordinateMapper;
 	CameraSpacePoint*        m_pCameraSpacePoints;
+    DepthSpacePoint*        m_pDepthCoordinates;
 
     // Frame reader
     IMultiSourceFrameReader*m_pMultiSourceFrameReader;
@@ -129,6 +132,6 @@ private:
 
     HRESULT                 SaveBitmapToFile(BYTE* pBitmapBits, LONG lWidth, LONG lHeight, WORD wBitsPerPixel, LPCWSTR lpszFilePath);
 
-	HRESULT                 SaveKinectDataToFile(int nColorWidth, int nColorHeight, LPCWSTR lpszFilePath);
+	HRESULT                 SaveKinectDataToFile(int nDepthWidth, int nDepthHeight, int nColorWidth, int nColorHeight, LPCWSTR lpszFilePath);
 };
 
