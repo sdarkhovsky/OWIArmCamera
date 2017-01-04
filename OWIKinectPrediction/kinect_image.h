@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <string>
+#include "point_cloud.h"
 
 namespace ais {
 

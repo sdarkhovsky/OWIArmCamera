@@ -6,31 +6,28 @@
 #include <algorithm>
 #include <functional>
 #include <vector>
+
+#ifdef _WINDOWS
+#else
 #include <dirent.h>
 #include <sys/types.h>
-
-#if 0
-#include "opencv2/highgui/highgui.hpp"
-//#include <opencv2/core/utility.hpp>
-//#include "opencv2/core/cuda.hpp"
-//#include "opencv2/highgui.hpp"
-//#include "opencv2/objdetect.hpp"
-//#include "opencv2/imgcodecs.hpp"
-#include "opencv2/imgproc/imgproc.hpp"
-#endif 
-
 #include <unistd.h>
-
+#endif
 #include "ais.h"
 #include "../OWIArmControl/owi_arm_control.h"
 
 #include "logger.hpp"
+
+#include "kinect_image.h"
+#include "point_cloud.h"
 
 std::vector<std::string> get_joint_commands();
 
 namespace ais {
 	extern c_ais g_ais;
 }
+
+using namespace ais;
 
 // found at http://www.cplusplus.com/forum/unices/3548/
 // read_directory()
@@ -80,6 +77,8 @@ int get_owi_command_from_file_name(std::string& file_name) {
 std::vector <std::string> read_directory( const std::string& path = std::string() )
 {
   std::vector <std::string> result;
+#ifdef _WINDOWS
+#else
   dirent* de;
   DIR* dp;
   errno = 0;
@@ -109,7 +108,17 @@ std::vector <std::string> read_directory( const std::string& path = std::string(
 
     std::sort( result.begin(), result.end(), sort_by_names );
     }
+#endif
   return result;
+}
+
+bool get_executable_file_path(char* file_path, int file_path_length)
+{
+#ifdef _WINDOWS
+    return false;
+#else
+    return (readlink("/proc/self/exe", file_path, file_path_length) > 0);
+#endif
 }
 
 /*
@@ -125,7 +134,7 @@ int main(int argc, char** argv)
 	if (argc == 1)
 	{
 		char buf[500]; 
-		if (readlink("/proc/self/exe", buf, sizeof(buf)) > 0)
+        if (get_executable_file_path(buf, sizeof(buf)))
 		{
 			std::string sbuf = buf;
 			std::size_t found = sbuf.find_last_of("/\\");
@@ -143,6 +152,7 @@ int main(int argc, char** argv)
 
 	std::vector <std::string> img_files = read_directory(training_samples_directory);
 
+    double cur_time;
  	for (std::vector<std::string>::iterator it = img_files.begin() ; it != img_files.end(); ++it)
 	{
 		// the image is taken after the command
@@ -159,7 +169,7 @@ int main(int argc, char** argv)
 			continue;
         }
         
-        g_ais.world.add_observation(point_cloud );
+        g_ais.world.add_observation(point_cloud, cur_time);
         
         int owi_cmd = get_owi_command_from_file_name(*it);
         if (owi_cmd >= 0) {
