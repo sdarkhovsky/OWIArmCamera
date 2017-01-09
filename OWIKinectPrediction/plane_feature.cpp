@@ -31,12 +31,15 @@ namespace ais {
         }
 
         // mark plane regions
-        float normal_deviation_tolerance = 1.0f - 0.01f;
+        float normal_deviation_tolerance = 1.0f - 0.1f;
         plane_regions_bitmap.clear();
-        plane_regions_bitmap.resize(num_point_cloud_rows - 1);
-        for (u = 1; u < num_point_cloud_rows - 1; u++) {
-            plane_regions_bitmap[u].resize(num_point_cloud_cols - 1);
-            for (v = 1; v < num_point_cloud_cols - 1; v++) {
+        plane_regions_bitmap.resize(num_point_cloud_rows);
+        for (u = 0; u < num_point_cloud_rows; u++) {
+            plane_regions_bitmap[u].resize(num_point_cloud_cols);
+        }
+
+        for (u = 1; u < num_point_cloud_rows - 2; u++) {
+            for (v = 1; v < num_point_cloud_cols - 2; v++) {
                 int num_codirected_normals = 0;
                 for (size_t u1 = u - 1; u1 <= u + 1; u1++) {
                     for (size_t v1 = v - 1; v1 <= v + 1; v1++) {

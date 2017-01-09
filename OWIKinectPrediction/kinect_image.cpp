@@ -48,8 +48,9 @@ bool c_kinect_image::write_file(std::string file_path, c_point_cloud& point_clou
     size_t width = point_cloud.points[0].size();
     size_t u, v;
 
+    outfile.open(file_path, std::ifstream::out);
+
     if (!xyz_format) {
-        outfile.open(file_path, std::ifstream::out);
         outfile << height << std::endl;
         outfile << width << std::endl;
     }
@@ -57,6 +58,8 @@ bool c_kinect_image::write_file(std::string file_path, c_point_cloud& point_clou
     for (u = 0; u < height; u++) {
         assert(point_cloud.points[u].size() == width);
         for (v = 0; v < width; v++) {
+            if (point_cloud.points[u][v].X == Vector3f::Zero()) // the input .kin files have no points for some u,v
+                continue;
             if (!xyz_format) {
                 outfile << u << " ";
                 outfile << v << " ";

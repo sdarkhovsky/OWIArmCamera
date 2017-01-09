@@ -101,7 +101,10 @@ std::vector <std::string> read_directory( const std::string& path = std::string(
             }
             else
             {
-                files_list.push_back(ffd.cFileName);
+                std::string s(ffd.cFileName);
+                int len = s.length();
+                if ( len > 4 && s.substr(len-4,4)==".kin")
+                    files_list.push_back(s);
             }
         } while (FindNextFile(hFind, &ffd) != 0);
         FindClose(hFind);
@@ -120,11 +123,12 @@ std::vector <std::string> read_directory( const std::string& path = std::string(
           std::string s(de->d_name);
           if (s == "." || s == "..")
               continue;
-          files_list.push_back(s);
+          int len = s.length();
+          if (len > 4 && s.substr(len - 4, 4) == ".kin")
+              files_list.push_back(s);
       }
       closedir(dp);
   }
-
 #endif
 	struct {
 	    bool operator()(std::string a, std::string b)
