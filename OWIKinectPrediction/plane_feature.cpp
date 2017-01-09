@@ -6,7 +6,7 @@ using namespace Eigen;
 
 namespace ais {
 
-    bool detect_plane_features(c_point_cloud& point_cloud) {
+    bool detect_plane_features(c_point_cloud& point_cloud, vector < vector <bool>>& plane_regions_bitmap) {
         size_t u, v;
         size_t num_point_cloud_rows = point_cloud.points.size();
         if (num_point_cloud_rows <= 0)
@@ -32,13 +32,22 @@ namespace ais {
 
         // mark plane regions
         float normal_deviation_tolerance = 1.0f - 0.01f;
-        vector < vector <bool>> plane_regions_bitmap;
+        plane_regions_bitmap.clear();
         plane_regions_bitmap.resize(num_point_cloud_rows - 1);
         for (u = 1; u < num_point_cloud_rows - 1; u++) {
             plane_regions_bitmap[u].resize(num_point_cloud_cols - 1);
             for (v = 1; v < num_point_cloud_cols - 1; v++) {
-                if (normals[u - 1][v].dot(normals[u][v]) > normal_deviation_tolerance)
-                    plane_regions_bitmap[u][v] = true;
+                int num_codirected_normals = 0;
+                for (size_t u1 = u - 1; u1 <= u + 1; u1++) {
+                    for (size_t v1 = v - 1; v1 <= v + 1; v1++) {
+                        if (u1 == u && v1 == v)
+                            continue;
+                        if (normals[u1][v1].dot(normals[u][v]) > normal_deviation_tolerance) {
+                            num_codirected_normals++;
+                        }
+                    }
+                }
+                plane_regions_bitmap[u][v] = (num_codirected_normals > 6);
             }
         }
 

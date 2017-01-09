@@ -1,5 +1,8 @@
 #include "world.h"
 #include "plane_feature.h"
+#include "kinect_image.h"
+
+bool get_executable_file_path(char* file_path, int file_path_length);
 
 namespace ais {
     
@@ -13,7 +16,31 @@ c_world_part_state::c_world_part_state(c_point_cloud& _point_cloud, c_world_time
 }
 
 c_world_part::c_world_part(c_point_cloud& point_cloud, c_world_time& world_time) {
-    bool result = detect_plane_features(point_cloud);
+    vector < vector <bool>> plane_regions_bitmap;
+    bool result = detect_plane_features(point_cloud, plane_regions_bitmap);
+    
+#ifdef _DEBUG
+    c_kinect_image kinect_img;
+    char buf[500];
+    if (get_executable_file_path(buf, sizeof(buf)))
+    {
+        std::string file_path;
+        c_point_cloud detected_planes_point_cloud = point_cloud;
+        size_t u, v;
+        for (u = 0; u < detected_planes_point_cloud.points.size(); u++) {
+            for (v = 0; v < detected_planes_point_cloud.points[u].size(); v++) {
+                if (plane_regions_bitmap[u][v]) {
+                    detected_planes_point_cloud.points[u][v].Clr = Vector3f::Zero();
+                }
+            }
+        }
+        bool xyz_format = true;
+        std::string sbuf = buf;
+        std::size_t found = sbuf.find_last_of("/\\");
+        file_path = sbuf.substr(0, found + 1) + "../KinectImages/detected_planes.xyz";
+        kinect_img.write_file(file_path, detected_planes_point_cloud, xyz_format);
+    }
+#endif
 /*
     std::unique_ptr<c_world_part_state> part_state(new c_world_part_state(point_cloud, world_time));
     world_part_states.push_back(std::move(part_state));   

@@ -5,7 +5,7 @@
 
 namespace ais {
 
-    bool detect_plane_features(c_point_cloud& point_cloud);
+    bool detect_plane_features(c_point_cloud& point_cloud, vector < vector <bool>>& plane_regions_bitmap);
 
     class c_plane_feature {
     public:

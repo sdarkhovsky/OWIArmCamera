@@ -14,6 +14,7 @@ public:
 	}
     
     bool read_file( std::string file_path, c_point_cloud& point_cloud );
+    bool write_file(std::string file_path, c_point_cloud& point_cloud, bool xyz_format);
 };
 
 

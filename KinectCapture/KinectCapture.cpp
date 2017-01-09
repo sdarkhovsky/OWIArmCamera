@@ -570,15 +570,15 @@ void CKinectCapture::ProcessFrame(INT64 nTime,
 		{
             std::wstring file_path;
 
-            bool insert_u_v = false;
+            bool xyz_format = true;
             file_path = m_pCaptureFilePath;
             file_path += L".xyz";
-			hr = SaveKinectDataToFile(nDepthWidth, nDepthHeight, nColorWidth, nColorHeight, file_path.c_str(), insert_u_v);
+			hr = SaveKinectDataToFile(nDepthWidth, nDepthHeight, nColorWidth, nColorHeight, file_path.c_str(), xyz_format);
 
-            insert_u_v = true;
+            xyz_format = false;
             file_path = m_pCaptureFilePath;
             file_path += L".kin";
-            hr = SaveKinectDataToFile(nDepthWidth, nDepthHeight, nColorWidth, nColorHeight, file_path.c_str(), insert_u_v);
+            hr = SaveKinectDataToFile(nDepthWidth, nDepthHeight, nColorWidth, nColorHeight, file_path.c_str(), xyz_format);
             PostMessage(m_hWnd, WM_CLOSE, 0, 0);
             return;
 		}
@@ -648,7 +648,7 @@ WriteBinarySTLMeshFile, WriteAsciiObjMeshFile, WriteAsciiPlyMeshFile
 Point Cloud library includes cloud viewer using the VTK for rendering.
 In turn, the VTK uses OpenGL 1.1 and OpenGL2.0 for rendering.
 */
-HRESULT CKinectCapture::SaveKinectDataToFile(int nDepthWidth, int nDepthHeight, int nColorWidth, int nColorHeight, LPCWSTR lpszFilePath, bool insert_u_v) {
+HRESULT CKinectCapture::SaveKinectDataToFile(int nDepthWidth, int nDepthHeight, int nColorWidth, int nColorHeight, LPCWSTR lpszFilePath, bool xyz_format) {
     bool bStoreColor = true;
 	HANDLE hFile = CreateFileW(lpszFilePath, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 
@@ -659,6 +659,24 @@ HRESULT CKinectCapture::SaveKinectDataToFile(int nDepthWidth, int nDepthHeight, 
 	}
 
 	DWORD dwBytesWritten = 0;
+
+    if (!xyz_format) {
+        std::string s;
+
+        s = std::to_string(nDepthHeight) + "\n";
+        if (!WriteFile(hFile, s.c_str(), s.size(), &dwBytesWritten, NULL))
+        {
+            CloseHandle(hFile);
+            return E_FAIL;
+        }
+
+        s = std::to_string(nDepthWidth) + "\n";
+        if (!WriteFile(hFile, s.c_str(), s.size(), &dwBytesWritten, NULL))
+        {
+            CloseHandle(hFile);
+            return E_FAIL;
+        }
+    }
 
     for (int depthIndex = 0; depthIndex < (nDepthWidth*nDepthHeight); ++depthIndex)
 	{
@@ -676,7 +694,7 @@ HRESULT CKinectCapture::SaveKinectDataToFile(int nDepthWidth, int nDepthHeight, 
 		{
             std::string s;
 
-            if (insert_u_v) {
+            if (!xyz_format) {
                 int u = depthIndex / nDepthWidth;
                 int v = depthIndex % nDepthWidth;
                 s = std::to_string(u) + " " + std::to_string(v) + " ";

@@ -8,6 +8,7 @@
 #include <vector>
 
 #ifdef _WINDOWS
+#include "windows.h"
 #else
 #include <dirent.h>
 #include <sys/types.h>
@@ -76,27 +77,55 @@ int get_owi_command_from_file_name(std::string& file_name) {
 
 std::vector <std::string> read_directory( const std::string& path = std::string() )
 {
-  std::vector <std::string> result;
+  std::vector <std::string> files_list;
 #ifdef _WINDOWS
+    WIN32_FIND_DATA ffd;
+    LARGE_INTEGER filesize;
+    size_t length_of_arg;
+    HANDLE hFind = INVALID_HANDLE_VALUE;
+    DWORD dwError = 0;
+
+    // Prepare string for use with FindFile functions.  First, copy the
+    // string to a buffer, then append '\*' to the directory name.
+    std::string dir_path = path + "\\*";
+
+    // Find the first file in the directory.
+
+    hFind = FindFirstFile(dir_path.c_str(), &ffd);
+    if (hFind != INVALID_HANDLE_VALUE) {
+        // List all the files in the directory with some info about them.
+        do
+        {
+            if (ffd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+            {
+            }
+            else
+            {
+                files_list.push_back(ffd.cFileName);
+            }
+        } while (FindNextFile(hFind, &ffd) != 0);
+        FindClose(hFind);
+    }
 #else
   dirent* de;
   DIR* dp;
   errno = 0;
   dp = opendir( path.empty() ? "." : path.c_str() );
   if (dp)
-    {
-    while (true)
-      {
-      errno = 0;
-      de = readdir( dp );
-      if (de == NULL) break;
-	  std::string s(de->d_name);
-	  if (s == "." || s == "..")
-		continue;
-      result.push_back(s);
+  {
+      while (true) {
+          errno = 0;
+          de = readdir(dp);
+          if (de == NULL) break;
+          std::string s(de->d_name);
+          if (s == "." || s == "..")
+              continue;
+          files_list.push_back(s);
       }
-    closedir( dp );
+      closedir(dp);
+  }
 
+#endif
 	struct {
 	    bool operator()(std::string a, std::string b)
 	    {   
@@ -106,16 +135,17 @@ std::vector <std::string> read_directory( const std::string& path = std::string(
 	    }   
 	} sort_by_names;
 
-    std::sort( result.begin(), result.end(), sort_by_names );
-    }
-#endif
-  return result;
+    std::sort( files_list.begin(), files_list.end(), sort_by_names );
+
+  return files_list;
 }
 
 bool get_executable_file_path(char* file_path, int file_path_length)
 {
 #ifdef _WINDOWS
-    return false;
+
+    DWORD length = GetModuleFileName(NULL, file_path, file_path_length);
+    return (length > 0);
 #else
     return (readlink("/proc/self/exe", file_path, file_path_length) > 0);
 #endif
@@ -138,7 +168,7 @@ int main(int argc, char** argv)
 		{
 			std::string sbuf = buf;
 			std::size_t found = sbuf.find_last_of("/\\");
-			training_samples_directory = sbuf.substr(0,found+1) + "../TrainingSamples";
+			training_samples_directory = sbuf.substr(0,found+1) + "../KinectImages";
 		}
 	}	
 	else
