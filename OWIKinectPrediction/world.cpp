@@ -19,26 +19,21 @@ c_world_part::c_world_part(c_point_cloud& point_cloud, c_world_time& world_time)
     vector < vector <bool>> plane_regions_bitmap;
     bool result = detect_plane_features(point_cloud, plane_regions_bitmap);
     
-#ifdef _DEBUG
-    c_kinect_image kinect_img;
-    char buf[500];
-    if (get_executable_file_path(buf, sizeof(buf)))
+#if 1
     {
-        std::string file_path;
+        std::string file_path = "C:\\Projects\\OWIArmCamera\\KinectImages\\detected_planes_point_cloud.xyz";
+
         c_point_cloud detected_planes_point_cloud = point_cloud;
         size_t u, v;
         for (u = 0; u < detected_planes_point_cloud.points.size(); u++) {
             for (v = 0; v < detected_planes_point_cloud.points[u].size(); v++) {
                 if (plane_regions_bitmap[u][v]) {
-                    detected_planes_point_cloud.points[u][v].Clr = Vector3f(250,0,0);
+                    detected_planes_point_cloud.points[u][v].Clr = Vector3f(250, 0, 0);
                 }
             }
         }
         bool xyz_format = true;
-        std::string sbuf = buf;
-        std::size_t found = sbuf.find_last_of("/\\");
-        file_path = sbuf.substr(0, found + 1) + "detected_planes.xyz";
-        kinect_img.write_file(file_path, detected_planes_point_cloud, xyz_format);
+        c_kinect_image::write_file(file_path, detected_planes_point_cloud, xyz_format);
     }
 #endif
 /*

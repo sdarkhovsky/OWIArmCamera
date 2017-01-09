@@ -21,6 +21,7 @@
 
 #include "kinect_image.h"
 #include "point_cloud.h"
+#include "plane_feature.h"
 
 std::vector<std::string> get_joint_commands();
 
@@ -43,9 +44,17 @@ int get_file_number(std::string a)
 	if (a.size()>3) a = a.substr(3);
 
 	std::size_t found = a.find("_");
-	if (found >= 0) a = a.substr(0,found);
+	if (found != string::npos) a = a.substr(0,found);
 
-	return std::stoi(a);
+    int file_number = 0;
+    try {
+        file_number = std::stoi(a);
+    }
+    catch (const std::invalid_argument& ia) {
+//        std::cerr << "Invalid argument: " << ia.what() << '\n';
+    }
+
+	return file_number;
 }
 
 // returns -1 if no command is present in the file name
@@ -163,7 +172,18 @@ May need: export LD_LIBRARY_PATH=/usr/local/lib before running the program
 int main(int argc, char** argv)
 {
     int result = 0;
-	std::string training_samples_directory;
+    std::string training_samples_directory;
+
+#if 0
+    {
+        c_point_cloud plane_point_cloud;
+        generate_point_cloud_plane(plane_point_cloud);
+        std::string file_path = "C:\\Projects\\OWIArmCamera\\KinectImages\\plane.kin";
+        bool xyz_format = false;
+        c_kinect_image::write_file(file_path, plane_point_cloud, xyz_format);
+        return 0;
+    }
+#endif
 
 	if (argc == 1)
 	{
@@ -194,10 +214,9 @@ int main(int argc, char** argv)
 
 		std::string img_path =  training_samples_directory + "/" + *it;
         
-		c_kinect_image kinect_img;
         c_point_cloud point_cloud;
         
-        if (!kinect_img.read_file( img_path, point_cloud ))
+        if (!c_kinect_image::read_file( img_path, point_cloud ))
 		{
 			std::cout << "can't open image file: "  << *it << std::endl;
 			continue;
