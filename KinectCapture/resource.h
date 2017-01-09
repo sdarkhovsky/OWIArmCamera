@@ -7,6 +7,7 @@
 #define IDC_VIDEOVIEW                   1000
 #define IDC_STATUS                      1001
 #define IDC_BUTTON_SCREENSHOT           1002
+#define IDC_BUTTON_GO                   1002
 
 // Next default values for new objects
 // 

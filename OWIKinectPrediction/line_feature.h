@@ -18,7 +18,7 @@ namespace ais {
     class c_line_segment_feature : public c_line_feature {
     public:
         c_line_segment_feature() {};
-        c_vector3f ends[2];
+        Vector3f ends[2];
     };
 
     class c_line_boundary {

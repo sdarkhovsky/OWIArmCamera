@@ -57,15 +57,13 @@ private:
     double                  m_fFreq;
     INT64                   m_nNextStatusTime;
     DWORD                   m_nFramesSinceUpdate;
-    bool                    m_bSaveScreenshot;
-
-    CameraSpacePoint m_maxBox, m_minBox;
+    bool                    m_bGo;
 
     // Current Kinect
     IKinectSensor*          m_pKinectSensor;
     ICoordinateMapper*      m_pCoordinateMapper;
-	CameraSpacePoint*        m_pCameraSpacePoints;
-    DepthSpacePoint*        m_pDepthCoordinates;
+    CameraSpacePoint*       m_pCameraSpaceDepthFrameCoordinates;
+    ColorSpacePoint*        m_pColorSpaceDepthFrameCoordinates;
 
     // Frame reader
     IMultiSourceFrameReader*m_pMultiSourceFrameReader;
@@ -74,7 +72,6 @@ private:
     ImageRenderer*          m_pDrawCoordinateMapping;
     ID2D1Factory*           m_pD2DFactory;
     RGBQUAD*                m_pOutputRGBX; 
-    RGBQUAD*                m_pBackgroundRGBX; 
     RGBQUAD*                m_pColorRGBX;
 
     /// <summary>
@@ -130,8 +127,6 @@ private:
     /// <param name="lpszFilePath">full file path to output bitmap to</param>
     /// <returns>indicates success or failure</returns>
 
-    HRESULT                 SaveBitmapToFile(BYTE* pBitmapBits, LONG lWidth, LONG lHeight, WORD wBitsPerPixel, LPCWSTR lpszFilePath);
-
-	HRESULT                 SaveKinectDataToFile(int nDepthWidth, int nDepthHeight, int nColorWidth, int nColorHeight, LPCWSTR lpszFilePath);
+	HRESULT                 SaveKinectDataToFile(int nDepthWidth, int nDepthHeight, int nColorWidth, int nColorHeight, LPCWSTR lpszFilePath, bool insert_u_v);
 };
 

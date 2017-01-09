@@ -5,10 +5,12 @@
 
 namespace ais {
 
+    bool detect_plane_features(c_point_cloud& point_cloud);
+
     class c_plane_feature {
     public:
         c_line_boundary boundary;
-        c_vector3f normal;
+        Vector3f normal;
     };
 }
 #endif

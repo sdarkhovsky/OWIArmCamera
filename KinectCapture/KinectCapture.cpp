@@ -48,16 +48,15 @@ CKinectCapture::CKinectCapture() :
     m_nFramesSinceUpdate(0),
     m_fFreq(0),
     m_nNextStatusTime(0LL),
-    m_bSaveScreenshot(false),
+    m_bGo(false),
     m_pKinectSensor(NULL),
     m_pCoordinateMapper(NULL),
     m_pMultiSourceFrameReader(NULL),
-    m_pDepthCoordinates(NULL),
-	m_pCameraSpacePoints(NULL),
+    m_pCameraSpaceDepthFrameCoordinates(NULL),
+    m_pColorSpaceDepthFrameCoordinates(NULL),
     m_pD2DFactory(NULL),
     m_pDrawCoordinateMapping(NULL),
     m_pOutputRGBX(NULL),
-    m_pBackgroundRGBX(NULL),
     m_pColorRGBX(NULL)
 {
     LARGE_INTEGER qpf = {0};
@@ -65,31 +64,6 @@ CKinectCapture::CKinectCapture() :
     {
         m_fFreq = double(qpf.QuadPart);
     }
-
-    // create heap storage for composite image pixel data in RGBX format
-    m_pOutputRGBX = new RGBQUAD[cColorWidth * cColorHeight];
-
-    // create heap storage for background image pixel data in RGBX format
-    m_pBackgroundRGBX = new RGBQUAD[cColorWidth * cColorHeight];
-
-    // create heap storage for color pixel data in RGBX format
-    m_pColorRGBX = new RGBQUAD[cColorWidth * cColorHeight];
-
-    // create heap storage for the coorinate mapping from color to depth
-    m_pDepthCoordinates = new DepthSpacePoint[cColorWidth * cColorHeight];
-
-    // create heap storage for the coorinate mapping from color to space
-	m_pCameraSpacePoints = new CameraSpacePoint[cColorWidth * cColorHeight];
-
-//    m_maxBox = { 0.5,0.5,1.0 }; // in m
-//    m_minBox = { -0.5,-0.5, 0.0 }; // in m
-
-    m_maxBox = {  0.25,  0.5, 1.5 }; // in m
-    m_minBox = { -0.25, -0.5,  0 }; // in m
-
-//    m_maxBox = { 1000,  1000,1000 }; // in m
-//    m_minBox = { -1000, -1000, -1000 }; // in m
-
 }
   
 
@@ -111,29 +85,23 @@ CKinectCapture::~CKinectCapture()
         m_pOutputRGBX = NULL;
     }
 
-    if (m_pBackgroundRGBX)
-    {
-        delete [] m_pBackgroundRGBX;
-        m_pBackgroundRGBX = NULL;
-    }
-
     if (m_pColorRGBX)
     {
         delete [] m_pColorRGBX;
         m_pColorRGBX = NULL;
     }
 
-    if (m_pDepthCoordinates)
+    if (m_pCameraSpaceDepthFrameCoordinates)
     {
-        delete[] m_pDepthCoordinates;
-        m_pDepthCoordinates = NULL;
+        delete[] m_pCameraSpaceDepthFrameCoordinates;
+        m_pCameraSpaceDepthFrameCoordinates = NULL;
     }
 
-	if (m_pCameraSpacePoints)
-	{
-		delete[] m_pCameraSpacePoints;
-		m_pCameraSpacePoints = NULL;
-	}
+    if (m_pColorSpaceDepthFrameCoordinates)
+    {
+        delete[] m_pColorSpaceDepthFrameCoordinates;
+        m_pColorSpaceDepthFrameCoordinates = NULL;
+    }
 
     // clean up Direct2D
     SafeRelease(m_pD2DFactory);
@@ -160,17 +128,6 @@ CKinectCapture::~CKinectCapture()
 /// <param name="nCmdShow">whether to display minimized, maximized, or normally</param>
 int CKinectCapture::Run(HINSTANCE hInstance, int nCmdShow)
 {
-    if (m_pBackgroundRGBX)
-    {
-        const RGBQUAD c_green = {0, 255, 0}; 
-
-        // Fill in with a background colour of green if we can't load the background image
-        for (int i = 0 ; i < cColorWidth * cColorHeight ; ++i)
-        {
-            m_pBackgroundRGBX[i] = c_green;
-        }
-    }
-
     MSG       msg = {0};
     WNDCLASS  wc;
 
@@ -324,6 +281,16 @@ void CKinectCapture::Update()
             hr = pColorFrame->get_RawColorImageFormat(&imageFormat);
         }
 
+        m_pCameraSpaceDepthFrameCoordinates = new CameraSpacePoint[nDepthWidth * nDepthHeight];
+
+        m_pColorSpaceDepthFrameCoordinates = new ColorSpacePoint[nDepthWidth * nDepthHeight];
+
+        // create heap storage for composite image pixel data in RGBX format
+        m_pOutputRGBX = new RGBQUAD[nDepthWidth * nDepthHeight];
+
+        // create heap storage for color pixel data in RGBX format
+        m_pColorRGBX = new RGBQUAD[cColorWidth * cColorHeight];
+
         if (SUCCEEDED(hr))
         {
             if (imageFormat == ColorImageFormat_Bgra)
@@ -344,8 +311,27 @@ void CKinectCapture::Update()
 
         if (SUCCEEDED(hr))
         {
-            ProcessFrame(nDepthTime, pDepthBuffer, nDepthWidth, nDepthHeight, 
-                pColorBuffer, nColorWidth, nColorHeight);
+            ProcessFrame(nDepthTime, pDepthBuffer, nDepthWidth, nDepthHeight, pColorBuffer, nColorWidth, nColorHeight);
+        }
+
+        if (m_pCameraSpaceDepthFrameCoordinates) {
+            delete[] m_pCameraSpaceDepthFrameCoordinates;
+            m_pCameraSpaceDepthFrameCoordinates = NULL;
+        }
+
+        if (m_pColorSpaceDepthFrameCoordinates) {
+            delete[] m_pColorSpaceDepthFrameCoordinates;
+            m_pColorSpaceDepthFrameCoordinates = NULL;
+        }
+
+        if (m_pOutputRGBX) {
+            delete[] m_pOutputRGBX;
+            m_pOutputRGBX = NULL;
+        }
+
+        if (m_pColorRGBX) {
+            delete[] m_pColorRGBX;
+            m_pColorRGBX = NULL;
         }
 
         SafeRelease(pDepthFrameDescription);
@@ -413,7 +399,7 @@ LRESULT CALLBACK CKinectCapture::DlgProc(HWND hWnd, UINT message, WPARAM wParam,
             // Create and initialize a new Direct2D image renderer (take a look at ImageRenderer.h)
             // We'll use this to draw the data we receive from the Kinect to the screen
             m_pDrawCoordinateMapping = new ImageRenderer(); 
-            HRESULT hr = m_pDrawCoordinateMapping->Initialize(GetDlgItem(m_hWnd, IDC_VIDEOVIEW), m_pD2DFactory, cColorWidth, cColorHeight, cColorWidth * sizeof(RGBQUAD)); 
+            HRESULT hr = m_pDrawCoordinateMapping->Initialize(GetDlgItem(m_hWnd, IDC_VIDEOVIEW), m_pD2DFactory, cDepthWidth, cDepthHeight, cDepthWidth * sizeof(RGBQUAD));
             if (FAILED(hr))
             {
                 SetStatusMessage(L"Failed to initialize the Direct2D draw device.", 10000, true);
@@ -437,9 +423,9 @@ LRESULT CALLBACK CKinectCapture::DlgProc(HWND hWnd, UINT message, WPARAM wParam,
         // Handle button press
         case WM_COMMAND:
             // If it was for the screenshot control and a button clicked event, save a screenshot next frame 
-            if (IDC_BUTTON_SCREENSHOT == LOWORD(wParam) && BN_CLICKED == HIWORD(wParam))
+            if (IDC_BUTTON_GO == LOWORD(wParam) && BN_CLICKED == HIWORD(wParam))
             {
-                m_bSaveScreenshot = true;
+                m_bGo = true;
             }
             break;
     }
@@ -538,80 +524,64 @@ void CKinectCapture::ProcessFrame(INT64 nTime,
     }
 
     // Make sure we've received valid data
-    if (m_pCoordinateMapper && m_pDepthCoordinates && m_pCameraSpacePoints && m_pOutputRGBX &&
+    if (m_pCoordinateMapper && m_pCameraSpaceDepthFrameCoordinates && m_pColorSpaceDepthFrameCoordinates && m_pOutputRGBX && m_pColorRGBX &&
         pDepthBuffer && (nDepthWidth == cDepthWidth) && (nDepthHeight == cDepthHeight) && 
         pColorBuffer && (nColorWidth == cColorWidth) && (nColorHeight == cColorHeight))
     {
-        HRESULT hr = m_pCoordinateMapper->MapColorFrameToDepthSpace(nDepthWidth * nDepthHeight, (UINT16*)pDepthBuffer, nColorWidth * nColorHeight, m_pDepthCoordinates);
+        hr = m_pCoordinateMapper->MapDepthFrameToCameraSpace(nDepthWidth * nDepthHeight, (UINT16*)pDepthBuffer, nDepthWidth * nDepthHeight, m_pCameraSpaceDepthFrameCoordinates);
         if (!SUCCEEDED(hr)) return;
 
-		hr = m_pCoordinateMapper->MapColorFrameToCameraSpace(nDepthWidth * nDepthHeight, pDepthBuffer, nColorWidth * nColorHeight, m_pCameraSpacePoints);
+        hr = m_pCoordinateMapper->MapDepthFrameToColorSpace(nDepthWidth * nDepthHeight, (UINT16*)pDepthBuffer, nDepthWidth * nDepthHeight, m_pColorSpaceDepthFrameCoordinates);
         if (!SUCCEEDED(hr)) return;
+
+        const RGBQUAD c_green = { 0, 255, 0 };
 
         // loop over output pixels
-        for (int colorIndex = 0; colorIndex < (nColorWidth*nColorHeight); ++colorIndex)
+        for (int depthIndex = 0; depthIndex < (nDepthWidth*nDepthHeight); ++depthIndex)
         {
             // default setting source to copy from the background pixel
-            const RGBQUAD* pSrc = m_pBackgroundRGBX + colorIndex;
+            const RGBQUAD* pSrc = &c_green;
 
-            DepthSpacePoint dp = m_pDepthCoordinates[colorIndex];
-            CameraSpacePoint cp = m_pCameraSpacePoints[colorIndex];
+            CameraSpacePoint cp = m_pCameraSpaceDepthFrameCoordinates[depthIndex];
 
-            // Values that are negative infinity means it is an invalid color to depth mapping so we
-            // skip processing for this pixel
-            if (cp.X != -std::numeric_limits<float>::infinity() && cp.Y != -std::numeric_limits<float>::infinity() && cp.Z != -std::numeric_limits<float>::infinity())
+            ColorSpacePoint clrp = m_pColorSpaceDepthFrameCoordinates[depthIndex];
+            // Values that are negative infinity means it is an invalid color to depth mapping so we skip processing for this pixel
+            int colorX = static_cast<int>(clrp.X + 0.5f);
+            int colorY = static_cast<int>(clrp.Y + 0.5f);
+
+            if (cp.X != -std::numeric_limits<float>::infinity() && cp.Y != -std::numeric_limits<float>::infinity() && cp.Z != -std::numeric_limits<float>::infinity() 
+                && clrp.X != -std::numeric_limits<float>::infinity() && clrp.Y != -std::numeric_limits<float>::infinity()
+                && colorX >= 0 && colorY >= 0 && colorX < nColorWidth && colorY < nColorHeight
+                )
             {
-                int depthX = static_cast<int>(dp.X + 0.5f);
-                int depthY = static_cast<int>(dp.Y + 0.5f);
-
-                if ((depthX >= 0 && depthX < nDepthWidth) && (depthY >= 0 && depthY < nDepthHeight)
-                    && cp.X > m_minBox.X && cp.X < m_maxBox.X && cp.Y > m_minBox.Y && cp.Y < m_maxBox.Y && cp.Z > m_minBox.Z && cp.Z < m_maxBox.Z
-                    ) {
-                        // set source for copy to the color pixel
-                        pSrc = m_pColorRGBX + colorIndex;
-                }
+                // set source for copy to the color pixel
+                int colorIndex = colorY * nColorWidth + colorX;
+                pSrc = m_pColorRGBX + colorIndex;
             }
 
             // write output
-            m_pOutputRGBX[colorIndex] = *pSrc;
+            m_pOutputRGBX[depthIndex] = *pSrc;
         }
 
         // Draw the data with Direct2D
-        m_pDrawCoordinateMapping->Draw(reinterpret_cast<BYTE*>(m_pOutputRGBX), cColorWidth * cColorHeight * sizeof(RGBQUAD));
+        m_pDrawCoordinateMapping->Draw(reinterpret_cast<BYTE*>(m_pOutputRGBX), cDepthWidth * cDepthHeight * sizeof(RGBQUAD));
 
-		if (wcslen(m_pCaptureFilePath)>0)
+        if (wcslen(m_pCaptureFilePath)>0)
 		{
-			hr = SaveKinectDataToFile(nDepthWidth, nDepthHeight, nColorWidth, nColorHeight, m_pCaptureFilePath);
+            std::wstring file_path;
+
+            bool insert_u_v = false;
+            file_path = m_pCaptureFilePath;
+            file_path += L".xyz";
+			hr = SaveKinectDataToFile(nDepthWidth, nDepthHeight, nColorWidth, nColorHeight, file_path.c_str(), insert_u_v);
+
+            insert_u_v = true;
+            file_path = m_pCaptureFilePath;
+            file_path += L".kin";
+            hr = SaveKinectDataToFile(nDepthWidth, nDepthHeight, nColorWidth, nColorHeight, file_path.c_str(), insert_u_v);
             PostMessage(m_hWnd, WM_CLOSE, 0, 0);
             return;
 		}
-
-        if (m_bSaveScreenshot)
-        {
-            WCHAR szScreenshotPath[MAX_PATH];
-
-            // Retrieve the path to My Photos
-            GetScreenshotFileName(szScreenshotPath, _countof(szScreenshotPath));
-
-            // Write out the bitmap to disk
-            hr = SaveBitmapToFile(reinterpret_cast<BYTE*>(m_pOutputRGBX), nColorWidth, nColorHeight, sizeof(RGBQUAD) * 8, szScreenshotPath);
-
-            WCHAR szStatusMessage[64 + MAX_PATH];
-            if (SUCCEEDED(hr))
-            {
-                // Set the status bar to show where the screenshot was saved
-                StringCchPrintf(szStatusMessage, _countof(szStatusMessage), L"Screenshot saved to %s", szScreenshotPath);
-            }
-            else
-            {
-                StringCchPrintf(szStatusMessage, _countof(szStatusMessage), L"Failed to write screenshot to %s", szScreenshotPath);
-            }
-
-            SetStatusMessage(szStatusMessage, 5000, true);
-
-            // toggle off so we don't save a screenshot again next frame
-            m_bSaveScreenshot = false;
-        }
     }
 }
 
@@ -667,83 +637,10 @@ HRESULT CKinectCapture::GetScreenshotFileName(_Out_writes_z_(nFilePathSize) LPWS
     return hr;
 }
 
-/// <summary>
-/// Save passed in image data to disk as a bitmap
-/// </summary>
-/// <param name="pBitmapBits">image data to save</param>
-/// <param name="lWidth">width (in pixels) of input image data</param>
-/// <param name="lHeight">height (in pixels) of input image data</param>
-/// <param name="wBitsPerPixel">bits per pixel of image data</param>
-/// <param name="lpszFilePath">full file path to output bitmap to</param>
-/// <returns>indicates success or failure</returns>
-HRESULT CKinectCapture::SaveBitmapToFile(BYTE* pBitmapBits, LONG lWidth, LONG lHeight, WORD wBitsPerPixel, LPCWSTR lpszFilePath)
-{
-    DWORD dwByteCount = lWidth * lHeight * (wBitsPerPixel / 8);
-
-    BITMAPINFOHEADER bmpInfoHeader = {0};
-
-    bmpInfoHeader.biSize        = sizeof(BITMAPINFOHEADER);  // Size of the header
-    bmpInfoHeader.biBitCount    = wBitsPerPixel;             // Bit count
-    bmpInfoHeader.biCompression = BI_RGB;                    // Standard RGB, no compression
-    bmpInfoHeader.biWidth       = lWidth;                    // Width in pixels
-    bmpInfoHeader.biHeight      = -lHeight;                  // Height in pixels, negative indicates it's stored right-side-up
-    bmpInfoHeader.biPlanes      = 1;                         // Default
-    bmpInfoHeader.biSizeImage   = dwByteCount;               // Image size in bytes
-
-    BITMAPFILEHEADER bfh = {0};
-
-    bfh.bfType    = 0x4D42;                                           // 'M''B', indicates bitmap
-    bfh.bfOffBits = bmpInfoHeader.biSize + sizeof(BITMAPFILEHEADER);  // Offset to the start of pixel data
-    bfh.bfSize    = bfh.bfOffBits + bmpInfoHeader.biSizeImage;        // Size of image + headers
-
-    // Create the file on disk to write to
-    HANDLE hFile = CreateFileW(lpszFilePath, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
-
-    // Return if error opening file
-    if (NULL == hFile) 
-    {
-        return E_ACCESSDENIED;
-    }
-
-    DWORD dwBytesWritten = 0;
-    
-    // Write the bitmap file header
-    if (!WriteFile(hFile, &bfh, sizeof(bfh), &dwBytesWritten, NULL))
-    {
-        CloseHandle(hFile);
-        return E_FAIL;
-    }
-    
-    // Write the bitmap info header
-    if (!WriteFile(hFile, &bmpInfoHeader, sizeof(bmpInfoHeader), &dwBytesWritten, NULL))
-    {
-        CloseHandle(hFile);
-        return E_FAIL;
-    }
-    
-    // Write the RGB Data
-    if (!WriteFile(hFile, pBitmapBits, bmpInfoHeader.biSizeImage, &dwBytesWritten, NULL))
-    {
-        CloseHandle(hFile);
-        return E_FAIL;
-    }    
-
-    // Close the file
-    CloseHandle(hFile);
-    return S_OK;
-}
-
-/// <summary>
-/// Save the space points to disk in the xyz format
-/// </summary>
-/// <param name="pBitmapBits">image data to save</param>
-/// <param name="lWidth">width (in pixels) of input image data</param>
-/// <param name="lHeight">height (in pixels) of input image data</param>
-/// <param name="wBitsPerPixel">bits per pixel of image data</param>
-/// <param name="lpszFilePath">full file path to output bitmap to</param>
-/// <returns>indicates success or failure</returns>
 /*  
 See http://www.pointcloudviz.com/desktop/help/Using_SupportedFormats.html for xyz with color format
+See bool c_kinect_image::read_file(std::string file_path, c_point_cloud& point_cloud) for the internal point cloud file format
+
 See KinectFusionExplorer - D2D\KinectFusionExplorer.cpp from Kinect API for examples
 of how to store the point cloud or mesh data in the Stl, Obj and Ply formats:
 WriteBinarySTLMeshFile, WriteAsciiObjMeshFile, WriteAsciiPlyMeshFile
@@ -751,9 +648,8 @@ WriteBinarySTLMeshFile, WriteAsciiObjMeshFile, WriteAsciiPlyMeshFile
 Point Cloud library includes cloud viewer using the VTK for rendering.
 In turn, the VTK uses OpenGL 1.1 and OpenGL2.0 for rendering.
 */
-HRESULT CKinectCapture::SaveKinectDataToFile(int nDepthWidth, int nDepthHeight, int nColorWidth, int nColorHeight, LPCWSTR lpszFilePath) {
-    std::string s;
-    bool bStoreXYZOnly = false;
+HRESULT CKinectCapture::SaveKinectDataToFile(int nDepthWidth, int nDepthHeight, int nColorWidth, int nColorHeight, LPCWSTR lpszFilePath, bool insert_u_v) {
+    bool bStoreColor = true;
 	HANDLE hFile = CreateFileW(lpszFilePath, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 
 	// Return if error opening file
@@ -764,37 +660,41 @@ HRESULT CKinectCapture::SaveKinectDataToFile(int nDepthWidth, int nDepthHeight, 
 
 	DWORD dwBytesWritten = 0;
 
-	for (int colorIndex = 0; colorIndex < (nColorWidth*nColorHeight); ++colorIndex)
+    for (int depthIndex = 0; depthIndex < (nDepthWidth*nDepthHeight); ++depthIndex)
 	{
-        const RGBQUAD* pClr = m_pColorRGBX + colorIndex;
+        CameraSpacePoint cp = m_pCameraSpaceDepthFrameCoordinates[depthIndex];
 
-        DepthSpacePoint dp = m_pDepthCoordinates[colorIndex];
-		CameraSpacePoint cp = m_pCameraSpacePoints[colorIndex];
+        ColorSpacePoint clrp = m_pColorSpaceDepthFrameCoordinates[depthIndex];
+        // Values that are negative infinity means it is an invalid color to depth mapping so we skip processing for this pixel
+        int colorX = static_cast<int>(clrp.X + 0.5f);
+        int colorY = static_cast<int>(clrp.Y + 0.5f);
 
-		// Values that are negative infinity means it is an invalid color to depth mapping so we
-		// skip processing for this pixel
-		if (cp.X != -std::numeric_limits<float>::infinity() && cp.Y != -std::numeric_limits<float>::infinity() && cp.Z != -std::numeric_limits<float>::infinity())
+        if (cp.X != -std::numeric_limits<float>::infinity() && cp.Y != -std::numeric_limits<float>::infinity() && cp.Z != -std::numeric_limits<float>::infinity()
+            && clrp.X != -std::numeric_limits<float>::infinity() && clrp.Y != -std::numeric_limits<float>::infinity()
+            && colorX >= 0 && colorY >= 0 && colorX < nColorWidth && colorY < nColorHeight
+            )
 		{
-            int depthX = static_cast<int>(dp.X + 0.5f);
-            int depthY = static_cast<int>(dp.Y + 0.5f);
+            std::string s;
 
-            if ((depthX >= 0 && depthX < nDepthWidth) && (depthY >= 0 && depthY < nDepthHeight)
-                && cp.X > m_minBox.X && cp.X < m_maxBox.X && cp.Y > m_minBox.Y && cp.Y < m_maxBox.Y && cp.Z > m_minBox.Z && cp.Z < m_maxBox.Z
-                ) {
-                if (bStoreXYZOnly) {
-                    s = std::to_string(cp.X) + " " + std::to_string(cp.Y) + " " + std::to_string(cp.Z) + "\n";
-                }
-                else {
-                    s = std::to_string(cp.X) + " " + std::to_string(cp.Y) + " " + std::to_string(cp.Z) + " " +
-                        std::to_string(pClr->rgbRed) + " " + std::to_string(pClr->rgbGreen) + " " + std::to_string(pClr->rgbBlue) +
-                        "\n";
-                }
+            if (insert_u_v) {
+                int u = depthIndex / nDepthWidth;
+                int v = depthIndex % nDepthWidth;
+                s = std::to_string(u) + " " + std::to_string(v) + " ";
+            }
 
-                if (!WriteFile(hFile, s.c_str(), s.size(), &dwBytesWritten, NULL))
-                {
-                    CloseHandle(hFile);
-                    return E_FAIL;
-                }
+            s = s + std::to_string(cp.X) + " " + std::to_string(cp.Y) + " " + std::to_string(cp.Z);
+            if (bStoreColor) {
+                int colorIndex = colorY * nColorWidth + colorX;
+                const RGBQUAD* pSrc = m_pColorRGBX + colorIndex;
+                s = s + " " + std::to_string(pSrc->rgbRed) + " " + std::to_string(pSrc->rgbGreen) + " " + std::to_string(pSrc->rgbBlue);
+            }
+
+            s = s + "\n";
+
+            if (!WriteFile(hFile, s.c_str(), s.size(), &dwBytesWritten, NULL))
+            {
+                CloseHandle(hFile);
+                return E_FAIL;
             }
 		}
 	}

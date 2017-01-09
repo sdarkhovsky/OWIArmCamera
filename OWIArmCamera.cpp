@@ -59,7 +59,7 @@ int main(int argc, char** argv)
 		switch(capture_src) {
 			case KINECT_DEPTH_CAPTURE_SRC:
 			{
-				capture_file_name = "img" + std::to_string(i) + cmdSuffix + ".xyz";
+				capture_file_name = "img" + std::to_string(i) + cmdSuffix;
 	            message_header = KINECT_CAPTURE_MESSAGE;
 				std::string send_message = message_header + capture_file_name;
 				socket_send_recv(send_message.c_str(), send_message.size());
@@ -68,7 +68,7 @@ int main(int argc, char** argv)
 			case CAMERA_CAPTURE_SRC:
 			default:
 			{
-				capture_file_name = "img" + std::to_string(i) + cmdSuffix + ".png";
+				capture_file_name = "img" + std::to_string(i) + cmdSuffix;
 				cmd = "./CameraCapture/CameraCapture 1 ./TrainingSamples/" + capture_file_name;
 				execute_command(cmd);
 			}

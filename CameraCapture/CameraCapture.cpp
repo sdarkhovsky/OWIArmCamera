@@ -28,7 +28,9 @@ int main(int argc, char** argv)
 
 	// Settings
 	int camera_dev = atoi(argv[1]);
-    char* img_path = argv[2];
+    std::string img_path(argv[2]);
+    img_path += ".png";
+    
 	char* window_name = argv[0];
 
     cv::VideoCapture cap(camera_dev); // open the camera
@@ -63,7 +65,7 @@ int main(int argc, char** argv)
       {
         cv::imshow(window_name, frame);
 
-        if (!cv::imwrite(img_path, frame)) {
+        if (!cv::imwrite(img_path.c_str(), frame)) {
         	printf("error\n");
 	      	result = 1;
         }
