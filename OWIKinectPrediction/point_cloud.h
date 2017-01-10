@@ -20,6 +20,7 @@ typedef struct _c_point_cloud_point
 
 class c_point_cloud {
 public:
+    void filter_by_z(c_point_cloud& filtered_point_cloud, float max_z);
     std::vector< std::vector<c_point_cloud_point>> points;
 };
 
