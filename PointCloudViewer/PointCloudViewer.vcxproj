@@ -21,7 +21,7 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{68CD70E9-37A8-470E-A7B7-9DAC16B7B4F6}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>OpenGLSample</RootNamespace>
+    <RootNamespace>PointCloudViewer</RootNamespace>
     <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
     <ProjectName>PointCloudViewer</ProjectName>
   </PropertyGroup>
