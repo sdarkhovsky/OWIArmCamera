@@ -7,10 +7,16 @@
 * the X Window System sample
 */
 #include <windows.h> 
+#include <windowsx.h>
+
 #include <GL/gl.h> 
 #include <GL/glu.h> 
 
 #include <vector>
+
+#include <iostream>
+#include <fstream>
+#include <string>
 
 /* Windows globals, defines, and prototypes */
 CHAR szAppName[] = "Win OpenGL";
@@ -32,6 +38,7 @@ BOOL bSetupPixelFormat(HDC);
 /* OpenGL globals, defines, and prototypes */
 GLfloat latitude, longitude, latinc, longinc;
 GLdouble radius;
+GLfloat scaleX, scaleY, scaleZ;
 
 #define GLOBE    1 
 #define CYLINDER 2 
@@ -42,6 +49,7 @@ GLvoid resize(GLsizei, GLsizei);
 GLvoid initializeGL(GLsizei, GLsizei);
 GLvoid drawScene(GLvoid);
 void polarView(GLdouble, GLdouble, GLdouble, GLdouble);
+
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
@@ -117,6 +125,9 @@ LONG WINAPI MainWndProc(
     PAINTSTRUCT    ps;
     RECT rect;
 
+    int xPos, yPos;
+    int fwKeys, zDelta, mult;
+
     switch (uMsg) {
 
     case WM_CREATE:
@@ -163,18 +174,59 @@ LONG WINAPI MainWndProc(
     case WM_KEYDOWN:
         switch (wParam) {
         case VK_LEFT:
-            longinc += 0.25F;
+            longinc += 0.F;
             break;
         case VK_RIGHT:
-            longinc -= 0.25F;
+            longinc -= 0.F;
             break;
         case VK_UP:
-            latinc += 0.25F;
+            latinc += 0.F;
             break;
         case VK_DOWN:
-            latinc -= 0.25F;
+            latinc -= 0.F;
             break;
         }
+
+    case WM_RBUTTONDOWN:
+        xPos = GET_X_LPARAM(lParam);
+        yPos = GET_Y_LPARAM(lParam);
+        SetCapture(hWnd);
+
+        return 0;
+
+    case WM_RBUTTONUP:
+        ReleaseCapture();
+        return 0;
+
+    case WM_LBUTTONDOWN:
+        xPos = GET_X_LPARAM(lParam);
+        yPos = GET_Y_LPARAM(lParam);
+        SetCapture(hWnd);
+
+        return 0;
+
+    case WM_LBUTTONUP:
+        ReleaseCapture();
+        return 0;
+
+    case WM_MOUSEMOVE:
+        xPos = GET_X_LPARAM(lParam);
+        yPos = GET_Y_LPARAM(lParam);
+        fwKeys = GET_KEYSTATE_WPARAM(wParam);
+        if (fwKeys & MK_LBUTTON)
+        {
+        }
+        return 0;
+        
+    case WM_MOUSEWHEEL:
+        fwKeys = GET_KEYSTATE_WPARAM(wParam);
+        zDelta = GET_WHEEL_DELTA_WPARAM(wParam);
+        xPos = GET_X_LPARAM(lParam);
+        yPos = GET_Y_LPARAM(lParam);
+        mult = zDelta / 120;
+        scaleX += mult*0.1f;
+        scaleY += mult *0.1f;
+        scaleZ += mult*0.1f;
 
     default:
         lRet = DefWindowProc(hWnd, uMsg, wParam, lParam);
@@ -265,20 +317,26 @@ GLvoid createObjects()
 
     glNewList(POINT_CLOUD, GL_COMPILE);
     glBegin(GL_POINTS);
-    size_t u, v;
-    size_t u_max = 1000;
-    size_t v_max = 1000;
-    float step_u = 0.01f;
-    float step_v = 0.01f;
-    for (u = 0; u < u_max; u++) {
-        for (v = 0; v < v_max; v++) {
-            glColor3ub(255, 0, 0);
-            float x = u*step_u;
-            float y = v*step_v;
-            float z = x*y;
-            glVertex3d(x, y, z);
-        }
+
+    // read points from xyz file
+    std::string file_path = "C:\\Projects\\OWIArmCamera\\KinectImages\\more\\img0.xyz";
+    std::ifstream infile;
+    infile.open(file_path, std::ifstream::in);
+    while (!infile.eof())
+    {
+        float x, y, z;
+        float r, g, b; // 0-255 range
+        infile >> x;
+        infile >> y;
+        infile >> z;
+        infile >> r;
+        infile >> g;
+        infile >> b;
+        glColor3ub(r, g, b);
+        glVertex3d(x, y, z);
     }
+    infile.close();
+
     glEnd();
     glEndList();
 }
@@ -293,6 +351,9 @@ GLvoid initializeGL(GLsizei width, GLsizei height)
 
     glEnable(GL_DEPTH_TEST);
 
+    // white background
+    glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+
     glMatrixMode(GL_PROJECTION);
     aspect = (GLfloat)width / height;
     gluPerspective(45.0, aspect, 3.0, 7.0);
@@ -305,8 +366,12 @@ GLvoid initializeGL(GLsizei width, GLsizei height)
 
     latitude = 0.0F;
     longitude = 0.0F;
-    latinc = 6.0F;
-    longinc = 2.5F;
+    latinc = 0.0F;
+    longinc = 0.0F;
+
+    scaleX = 1.0f;
+    scaleY = 1.0f;
+    scaleZ = 1.0f;
 
     createObjects();
 }
@@ -321,6 +386,11 @@ void polarView(GLdouble radius, GLdouble twist, GLdouble latitude,
 
 }
 
+GLvoid zoomView(GLvoid)
+{
+    glScalef(scaleX, scaleY, scaleZ); // scale the matrix
+}
+
 GLvoid drawScene(GLvoid)
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -332,6 +402,7 @@ GLvoid drawScene(GLvoid)
     longitude += longinc;
 
     polarView(radius, 0, latitude, longitude);
+    zoomView();
 
     glIndexi(BLUE_INDEX);
     glCallList(POINT_CLOUD);
