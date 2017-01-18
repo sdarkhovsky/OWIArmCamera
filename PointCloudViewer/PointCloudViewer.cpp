@@ -319,7 +319,7 @@ GLvoid createObjects()
     glBegin(GL_POINTS);
 
     // read points from xyz file
-    std::string file_path = "C:\\Projects\\OWIArmCamera\\KinectImages\\more\\img0.xyz";
+    std::string file_path = "C:\\Projects\\OWIArmCamera\\KinectImages\\detected_edges_point_cloud.xyz";
     std::ifstream infile;
     infile.open(file_path, std::ifstream::in);
     while (!infile.eof())

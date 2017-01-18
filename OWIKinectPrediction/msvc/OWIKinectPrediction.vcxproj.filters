@@ -36,6 +36,9 @@
     <ClCompile Include="..\point_cloud.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\edge_feature.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\ais.h">
@@ -57,6 +60,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\typedef.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\edge_feature.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

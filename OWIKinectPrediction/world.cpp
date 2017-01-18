@@ -1,4 +1,5 @@
 #include "world.h"
+#include "edge_feature.h"
 #include "plane_feature.h"
 #include "kinect_image.h"
 
@@ -16,25 +17,26 @@ c_world_part_state::c_world_part_state(c_point_cloud& _point_cloud, c_world_time
 }
 
 c_world_part::c_world_part(c_point_cloud& point_cloud, c_world_time& world_time) {
-    vector < vector <bool>> plane_regions_bitmap;
-    bool result = detect_plane_features(point_cloud, plane_regions_bitmap);
+
+    vector < vector <bool>> edges_bitmap;
+    bool result = detect_edge_features(point_cloud, edges_bitmap);
     
 #if 1
     {
-        std::string file_path = "C:\\Projects\\OWIArmCamera\\KinectImages\\detected_planes_point_cloud.xyz";
+        std::string file_path = "C:\\Projects\\OWIArmCamera\\KinectImages\\detected_edges_point_cloud.xyz";
 
-        c_point_cloud detected_planes_point_cloud = point_cloud;
+        c_point_cloud detected_edges_point_cloud = point_cloud;
         size_t u, v;
-        for (u = 0; u < detected_planes_point_cloud.points.size(); u++) {
-            for (v = 0; v < detected_planes_point_cloud.points[u].size(); v++) {
-                if (plane_regions_bitmap[u][v]) {
-                    detected_planes_point_cloud.points[u][v].Clr = Vector3f(250, 0, 0);
+        for (u = 0; u < detected_edges_point_cloud.points.size(); u++) {
+            for (v = 0; v < detected_edges_point_cloud.points[u].size(); v++) {
+                if (edges_bitmap[u][v]) {
+                    detected_edges_point_cloud.points[u][v].Clr = Vector3f(250, 0, 0);
                 }
             }
         }
         bool xyz_format = true;
         c_point_cloud filtered_point_cloud;
-        detected_planes_point_cloud.filter_by_z(filtered_point_cloud, 2.0f);
+        detected_edges_point_cloud.filter_by_z(filtered_point_cloud, 2.0f);
         c_kinect_image::write_file(file_path, filtered_point_cloud, xyz_format);
     }
 #endif

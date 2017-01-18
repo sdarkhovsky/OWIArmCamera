@@ -87,6 +87,12 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Console</SubSystem>
     </Link>
+    <PostBuildEvent>
+      <Command>copy "$(OutDir)$(TargetName)$(TargetExt)" "$(OutDir)..\..\..\$(TargetName)$(TargetExt)" </Command>
+    </PostBuildEvent>
+    <PostBuildEvent>
+      <Message>Copy files</Message>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -103,6 +109,12 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
+    <PostBuildEvent>
+      <Command>copy "$(OutDir)$(TargetName)$(TargetExt)" "$(OutDir)..\..\..\$(TargetName)$(TargetExt)" </Command>
+    </PostBuildEvent>
+    <PostBuildEvent>
+      <Message>Copy files</Message>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -112,6 +124,12 @@
     <Link>
       <SubSystem>Console</SubSystem>
     </Link>
+    <PostBuildEvent>
+      <Command>copy "$(OutDir)$(TargetName)$(TargetExt)" "$(OutDir)..\..\..\$(TargetName)$(TargetExt)" </Command>
+    </PostBuildEvent>
+    <PostBuildEvent>
+      <Message>Copy files</Message>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -121,10 +139,17 @@
     <Link>
       <SubSystem>Console</SubSystem>
     </Link>
+    <PostBuildEvent>
+      <Command>copy "$(OutDir)$(TargetName)$(TargetExt)" "$(OutDir)..\..\..\$(TargetName)$(TargetExt)" </Command>
+    </PostBuildEvent>
+    <PostBuildEvent>
+      <Message>Copy files</Message>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\joint_commands.cpp" />
     <ClCompile Include="..\ais.cpp" />
+    <ClCompile Include="..\edge_feature.cpp" />
     <ClCompile Include="..\plane_feature.cpp" />
     <ClCompile Include="..\kinect_image.cpp" />
     <ClCompile Include="..\OWIKinectPrediction.cpp" />
@@ -133,6 +158,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\ais.h" />
+    <ClInclude Include="..\edge_feature.h" />
     <ClInclude Include="..\kinect_image.h" />
     <ClInclude Include="..\point_cloud.h" />
     <ClInclude Include="..\typedef.h" />
