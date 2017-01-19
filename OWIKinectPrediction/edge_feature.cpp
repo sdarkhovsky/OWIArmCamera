@@ -13,7 +13,7 @@ namespace ais {
             return false;
         size_t num_point_cloud_cols = point_cloud.points[0].size();
 
-        int nbhd_radius[2] = { 1, 4 };
+        int nbhd_radius[2] = { 1, 2 };
         int total_nbhd_radius = nbhd_radius[0] + nbhd_radius[1];
 
         edges_bitmap.clear();
@@ -27,18 +27,18 @@ namespace ais {
             for (v = total_nbhd_radius; v < num_point_cloud_cols - total_nbhd_radius; v++) {
 
                 Vector3f mass_center[2];
-                size_t num_points[2] = { 0,0 };
+                size_t num_points[2];
 
                 for (j = 0; j <= 1; j++) {
                     mass_center[j] = Vector3f::Zero();
+                    num_points[j] = 0;
                 }
 
-                bool found_undefined_pnts = false;
                 for (u1 = u - total_nbhd_radius; u1 <= u + total_nbhd_radius; u1++) {
                     for (v1 = v - total_nbhd_radius; v1 <= v + total_nbhd_radius; v1++) {
+
                         if (point_cloud.points[u1][v1].X == Vector3f::Zero()) {
-                            found_undefined_pnts = true;
-                            break;
+                            continue;
                         }
 
                         if (u1 >= u - nbhd_radius[0] && u1 <= u + nbhd_radius[0] && v1 >= v - nbhd_radius[0] && v1 <= v + nbhd_radius[0]) {
@@ -47,14 +47,13 @@ namespace ais {
                         else {
                             j = 1;
                         }
+
                         mass_center[j] += point_cloud.points[u1][v1].X;
                         num_points[j]++;
                     }
-                    if (found_undefined_pnts)
-                        break;
                 }
 
-                if (found_undefined_pnts)
+                if (num_points[0] == 0 || num_points[1] == 0)
                     continue;
 
                 for (j = 0; j <= 1; j++) {
@@ -69,18 +68,21 @@ namespace ais {
                 size_t num_pnts = 0;
                 for (u1 = u - total_nbhd_radius; u1 <= u + total_nbhd_radius; u1++) {
                     for (v1 = v - total_nbhd_radius; v1 <= v + total_nbhd_radius; v1++) {
-                        if (u1 != u && v1 != u) {
-                            dist_to_tangent_plane = edge_direction.dot(point_cloud.points[u][v].X - point_cloud.points[u1][v1].X);
-                            if (dist_to_tangent_plane > max_dist_to_tangent_plane)
-                                max_dist_to_tangent_plane = dist_to_tangent_plane;
-                            sum_dist_to_tangent_plane += dist_to_tangent_plane;
-                            num_pnts++;
+
+                        if (point_cloud.points[u1][v1].X == Vector3f::Zero() || (u1 == u && v1 == v)) {
+                            continue;
                         }
+
+                        dist_to_tangent_plane = edge_direction.dot(point_cloud.points[u][v].X - point_cloud.points[u1][v1].X);
+                        if (dist_to_tangent_plane > max_dist_to_tangent_plane)
+                            max_dist_to_tangent_plane = dist_to_tangent_plane;
+                        sum_dist_to_tangent_plane += dist_to_tangent_plane;
+                        num_pnts++;
                     }
                 }
                 float ratio = sum_dist_to_tangent_plane / num_pnts;
                 ratio /= max_dist_to_tangent_plane;
-                if (ratio > 0.25f) {
+                if (ratio > 0.4f) {
                     edges_bitmap[u][v] = true;
                 }
             }

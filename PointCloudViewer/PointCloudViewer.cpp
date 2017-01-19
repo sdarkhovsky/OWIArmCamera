@@ -8,12 +8,14 @@
 */
 #include <windows.h> 
 #include <windowsx.h>
+#include <shellapi.h>
+
+#include <stdlib.h>
 
 #include <GL/gl.h> 
 #include <GL/glu.h> 
 
 #include <vector>
-
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -36,25 +38,65 @@ LONG WINAPI MainWndProc(HWND, UINT, WPARAM, LPARAM);
 BOOL bSetupPixelFormat(HDC);
 
 /* OpenGL globals, defines, and prototypes */
-GLfloat latitude, longitude, latinc, longinc;
 GLdouble radius;
 GLfloat scaleX, scaleY, scaleZ;
 
-#define GLOBE    1 
-#define CYLINDER 2 
-#define CONE     3 
-#define POINT_CLOUD 4
+#define POINT_CLOUD 1
 
 GLvoid resize(GLsizei, GLsizei);
 GLvoid initializeGL(GLsizei, GLsizei);
 GLvoid drawScene(GLvoid);
 void polarView(GLdouble, GLdouble, GLdouble, GLdouble);
 
+using namespace std;
+
+string point_cloud_file_path;
+
+bool get_command_line_options(vector< string >& arg_list) {
+    int i;
+    // requests parameters to be passed in pairs
+    if (arg_list.size() % 2)
+        return false;
+
+    for (i = 0; i < arg_list.size(); i = i + 2) {
+        if (arg_list[i] == "-p") {
+            point_cloud_file_path = arg_list[i + 1];
+        }
+    }
+
+    return true;
+}
+
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
     MSG        msg;
     WNDCLASS   wndclass;
+
+    LPWSTR *szArglist;
+    int nArgs;
+    int i;
+
+    vector< string > arg_list;
+
+    szArglist = CommandLineToArgvW(GetCommandLineW(), &nArgs);
+    if (NULL == szArglist) return 0;
+    // skip the first argument, which is the full path of the executable
+    for (i = 1; i < nArgs; i++) {
+        size_t buf_len = wcslen(szArglist[i])+1;  // with the null terminator
+        char* buf = (char*)calloc(buf_len+1, 1);
+        if (!buf) return 0;
+        size_t ret_len;
+        errno_t ret = wcstombs_s(&ret_len, buf, buf_len, szArglist[i], buf_len);
+        string s = buf;
+        arg_list.push_back(s);
+        free(buf);
+    }
+    // Free memory allocated for CommandLineToArgvW arguments.
+    LocalFree(szArglist);
+
+    if (!get_command_line_options(arg_list))
+        return 0;
 
     /* Register the frame class */
     wndclass.style = 0;
@@ -174,16 +216,12 @@ LONG WINAPI MainWndProc(
     case WM_KEYDOWN:
         switch (wParam) {
         case VK_LEFT:
-            longinc += 0.F;
             break;
         case VK_RIGHT:
-            longinc -= 0.F;
             break;
         case VK_UP:
-            latinc += 0.F;
             break;
         case VK_DOWN:
-            latinc -= 0.F;
             break;
         }
 
@@ -289,39 +327,12 @@ GLvoid resize(GLsizei width, GLsizei height)
 
 GLvoid createObjects()
 {
-    GLUquadricObj *quadObj;
-
-    glNewList(GLOBE, GL_COMPILE);
-    quadObj = gluNewQuadric();
-    gluQuadricDrawStyle(quadObj, GLU_LINE);
-    gluSphere(quadObj, 1.5, 16, 16);
-    glEndList();
-
-    glNewList(CONE, GL_COMPILE);
-    quadObj = gluNewQuadric();
-    gluQuadricDrawStyle(quadObj, GLU_FILL);
-    gluQuadricNormals(quadObj, GLU_SMOOTH);
-    gluCylinder(quadObj, 0.3, 0.0, 0.6, 15, 10);
-    glEndList();
-
-    glNewList(CYLINDER, GL_COMPILE);
-    glPushMatrix();
-    glRotatef((GLfloat)90.0, (GLfloat)1.0, (GLfloat)0.0, (GLfloat)0.0);
-    glTranslatef((GLfloat)0.0, (GLfloat)0.0, (GLfloat)-1.0);
-    quadObj = gluNewQuadric();
-    gluQuadricDrawStyle(quadObj, GLU_FILL);
-    gluQuadricNormals(quadObj, GLU_SMOOTH);
-    gluCylinder(quadObj, 0.3, 0.3, 0.6, 12, 2);
-    glPopMatrix();
-    glEndList();
-
     glNewList(POINT_CLOUD, GL_COMPILE);
     glBegin(GL_POINTS);
 
     // read points from xyz file
-    std::string file_path = "C:\\Projects\\OWIArmCamera\\KinectImages\\detected_edges_point_cloud.xyz";
     std::ifstream infile;
-    infile.open(file_path, std::ifstream::in);
+    infile.open(point_cloud_file_path, std::ifstream::in);
     while (!infile.eof())
     {
         float x, y, z;
@@ -364,11 +375,6 @@ GLvoid initializeGL(GLsizei width, GLsizei height)
     maxObjectSize = 3.0F;
     radius = near_plane + maxObjectSize / 2.0;
 
-    latitude = 0.0F;
-    longitude = 0.0F;
-    latinc = 0.0F;
-    longinc = 0.0F;
-
     scaleX = 1.0f;
     scaleY = 1.0f;
     scaleZ = 1.0f;
@@ -397,34 +403,17 @@ GLvoid drawScene(GLvoid)
 
     glPushMatrix();
 
-#if 1
-    latitude += latinc;
-    longitude += longinc;
-
+    GLdouble latitude = 0.0f, longitude = 0.0f;
     polarView(radius, 0, latitude, longitude);
     zoomView();
 
     glIndexi(BLUE_INDEX);
+
+//    glPushMatrix();
+//    glTranslatef(0.8F, -0.65F, 0.0F);
+//    glRotatef(30.0F, 1.0F, 0.5F, 1.0F);
     glCallList(POINT_CLOUD);
-#else
-    latitude += latinc;
-    longitude += longinc;
-
-    polarView(radius, 0, latitude, longitude);
-
-    glIndexi(RED_INDEX);
-    glCallList(CONE);
-
-    glIndexi(BLUE_INDEX);
-    glCallList(GLOBE);
-
-    glIndexi(GREEN_INDEX);
-    glPushMatrix();
-    glTranslatef(0.8F, -0.65F, 0.0F);
-    glRotatef(30.0F, 1.0F, 0.5F, 1.0F);
-    glCallList(CYLINDER);
-    glPopMatrix();
-#endif
+//    glPopMatrix();
 
     glPopMatrix();
 
