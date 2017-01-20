@@ -16,6 +16,7 @@ typedef struct _c_point_cloud_point
 {
     Vector3f X;
     Vector3f Clr;
+    Vector3f Edge;
 } 	c_point_cloud_point;
 
 class c_point_cloud {

@@ -18,26 +18,24 @@ c_world_part_state::c_world_part_state(c_point_cloud& _point_cloud, c_world_time
 
 c_world_part::c_world_part(c_point_cloud& point_cloud, c_world_time& world_time) {
 
-    vector < vector <bool>> edges_bitmap;
-    bool result = detect_edge_features(point_cloud, edges_bitmap);
+    bool result = detect_edge_features(point_cloud);
     
 #if 1
     {
-        std::string file_path = "C:\\Projects\\OWIArmCamera\\KinectImages\\detected_edges_point_cloud.xyz";
+        std::string file_path = "C:\\Projects\\OWIArmCamera\\KinectImages\\detected_edges_point_cloud.xyze";
 
         c_point_cloud detected_edges_point_cloud = point_cloud;
         size_t u, v;
         for (u = 0; u < detected_edges_point_cloud.points.size(); u++) {
             for (v = 0; v < detected_edges_point_cloud.points[u].size(); v++) {
-                if (edges_bitmap[u][v]) {
+                 if (point_cloud.points[u][v].Edge != Vector3f::Zero()) {
                     detected_edges_point_cloud.points[u][v].Clr = Vector3f(250, 0, 0);
                 }
             }
         }
-        bool xyz_format = true;
         c_point_cloud filtered_point_cloud;
         detected_edges_point_cloud.filter_by_z(filtered_point_cloud, 2.0f);
-        c_kinect_image::write_file(file_path, filtered_point_cloud, xyz_format);
+        c_kinect_image::write_file(file_path, filtered_point_cloud, c_image_format::xyze);
     }
 #endif
 /*

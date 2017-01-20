@@ -7,14 +7,16 @@
 
 namespace ais {
 
+enum class c_image_format { kinect, xyz, xyze };
+
 class c_kinect_image
 {
 public:
 	c_kinect_image() {
 	}
-    
+
     static bool read_file( std::string file_path, c_point_cloud& point_cloud );
-    static bool write_file(std::string file_path, c_point_cloud& point_cloud, bool xyz_format);
+    static bool write_file(std::string file_path, c_point_cloud& point_cloud, c_image_format image_format);
 };
 
 

@@ -6,7 +6,7 @@ using namespace Eigen;
 
 namespace ais {
 
-    bool detect_edge_features(c_point_cloud& point_cloud, vector < vector <bool>>& edges_bitmap) {
+    bool detect_edge_features(c_point_cloud& point_cloud) {
         size_t u, v, u1, v1, j;
         size_t num_point_cloud_rows = point_cloud.points.size();
         if (num_point_cloud_rows <= 0)
@@ -15,12 +15,6 @@ namespace ais {
 
         int nbhd_radius[2] = { 1, 2 };
         int total_nbhd_radius = nbhd_radius[0] + nbhd_radius[1];
-
-        edges_bitmap.clear();
-        edges_bitmap.resize(num_point_cloud_rows);
-        for (u = 0; u < num_point_cloud_rows; u++) {
-            edges_bitmap[u].resize(num_point_cloud_cols);
-        }
 
         for (u = total_nbhd_radius; u < num_point_cloud_rows - total_nbhd_radius; u++) {
             assert(point_cloud.points[u].size() == num_point_cloud_cols);
@@ -62,7 +56,8 @@ namespace ais {
 
                 // find edge direction
                 Vector3f edge_direction = mass_center[0] - mass_center[1];
-                edge_direction.normalize();
+                Vector3f edge_direction_normalized = edge_direction;
+                edge_direction_normalized.normalize();
 
                 float dist_to_tangent_plane, sum_dist_to_tangent_plane = 0, max_dist_to_tangent_plane = 0;
                 size_t num_pnts = 0;
@@ -73,7 +68,7 @@ namespace ais {
                             continue;
                         }
 
-                        dist_to_tangent_plane = edge_direction.dot(point_cloud.points[u][v].X - point_cloud.points[u1][v1].X);
+                        dist_to_tangent_plane = edge_direction_normalized.dot(point_cloud.points[u][v].X - point_cloud.points[u1][v1].X);
                         if (dist_to_tangent_plane > max_dist_to_tangent_plane)
                             max_dist_to_tangent_plane = dist_to_tangent_plane;
                         sum_dist_to_tangent_plane += dist_to_tangent_plane;
@@ -83,7 +78,7 @@ namespace ais {
                 float ratio = sum_dist_to_tangent_plane / num_pnts;
                 ratio /= max_dist_to_tangent_plane;
                 if (ratio > 0.4f) {
-                    edges_bitmap[u][v] = true;
+                    point_cloud.points[u][v].Edge = edge_direction;
                 }
             }
         }

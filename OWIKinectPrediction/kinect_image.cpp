@@ -40,7 +40,7 @@ bool c_kinect_image::read_file(std::string file_path, c_point_cloud& point_cloud
 	return true;
 }
 
-bool c_kinect_image::write_file(std::string file_path, c_point_cloud& point_cloud, bool xyz_format)
+bool c_kinect_image::write_file(std::string file_path, c_point_cloud& point_cloud, c_image_format image_format)
 {
     string line;
     ofstream outfile;
@@ -50,7 +50,7 @@ bool c_kinect_image::write_file(std::string file_path, c_point_cloud& point_clou
 
     outfile.open(file_path, std::ifstream::out);
 
-    if (!xyz_format) {
+    if (image_format == c_image_format::kinect) {
         outfile << height << std::endl;
         outfile << width << std::endl;
     }
@@ -60,7 +60,7 @@ bool c_kinect_image::write_file(std::string file_path, c_point_cloud& point_clou
         for (v = 0; v < width; v++) {
             if (point_cloud.points[u][v].X == Vector3f::Zero()) // the input .kin files have no points for some u,v
                 continue;
-            if (!xyz_format) {
+            if (image_format == c_image_format::kinect) {
                 outfile << u << " ";
                 outfile << v << " ";
             }
@@ -69,7 +69,15 @@ bool c_kinect_image::write_file(std::string file_path, c_point_cloud& point_clou
             outfile << point_cloud.points[u][v].X(2) << " ";
             outfile << point_cloud.points[u][v].Clr(0) << " ";
             outfile << point_cloud.points[u][v].Clr(1) << " ";
-            outfile << point_cloud.points[u][v].Clr(2) << std::endl;
+            if (image_format == c_image_format::xyze && point_cloud.points[u][v].Edge != Vector3f::Zero()) {
+                outfile << point_cloud.points[u][v].Clr(2) << " ";
+                outfile << point_cloud.points[u][v].Edge(0) << " ";
+                outfile << point_cloud.points[u][v].Edge(1) << " ";
+                outfile << point_cloud.points[u][v].Edge(2) << std::endl;
+            }
+            else {
+                outfile << point_cloud.points[u][v].Clr(2) << std::endl;
+            }
         }
     }
 

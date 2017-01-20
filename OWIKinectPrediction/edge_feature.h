@@ -3,7 +3,7 @@
 
 namespace ais {
 
-    bool detect_edge_features(c_point_cloud& point_cloud, vector < vector <bool>>& edges_bitmap);
+    bool detect_edge_features(c_point_cloud& point_cloud);
 
     class c_edge_feature {
     public:

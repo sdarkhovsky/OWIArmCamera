@@ -21,10 +21,9 @@ namespace ais {
                 }
             }
         }
-        bool xyz_format = true;
         c_point_cloud filtered_point_cloud;
         detected_planes_point_cloud.filter_by_z(filtered_point_cloud, 2.0f);
-        c_kinect_image::write_file(file_path, filtered_point_cloud, xyz_format);
+        c_kinect_image::write_file(file_path, filtered_point_cloud, c_image_format::xyz);
     */
     bool detect_plane_features(c_point_cloud& point_cloud, vector < vector <bool>>& plane_regions_bitmap) {
         size_t u, v;

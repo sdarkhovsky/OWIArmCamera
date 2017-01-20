@@ -179,8 +179,7 @@ int main(int argc, char** argv)
         c_point_cloud plane_point_cloud;
         generate_point_cloud_plane(plane_point_cloud);
         std::string file_path = "C:\\Projects\\OWIArmCamera\\KinectImages\\plane.kin";
-        bool xyz_format = false;
-        c_kinect_image::write_file(file_path, plane_point_cloud, xyz_format);
+        c_kinect_image::write_file(file_path, plane_point_cloud, c_image_format::kinect);
         return 0;
     }
 #endif

@@ -19,6 +19,7 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <sstream>
 
 #include <limits>
 #include <cstddef>
@@ -41,8 +42,12 @@ LONG WINAPI MainWndProc(HWND, UINT, WPARAM, LPARAM);
 BOOL bSetupPixelFormat(HDC);
 
 /* OpenGL globals, defines, and prototypes */
-GLfloat translate[3] = { 0, 0, 0 };
-float translate_speed[3] = { 0.01f, 0.01f, 0.1f };
+float translate_camera[3] = { 0.0f, 0.0f, 0.0f };
+float translate_camera_speed[3] = { 0.01f, 0.01f, 0.01f };
+
+float rotate_camera_angle = 0.0f;
+float rotate_camera_direction[3] = { 0.0f, 0.0f, 0.0f };
+float rotate_camera_speed = 0.01f;
 
 int last_mouse_pos_x;
 int last_mouse_pos_y;
@@ -238,6 +243,10 @@ LONG WINAPI MainWndProc(
     case WM_RBUTTONDOWN:
         xPos = GET_X_LPARAM(lParam);
         yPos = GET_Y_LPARAM(lParam);
+
+        last_mouse_pos_x = xPos;
+        last_mouse_pos_y = yPos;
+
         SetCapture(hWnd);
 
         return 0;
@@ -265,10 +274,20 @@ LONG WINAPI MainWndProc(
         xPos = GET_X_LPARAM(lParam);
         yPos = GET_Y_LPARAM(lParam);
         fwKeys = GET_KEYSTATE_WPARAM(wParam);
-        if (fwKeys & MK_LBUTTON)
+        if (fwKeys & MK_LBUTTON || fwKeys & MK_RBUTTON)
         {
-            translate[0] -= (last_mouse_pos_x - xPos)*translate_speed[0];
-            translate[1] += (last_mouse_pos_y - yPos)*translate_speed[1];
+            if (fwKeys & MK_LBUTTON) {
+                translate_camera[0] -= (last_mouse_pos_x - xPos)*translate_camera_speed[0];
+                translate_camera[1] += (last_mouse_pos_y - yPos)*translate_camera_speed[1];
+            }
+            else {
+                rotate_camera_direction[0] += (last_mouse_pos_y - yPos)*rotate_camera_speed;
+                rotate_camera_direction[1] -= (last_mouse_pos_x - xPos)*rotate_camera_speed;
+                rotate_camera_angle = sqrt(rotate_camera_direction[0] * rotate_camera_direction[0] +
+                    rotate_camera_direction[1] * rotate_camera_direction[1] +
+                    rotate_camera_direction[2] * rotate_camera_direction[2]);
+            }
+
             last_mouse_pos_x = xPos;
             last_mouse_pos_y = yPos;
         }
@@ -280,10 +299,10 @@ LONG WINAPI MainWndProc(
         xPos = GET_X_LPARAM(lParam);
         yPos = GET_Y_LPARAM(lParam);
         mult = zDelta / 120;
-        translate[2] += mult*translate_speed[2];
+        translate_camera[2] += mult*translate_camera_speed[2];
 
     default:
-        lRet = DefWindowProc(hWnd, uMsg, wParam, lParam);
+        lRet = (LONG)DefWindowProc(hWnd, uMsg, wParam, lParam);
         break;
     }
 
@@ -337,37 +356,66 @@ GLvoid resize(GLsizei width, GLsizei height)
 
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
+
+    // the OpenGL projection transformation (not to be confused with the projective transformation in the computer vision) transforms 
+    // all vertex data from the eye coordinates to the clip coordinates.
+
+    float zNear = (max_obj_coord[2] - min_obj_coord[2]) / 100.0f;;
+    float zFar = zNear + (max_obj_coord[2] - min_obj_coord[2])*3.0f;
+    gluPerspective(45.0, aspect, zNear, zFar);
+/*
     glFrustum(min_obj_coord[0], max_obj_coord[0],
         min_obj_coord[1], max_obj_coord[1],
         (max_obj_coord[2] - min_obj_coord[2])/2.0, (max_obj_coord[2] - min_obj_coord[2])*3.0 / 2.0);
+        */
     glMatrixMode(GL_MODELVIEW);
 }
 
 GLvoid createObjects()
 {
     glNewList(POINT_CLOUD, GL_COMPILE);
-    glBegin(GL_POINTS);
 
-    // read points from xyz file
     for (int i = 0; i < 3; i++) {
         min_obj_coord[i] = FLT_MAX;
         max_obj_coord[i] = FLT_MIN;
     }
 
+    // read points from xyz file
+    string line;
     std::ifstream infile;
     infile.open(point_cloud_file_path, std::ifstream::in);
-    while (!infile.eof())
-    {
+    while (std::getline(infile, line)) {
+       
+        std::stringstream linestream(line);
+        int count = 0;
         float obj_coord[3];
         float obj_color[3]; // 0-255 range
+        float edge_direction[3];
         for (int i = 0; i < 3; i++) {
-            infile >> obj_coord[i];
+            if (linestream >> obj_coord[i])
+                count++;
         }
         for (int i = 0; i < 3; i++) {
-            infile >> obj_color[i];
+            if (linestream >> obj_color[i])
+                count++;
         }
+        for (int i = 0; i < 3; i++) {
+            if (linestream >> edge_direction[i]) {
+                count++;
+            }
+        }
+        glBegin(GL_POINTS);
         glColor3ub((GLubyte)obj_color[0], (GLubyte)obj_color[1], (GLubyte)obj_color[2]);
         glVertex3f(obj_coord[0], obj_coord[1], obj_coord[2]);
+        glEnd();
+
+        if (count >= 9) {
+            glBegin(GL_LINES);
+            glColor3ub(255, 255, 0);
+            glVertex3f(obj_coord[0], obj_coord[1], obj_coord[2]);
+            glVertex3f(obj_coord[0] + edge_direction[0], obj_coord[1] + edge_direction[1], obj_coord[2] + edge_direction[2]);
+            glEnd();
+        }
 
         for (int i = 0; i < 3; i++) {
             if (obj_coord[i] < min_obj_coord[i]) min_obj_coord[i] = obj_coord[i];
@@ -376,7 +424,6 @@ GLvoid createObjects()
     }
     infile.close();
 
-    glEnd();
     glEndList();
 }
 
@@ -420,7 +467,9 @@ GLvoid drawScene(GLvoid)
     glPushMatrix();
 
     // zoom the view
-    glTranslatef(translate[0], translate[1], translate[2]);
+    glTranslatef(translate_camera[0], translate_camera[1], translate_camera[2]);
+    // rotate after translation
+    glRotatef((GLfloat)rotate_camera_angle, rotate_camera_direction[0], rotate_camera_direction[1], rotate_camera_direction[2]);
 
     glCallList(POINT_CLOUD);
 
