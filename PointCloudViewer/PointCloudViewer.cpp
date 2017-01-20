@@ -20,6 +20,9 @@
 #include <fstream>
 #include <string>
 
+#include <limits>
+#include <cstddef>
+
 /* Windows globals, defines, and prototypes */
 CHAR szAppName[] = "Win OpenGL";
 HWND  ghWnd;
@@ -38,19 +41,24 @@ LONG WINAPI MainWndProc(HWND, UINT, WPARAM, LPARAM);
 BOOL bSetupPixelFormat(HDC);
 
 /* OpenGL globals, defines, and prototypes */
-GLdouble radius;
-GLfloat scaleX, scaleY, scaleZ;
+GLfloat translate[3] = { 0, 0, 0 };
+float translate_speed[3] = { 0.01f, 0.01f, 0.1f };
+
+int last_mouse_pos_x;
+int last_mouse_pos_y;
 
 #define POINT_CLOUD 1
 
 GLvoid resize(GLsizei, GLsizei);
 GLvoid initializeGL(GLsizei, GLsizei);
 GLvoid drawScene(GLvoid);
-void polarView(GLdouble, GLdouble, GLdouble, GLdouble);
 
 using namespace std;
 
 string point_cloud_file_path;
+
+float min_obj_coord[3];
+float max_obj_coord[3];
 
 bool get_command_line_options(vector< string >& arg_list) {
     int i;
@@ -131,8 +139,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         return FALSE;
 
     /* show and update main window */
-    ShowWindow(ghWnd, nCmdShow);
+//    ShowWindow(ghWnd, nCmdShow);
 
+    ShowWindow(ghWnd, SW_MAXIMIZE);
+    
     UpdateWindow(ghWnd);
 
     /* animation loop */
@@ -239,6 +249,10 @@ LONG WINAPI MainWndProc(
     case WM_LBUTTONDOWN:
         xPos = GET_X_LPARAM(lParam);
         yPos = GET_Y_LPARAM(lParam);
+
+        last_mouse_pos_x = xPos;
+        last_mouse_pos_y = yPos;
+
         SetCapture(hWnd);
 
         return 0;
@@ -253,6 +267,10 @@ LONG WINAPI MainWndProc(
         fwKeys = GET_KEYSTATE_WPARAM(wParam);
         if (fwKeys & MK_LBUTTON)
         {
+            translate[0] -= (last_mouse_pos_x - xPos)*translate_speed[0];
+            translate[1] += (last_mouse_pos_y - yPos)*translate_speed[1];
+            last_mouse_pos_x = xPos;
+            last_mouse_pos_y = yPos;
         }
         return 0;
         
@@ -262,9 +280,7 @@ LONG WINAPI MainWndProc(
         xPos = GET_X_LPARAM(lParam);
         yPos = GET_Y_LPARAM(lParam);
         mult = zDelta / 120;
-        scaleX += mult*0.1f;
-        scaleY += mult *0.1f;
-        scaleZ += mult*0.1f;
+        translate[2] += mult*translate_speed[2];
 
     default:
         lRet = DefWindowProc(hWnd, uMsg, wParam, lParam);
@@ -321,7 +337,9 @@ GLvoid resize(GLsizei width, GLsizei height)
 
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    gluPerspective(45.0, aspect, 3.0, 7.0);
+    glFrustum(min_obj_coord[0], max_obj_coord[0],
+        min_obj_coord[1], max_obj_coord[1],
+        (max_obj_coord[2] - min_obj_coord[2])/2.0, (max_obj_coord[2] - min_obj_coord[2])*3.0 / 2.0);
     glMatrixMode(GL_MODELVIEW);
 }
 
@@ -331,20 +349,30 @@ GLvoid createObjects()
     glBegin(GL_POINTS);
 
     // read points from xyz file
+    for (int i = 0; i < 3; i++) {
+        min_obj_coord[i] = FLT_MAX;
+        max_obj_coord[i] = FLT_MIN;
+    }
+
     std::ifstream infile;
     infile.open(point_cloud_file_path, std::ifstream::in);
     while (!infile.eof())
     {
-        float x, y, z;
-        float r, g, b; // 0-255 range
-        infile >> x;
-        infile >> y;
-        infile >> z;
-        infile >> r;
-        infile >> g;
-        infile >> b;
-        glColor3ub(r, g, b);
-        glVertex3d(x, y, z);
+        float obj_coord[3];
+        float obj_color[3]; // 0-255 range
+        for (int i = 0; i < 3; i++) {
+            infile >> obj_coord[i];
+        }
+        for (int i = 0; i < 3; i++) {
+            infile >> obj_color[i];
+        }
+        glColor3ub((GLubyte)obj_color[0], (GLubyte)obj_color[1], (GLubyte)obj_color[2]);
+        glVertex3f(obj_coord[0], obj_coord[1], obj_coord[2]);
+
+        for (int i = 0; i < 3; i++) {
+            if (obj_coord[i] < min_obj_coord[i]) min_obj_coord[i] = obj_coord[i];
+            if (obj_coord[i] > max_obj_coord[i]) max_obj_coord[i] = obj_coord[i];
+        }
     }
     infile.close();
 
@@ -354,9 +382,6 @@ GLvoid createObjects()
 
 GLvoid initializeGL(GLsizei width, GLsizei height)
 {
-    GLfloat     maxObjectSize, aspect;
-    GLdouble    near_plane, far_plane;
-
     glClearIndex((GLfloat)BLACK_INDEX);
     glClearDepth(1.0);
 
@@ -365,55 +390,39 @@ GLvoid initializeGL(GLsizei width, GLsizei height)
     // white background
     glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
 
-    glMatrixMode(GL_PROJECTION);
-    aspect = (GLfloat)width / height;
-    gluPerspective(45.0, aspect, 3.0, 7.0);
-    glMatrixMode(GL_MODELVIEW);
-
-    near_plane = 3.0;
-    far_plane = 7.0;
-    maxObjectSize = 3.0F;
-    radius = near_plane + maxObjectSize / 2.0;
-
-    scaleX = 1.0f;
-    scaleY = 1.0f;
-    scaleZ = 1.0f;
-
     createObjects();
-}
 
-void polarView(GLdouble radius, GLdouble twist, GLdouble latitude,
-    GLdouble longitude)
-{
-    glTranslated(0.0, 0.0, -radius);
-    glRotated(-twist, 0.0, 0.0, 1.0);
-    glRotated(-latitude, 1.0, 0.0, 0.0);
-    glRotated(longitude, 0.0, 0.0, 1.0);
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+    float center_obj_coord[3];
+    for (int i = 0; i < 3; i++) {
+        center_obj_coord[i] = (min_obj_coord[i] + max_obj_coord[i]) / 2.0f;
+    }
 
-}
+    // position the camera looking at the object center
+    // note, that in the opengl the camera looks at the negative z direction of the camera reference frame
+    float camera_shift = (max_obj_coord[2] - min_obj_coord[2]);
+    gluLookAt(center_obj_coord[0], center_obj_coord[1], center_obj_coord[2] + camera_shift,
+        center_obj_coord[0], center_obj_coord[1], center_obj_coord[2],
+        0.0, 1.0, 0.0);
 
-GLvoid zoomView(GLvoid)
-{
-    glScalef(scaleX, scaleY, scaleZ); // scale the matrix
+    resize(width, height);
 }
 
 GLvoid drawScene(GLvoid)
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+//    GLfloat matrix[4][4];
+//    glGetFloatv(GL_MODELVIEW_MATRIX, (GLfloat*)matrix);
+
+    glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
 
-    GLdouble latitude = 0.0f, longitude = 0.0f;
-    polarView(radius, 0, latitude, longitude);
-    zoomView();
+    // zoom the view
+    glTranslatef(translate[0], translate[1], translate[2]);
 
-    glIndexi(BLUE_INDEX);
-
-//    glPushMatrix();
-//    glTranslatef(0.8F, -0.65F, 0.0F);
-//    glRotatef(30.0F, 1.0F, 0.5F, 1.0F);
     glCallList(POINT_CLOUD);
-//    glPopMatrix();
 
     glPopMatrix();
 

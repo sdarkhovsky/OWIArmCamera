@@ -5,3 +5,6 @@
 *.sdf
 *.aps
 *.user
+*.tlog
+*.idb
+*.lastbuildstate
