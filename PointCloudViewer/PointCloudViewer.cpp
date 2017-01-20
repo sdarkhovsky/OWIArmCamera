@@ -24,6 +24,8 @@
 #include <limits>
 #include <cstddef>
 
+#include <Eigen/Dense>
+
 /* Windows globals, defines, and prototypes */
 CHAR szAppName[] = "Win OpenGL";
 HWND  ghWnd;
@@ -42,12 +44,14 @@ LONG WINAPI MainWndProc(HWND, UINT, WPARAM, LPARAM);
 BOOL bSetupPixelFormat(HDC);
 
 /* OpenGL globals, defines, and prototypes */
-float translate_camera[3] = { 0.0f, 0.0f, 0.0f };
-float translate_camera_speed[3] = { 0.01f, 0.01f, 0.01f };
+float translate_camera[3];
+float translate_camera_speed[3];
 
-float rotate_camera_angle = 0.0f;
-float rotate_camera_direction[3] = { 0.0f, 0.0f, 0.0f };
-float rotate_camera_speed = 0.01f;
+float rotate_camera_angle;
+float rotate_camera_direction[3];
+float rotate_camera_speed;
+
+float edge_length;
 
 int last_mouse_pos_x;
 int last_mouse_pos_y;
@@ -59,6 +63,7 @@ GLvoid initializeGL(GLsizei, GLsizei);
 GLvoid drawScene(GLvoid);
 
 using namespace std;
+using namespace Eigen;
 
 string point_cloud_file_path;
 
@@ -80,6 +85,26 @@ bool get_command_line_options(vector< string >& arg_list) {
     return true;
 }
 
+void reset_settings() {
+    translate_camera[0] = 0.0f;
+    translate_camera[1] = 0.0f;
+    translate_camera[2] = 0.0f;
+
+    translate_camera_speed[0] = 0.01f;
+    translate_camera_speed[1] = 0.01f;
+    translate_camera_speed[2] = 0.01f;
+
+    rotate_camera_angle = 0.0f;
+
+    rotate_camera_direction[1] = 0.0f;
+    rotate_camera_direction[1] = 0.0f;
+    rotate_camera_direction[2] = 0.0f;
+
+    rotate_camera_speed = 0.01f;
+
+    edge_length = 0.1f;
+}
+
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
@@ -91,6 +116,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     int i;
 
     vector< string > arg_list;
+
+    reset_settings();
 
     szArglist = CommandLineToArgvW(GetCommandLineW(), &nArgs);
     if (NULL == szArglist) return 0;
@@ -229,14 +256,66 @@ LONG WINAPI MainWndProc(
         break;
 
     case WM_KEYDOWN:
-        switch (wParam) {
+        switch (wParam)
+        {
         case VK_LEFT:
+            // Process the LEFT ARROW key. 
             break;
         case VK_RIGHT:
+            // Process the RIGHT ARROW key. 
             break;
         case VK_UP:
+            // Process the UP ARROW key. 
             break;
         case VK_DOWN:
+            // Process the DOWN ARROW key. 
+            break;
+        case VK_HOME:
+            // Process the HOME key. 
+            break;
+        case VK_END:
+            // Process the END key. 
+            break;
+        case VK_INSERT:
+            // Process the INS key. 
+            break;
+        case VK_DELETE:
+            // Process the DEL key. 
+            break;
+        case VK_F2:
+            // Process the F2 key. 
+            break;
+        default:
+            // Process other non-character keystrokes. 
+            break;
+        }
+
+    case WM_CHAR:
+        switch (wParam)
+        {
+        case 0x08:
+            // Process a backspace. 
+            break;
+        case 0x0A:
+            // Process a linefeed. 
+            break;
+        case 0x1B:
+            // Process an escape. 
+            PostMessage(hWnd, WM_CLOSE, 0, 0);
+            break;
+        case 0x09:
+            // Process a tab. 
+            break;
+        case 0x0D:
+            // Process a carriage return. 
+            break;
+        case 0x52:
+        case 0x72:
+            // Process R, r
+            reset_settings();
+        default:
+            // Process displayable characters. 
+//            ch = (TCHAR)wParam;
             break;
         }
 
@@ -399,11 +478,13 @@ GLvoid createObjects()
             if (linestream >> obj_color[i])
                 count++;
         }
+
         for (int i = 0; i < 3; i++) {
             if (linestream >> edge_direction[i]) {
                 count++;
             }
         }
+
         glBegin(GL_POINTS);
         glColor3ub((GLubyte)obj_color[0], (GLubyte)obj_color[1], (GLubyte)obj_color[2]);
         glVertex3f(obj_coord[0], obj_coord[1], obj_coord[2]);
@@ -411,9 +492,15 @@ GLvoid createObjects()
 
         if (count >= 9) {
             glBegin(GL_LINES);
-            glColor3ub(255, 255, 0);
-            glVertex3f(obj_coord[0], obj_coord[1], obj_coord[2]);
-            glVertex3f(obj_coord[0] + edge_direction[0], obj_coord[1] + edge_direction[1], obj_coord[2] + edge_direction[2]);
+            glColor3ub(255, 0, 0);
+            Vector3f v1(obj_coord[0], obj_coord[1], obj_coord[2]);
+            Vector3f vEdge(edge_direction[0], edge_direction[1], edge_direction[2]);
+            vEdge.normalize();
+            Vector3f v2 = v1 + vEdge * edge_length;
+
+            glVertex3f(v1(0), v1(1), v1(2));
+            glVertex3f(v2(0), v2(1), v2(2));
+
             glEnd();
         }
 
@@ -467,6 +554,11 @@ GLvoid drawScene(GLvoid)
     glPushMatrix();
 
     // zoom the view
+    // the camera originally (in initializeGL) was shifted in the positive z direction (of the point cloud reference frame) 
+    // from the point cloud center and looking at the point cloud center. 
+    // The camera is always at the origin of the camera reference frame looking in its negative z direction, where the point cloud is supposed to be.
+    // when the positive Z translation is applied to the point cloud points in the camera reference frame, 
+    // their negative z coordinates get smaller in magnitude, they get closer to the origin, which creates zooming effect
     glTranslatef(translate_camera[0], translate_camera[1], translate_camera[2]);
     // rotate after translation
     glRotatef((GLfloat)rotate_camera_angle, rotate_camera_direction[0], rotate_camera_direction[1], rotate_camera_direction[2]);
