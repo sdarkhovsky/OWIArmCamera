@@ -33,9 +33,7 @@ c_world_part::c_world_part(c_point_cloud& point_cloud, c_world_time& world_time)
                 }
             }
         }
-        c_point_cloud filtered_point_cloud;
-        detected_edges_point_cloud.filter_by_z(filtered_point_cloud, 2.0f);
-        c_kinect_image::write_file(file_path, filtered_point_cloud, c_image_format::xyze);
+        c_kinect_image::write_file(file_path, detected_edges_point_cloud, c_image_format::xyze);
     }
 #endif
 /*

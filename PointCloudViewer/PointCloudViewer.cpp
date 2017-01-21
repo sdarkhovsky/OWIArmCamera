@@ -26,6 +26,10 @@
 
 #include <Eigen/Dense>
 
+using namespace std;
+using namespace Eigen;
+
+
 /* Windows globals, defines, and prototypes */
 CHAR szAppName[] = "Win OpenGL";
 HWND  ghWnd;
@@ -45,7 +49,8 @@ BOOL bSetupPixelFormat(HDC);
 
 /* OpenGL globals, defines, and prototypes */
 float translate_camera[3];
-float translate_camera_speed[3];
+
+Eigen::Vector3f translate_camera_speed;
 
 float rotate_camera_angle;
 float rotate_camera_direction[3];
@@ -61,9 +66,6 @@ int last_mouse_pos_y;
 GLvoid resize(GLsizei, GLsizei);
 GLvoid initializeGL(GLsizei, GLsizei);
 GLvoid drawScene(GLvoid);
-
-using namespace std;
-using namespace Eigen;
 
 string point_cloud_file_path;
 
@@ -90,19 +92,17 @@ void reset_settings() {
     translate_camera[1] = 0.0f;
     translate_camera[2] = 0.0f;
 
-    translate_camera_speed[0] = 0.01f;
-    translate_camera_speed[1] = 0.01f;
-    translate_camera_speed[2] = 0.01f;
-
+    translate_camera_speed = Vector3f(0.5f, 0.5f, 0.5f);
+    
     rotate_camera_angle = 0.0f;
 
     rotate_camera_direction[1] = 0.0f;
     rotate_camera_direction[1] = 0.0f;
     rotate_camera_direction[2] = 0.0f;
 
-    rotate_camera_speed = 0.01f;
+    rotate_camera_speed = 0.05f;
 
-    edge_length = 0.1f;
+    edge_length = 0.01f;
 }
 
 
@@ -356,8 +356,8 @@ LONG WINAPI MainWndProc(
         if (fwKeys & MK_LBUTTON || fwKeys & MK_RBUTTON)
         {
             if (fwKeys & MK_LBUTTON) {
-                translate_camera[0] -= (last_mouse_pos_x - xPos)*translate_camera_speed[0];
-                translate_camera[1] += (last_mouse_pos_y - yPos)*translate_camera_speed[1];
+                translate_camera[0] -= (last_mouse_pos_x - xPos)*translate_camera_speed(0);
+                translate_camera[1] += (last_mouse_pos_y - yPos)*translate_camera_speed(1);
             }
             else {
                 rotate_camera_direction[0] += (last_mouse_pos_y - yPos)*rotate_camera_speed;
@@ -378,7 +378,7 @@ LONG WINAPI MainWndProc(
         xPos = GET_X_LPARAM(lParam);
         yPos = GET_Y_LPARAM(lParam);
         mult = zDelta / 120;
-        translate_camera[2] += mult*translate_camera_speed[2];
+        translate_camera[2] += mult*translate_camera_speed(2);
 
     default:
         lRet = (LONG)DefWindowProc(hWnd, uMsg, wParam, lParam);

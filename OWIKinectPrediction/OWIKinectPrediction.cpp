@@ -176,13 +176,23 @@ int main(int argc, char** argv)
 
 #if 0
     {
-        c_point_cloud plane_point_cloud;
-        generate_point_cloud_plane(plane_point_cloud);
+        c_point_cloud point_cloud;
+        generate_point_cloud_plane(point_cloud);
         std::string file_path = "C:\\Projects\\OWIArmCamera\\KinectImages\\plane.kin";
-        c_kinect_image::write_file(file_path, plane_point_cloud, c_image_format::kinect);
+        c_kinect_image::write_file(file_path, point_cloud, c_image_format::kinect);
         return 0;
     }
 #endif
+#if 0
+    {
+        c_point_cloud point_cloud;
+        generate_point_cloud_prism(point_cloud);
+        std::string file_path = "C:\\Projects\\OWIArmCamera\\KinectImages\\prism.kin";
+        c_kinect_image::write_file(file_path, point_cloud, c_image_format::kinect);
+        return 0;
+    }
+#endif
+
 
 	if (argc == 1)
 	{
