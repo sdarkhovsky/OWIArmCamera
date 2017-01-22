@@ -28,6 +28,12 @@ namespace pcv {
             for (int i = 0; i < 3; i++) {
                 linestream >> point.X(i);
             }
+
+//11111111111111111111111111111111111111111111111
+            if (point.X(2) > 1.5 || point.X(2) < 0.6)
+                continue;
+//11111111111111111111111111111111111111111111111
+
             for (int i = 0; i < 3; i++) {
                 linestream >> point.Clr(i);
             }

@@ -48,6 +48,7 @@ HGLRC ghRC;
 
 LONG WINAPI MainWndProc(HWND, UINT, WPARAM, LPARAM);
 BOOL bSetupPixelFormat(HDC);
+void refresh_display_lists();
 
 /* OpenGL globals, defines, and prototypes */
 float translate_camera[3];
@@ -63,6 +64,22 @@ float edge_length;
 int last_mouse_pos_x;
 int last_mouse_pos_y;
 
+struct c_viewport {
+    c_viewport() {
+    }
+    c_viewport(int x, int y, int width, int height) {
+        this->x = x;
+        this->y = y;
+        this->width = width;
+        this->height = height;
+    }
+    int x;
+    int y;
+    int width;
+    int height;
+};
+c_viewport viewport;
+
 #define POINT_CLOUD 1
 
 GLvoid resize(GLsizei, GLsizei);
@@ -76,12 +93,13 @@ c_point_cloud point_cloud;
 enum class c_interactive_mode: int
 {
     idle,
-    hide_points
+    selecting_points_to_hide,
+    updating_points_to_hide
 };
 c_interactive_mode interactive_mode = c_interactive_mode::idle;
 
-Vector2f min_visible;
-Vector2f max_visible;
+Vector2i min_visible;
+Vector2i max_visible;
 
 bool get_command_line_options(vector< string >& arg_list) {
     int i;
@@ -116,8 +134,60 @@ void reset_settings() {
     edge_length = 0.01f;
 
     point_cloud.reset_visibility();
+
+    interactive_mode = c_interactive_mode::idle;
 }
 
+bool get_point_screen_coordinate(const c_point_cloud_point& point, const Matrix4f& model_view_matrix, const Matrix4f& projection_matrix, Vector2i& point_screen_coordinates) {
+    Vector4f point_coordinates;
+    point_coordinates(3) = 1.0f;
+    for (int i = 0; i < 3; i++) {
+        point_coordinates(i) = point.X(i);
+    }
+
+    // see http://www.songho.ca/opengl/gl_transform.html#projection and http://webglfactory.blogspot.com/2011/05/how-to-convert-world-to-screen.html
+    Vector4f clip_coordinates = projection_matrix*model_view_matrix*point_coordinates;
+    Vector3f normalized_device_coordinates(clip_coordinates(0) / clip_coordinates(3), clip_coordinates(1) / clip_coordinates(3), clip_coordinates(2) / clip_coordinates(3));
+    point_screen_coordinates(0) = (int)((float)viewport.width*(normalized_device_coordinates(0) + 1.0) / 2.0) + viewport.x;
+    point_screen_coordinates(1) = (int)((float)viewport.height*(-normalized_device_coordinates(1) + 1.0) / 2.0) + viewport.y;
+    return true;
+}
+
+void update_points_visibility(int visibility) {
+    Vector2i point_screen_coordinates;
+
+    GLfloat model_view_matrix_raw[16];
+    glGetFloatv(GL_MODELVIEW_MATRIX, (GLfloat*)&model_view_matrix_raw);
+    Matrix4f model_view_matrix;
+    for (int i = 0; i < 4; i++) {
+        model_view_matrix.col(i) << model_view_matrix_raw[i * 4], model_view_matrix_raw[i * 4 + 1], model_view_matrix_raw[i * 4 + 2], model_view_matrix_raw[i * 4 + 3];
+    }
+
+    GLfloat projection_matrix_raw[16];
+    glGetFloatv(GL_PROJECTION_MATRIX, (GLfloat*)&projection_matrix_raw);
+    Matrix4f projection_matrix;
+    for (int i = 0; i < 4; i++) {
+        projection_matrix.col(i) << projection_matrix_raw[i * 4], projection_matrix_raw[i * 4 + 1], projection_matrix_raw[i * 4 + 2], projection_matrix_raw[i * 4 + 3];
+    }
+
+    for (auto it = point_cloud.points.begin(); it != point_cloud.points.end(); ++it) {
+        if (it->visible == visibility)
+            continue;
+        if (get_point_screen_coordinate(*it, model_view_matrix, projection_matrix, point_screen_coordinates)) {
+            bool point_in_selected_box = true;
+            for (int i = 0; i < 2; i++) {
+                if (point_screen_coordinates(i) < min_visible(i) || point_screen_coordinates(i) > max_visible(i)) {
+                    point_in_selected_box = false;
+                    break;
+                }
+            }
+            if (point_in_selected_box) {
+                it->visible = visibility;
+            }
+        }
+    }
+    refresh_display_lists();
+}
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
@@ -322,15 +392,23 @@ LONG WINAPI MainWndProc(
         case 0x0D:
             // Process a carriage return. 
             break;
-        case 48:
-        case 68:
+        case 0x45:
+        case 0x65:
+            // Process E, e
+            break;
+        case 0x48:
+        case 0x68:
             // Process H, h
-            interactive_mode = c_interactive_mode::hide_points;
+            interactive_mode = c_interactive_mode::selecting_points_to_hide;
+            min_visible = Vector2i(INT_MAX, INT_MAX);
+            max_visible = Vector2i(INT_MIN, INT_MIN);
             break;
         case 0x52:
         case 0x72:
             // Process R, r
             reset_settings();
+            refresh_display_lists();
+            break;
         default:
             // Process displayable characters. 
 //            ch = (TCHAR)wParam;
@@ -364,6 +442,9 @@ LONG WINAPI MainWndProc(
         return 0;
 
     case WM_LBUTTONUP:
+        if (interactive_mode == c_interactive_mode::selecting_points_to_hide) {
+            interactive_mode = c_interactive_mode::updating_points_to_hide;
+        }
         ReleaseCapture();
         return 0;
 
@@ -371,23 +452,36 @@ LONG WINAPI MainWndProc(
         xPos = GET_X_LPARAM(lParam);
         yPos = GET_Y_LPARAM(lParam);
         fwKeys = GET_KEYSTATE_WPARAM(wParam);
-        if (fwKeys & MK_LBUTTON || fwKeys & MK_RBUTTON)
-        {
+        if (interactive_mode == c_interactive_mode::selecting_points_to_hide) {
+            if (fwKeys & MK_LBUTTON) {
+                if (xPos < min_visible(0))
+                    min_visible(0) = xPos;
+                if (yPos < min_visible(1))
+                    min_visible(1) = yPos;
+                if (xPos > max_visible(0))
+                    max_visible(0) = xPos;
+                if (yPos > max_visible(1))
+                    max_visible(1) = yPos;
+            }
+        } 
+        else 
+        if (interactive_mode == c_interactive_mode::idle) {
             if (fwKeys & MK_LBUTTON) {
                 translate_camera[0] -= (last_mouse_pos_x - xPos)*translate_camera_speed(0);
                 translate_camera[1] += (last_mouse_pos_y - yPos)*translate_camera_speed(1);
             }
-            else {
+            else 
+            if (fwKeys & MK_RBUTTON) {
                 rotate_camera_direction[0] += (last_mouse_pos_y - yPos)*rotate_camera_speed;
                 rotate_camera_direction[1] -= (last_mouse_pos_x - xPos)*rotate_camera_speed;
                 rotate_camera_angle = sqrt(rotate_camera_direction[0] * rotate_camera_direction[0] +
                     rotate_camera_direction[1] * rotate_camera_direction[1] +
                     rotate_camera_direction[2] * rotate_camera_direction[2]);
             }
-
-            last_mouse_pos_x = xPos;
-            last_mouse_pos_y = yPos;
         }
+
+        last_mouse_pos_x = xPos;
+        last_mouse_pos_y = yPos;
         return 0;
         
     case WM_MOUSEWHEEL:
@@ -396,7 +490,9 @@ LONG WINAPI MainWndProc(
         xPos = GET_X_LPARAM(lParam);
         yPos = GET_Y_LPARAM(lParam);
         mult = zDelta / 120;
-        translate_camera[2] += mult*translate_camera_speed(2);
+        if (interactive_mode == c_interactive_mode::idle) {
+            translate_camera[2] += mult*translate_camera_speed(2);
+        }
 
     default:
         lRet = (LONG)DefWindowProc(hWnd, uMsg, wParam, lParam);
@@ -442,16 +538,12 @@ BOOL bSetupPixelFormat(HDC hdc)
 }
 
 /* OpenGL code */
-
-bool get_point_screen_coordinate() {
-//111111111111111111111111111111
-}
-
 GLvoid resize(GLsizei width, GLsizei height)
 {
     GLfloat aspect;
 
-    glViewport(0, 0, width, height);
+    viewport = c_viewport(0, 0, width, height);
+    glViewport(viewport.x, viewport.y, viewport.width, viewport.height);
 
     aspect = (GLfloat)width / height;
 
@@ -536,9 +628,6 @@ GLvoid drawScene(GLvoid)
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-//    GLfloat matrix[4][4];
-//    glGetFloatv(GL_MODELVIEW_MATRIX, (GLfloat*)matrix);
-
     glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
 
@@ -551,6 +640,11 @@ GLvoid drawScene(GLvoid)
     glTranslatef(translate_camera[0], translate_camera[1], translate_camera[2]);
     // rotate after translation
     glRotatef((GLfloat)rotate_camera_angle, rotate_camera_direction[0], rotate_camera_direction[1], rotate_camera_direction[2]);
+
+    if (interactive_mode == c_interactive_mode::updating_points_to_hide) {
+        update_points_visibility(0);
+        interactive_mode = c_interactive_mode::idle;
+    }
 
     glCallList(POINT_CLOUD);
 
