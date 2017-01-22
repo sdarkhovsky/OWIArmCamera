@@ -26,9 +26,11 @@
 
 #include <Eigen/Dense>
 
+#include "point_cloud.h"
+
 using namespace std;
 using namespace Eigen;
-
+using namespace pcv;
 
 /* Windows globals, defines, and prototypes */
 CHAR szAppName[] = "Win OpenGL";
@@ -69,8 +71,17 @@ GLvoid drawScene(GLvoid);
 
 string point_cloud_file_path;
 
-float min_obj_coord[3];
-float max_obj_coord[3];
+c_point_cloud point_cloud;
+
+enum class c_interactive_mode: int
+{
+    idle,
+    hide_points
+};
+c_interactive_mode interactive_mode = c_interactive_mode::idle;
+
+Vector2f min_visible;
+Vector2f max_visible;
 
 bool get_command_line_options(vector< string >& arg_list) {
     int i;
@@ -92,7 +103,7 @@ void reset_settings() {
     translate_camera[1] = 0.0f;
     translate_camera[2] = 0.0f;
 
-    translate_camera_speed = Vector3f(0.5f, 0.5f, 0.5f);
+    translate_camera_speed = Vector3f(0.02f, 0.02f, 0.05f);
     
     rotate_camera_angle = 0.0f;
 
@@ -103,6 +114,8 @@ void reset_settings() {
     rotate_camera_speed = 0.05f;
 
     edge_length = 0.01f;
+
+    point_cloud.reset_visibility();
 }
 
 
@@ -309,6 +322,11 @@ LONG WINAPI MainWndProc(
         case 0x0D:
             // Process a carriage return. 
             break;
+        case 48:
+        case 68:
+            // Process H, h
+            interactive_mode = c_interactive_mode::hide_points;
+            break;
         case 0x52:
         case 0x72:
             // Process R, r
@@ -425,6 +443,10 @@ BOOL bSetupPixelFormat(HDC hdc)
 
 /* OpenGL code */
 
+bool get_point_screen_coordinate() {
+//111111111111111111111111111111
+}
+
 GLvoid resize(GLsizei width, GLsizei height)
 {
     GLfloat aspect;
@@ -439,79 +461,46 @@ GLvoid resize(GLsizei width, GLsizei height)
     // the OpenGL projection transformation (not to be confused with the projective transformation in the computer vision) transforms 
     // all vertex data from the eye coordinates to the clip coordinates.
 
-    float zNear = (max_obj_coord[2] - min_obj_coord[2]) / 100.0f;;
-    float zFar = zNear + (max_obj_coord[2] - min_obj_coord[2])*3.0f;
+    float zNear = (point_cloud.max_coord(2) - point_cloud.min_coord(2)) / 100.0f;;
+    float zFar = zNear + (point_cloud.max_coord(2) - point_cloud.min_coord(2))*3.0f;
     gluPerspective(45.0, aspect, zNear, zFar);
-/*
-    glFrustum(min_obj_coord[0], max_obj_coord[0],
-        min_obj_coord[1], max_obj_coord[1],
-        (max_obj_coord[2] - min_obj_coord[2])/2.0, (max_obj_coord[2] - min_obj_coord[2])*3.0 / 2.0);
-        */
+
     glMatrixMode(GL_MODELVIEW);
+}
+
+void refresh_display_lists() {
+    glNewList(POINT_CLOUD, GL_COMPILE);
+
+    for (auto it = point_cloud.points.begin(); it != point_cloud.points.end(); ++it) {
+        if (it->visible == 0)
+            continue;
+        glBegin(GL_POINTS);
+        glColor3ub((GLubyte)it->Clr(0), (GLubyte)it->Clr(1), (GLubyte)it->Clr(2));
+        glVertex3f(it->X(0), it->X(1), it->X(2));
+        glEnd();
+
+        if (it->Edge != Vector3f::Zero()) {
+            glBegin(GL_LINES);
+            glColor3ub(255, 0, 0);
+            Vector3f normalized_edge = it->Edge;
+            normalized_edge.normalize();
+            Vector3f v = it->X + normalized_edge * edge_length;
+
+            glVertex3f(it->X(0), it->X(1), it->X(2));
+            glVertex3f(v(0), v(1), v(2));
+
+            glEnd();
+        }
+    }
+
+    glEndList();
 }
 
 GLvoid createObjects()
 {
-    glNewList(POINT_CLOUD, GL_COMPILE);
+    point_cloud.read_point_cloud_file(point_cloud_file_path);
 
-    for (int i = 0; i < 3; i++) {
-        min_obj_coord[i] = FLT_MAX;
-        max_obj_coord[i] = FLT_MIN;
-    }
-
-    // read points from xyz file
-    string line;
-    std::ifstream infile;
-    infile.open(point_cloud_file_path, std::ifstream::in);
-    while (std::getline(infile, line)) {
-       
-        std::stringstream linestream(line);
-        int count = 0;
-        float obj_coord[3];
-        float obj_color[3]; // 0-255 range
-        float edge_direction[3];
-        for (int i = 0; i < 3; i++) {
-            if (linestream >> obj_coord[i])
-                count++;
-        }
-        for (int i = 0; i < 3; i++) {
-            if (linestream >> obj_color[i])
-                count++;
-        }
-
-        for (int i = 0; i < 3; i++) {
-            if (linestream >> edge_direction[i]) {
-                count++;
-            }
-        }
-
-        glBegin(GL_POINTS);
-        glColor3ub((GLubyte)obj_color[0], (GLubyte)obj_color[1], (GLubyte)obj_color[2]);
-        glVertex3f(obj_coord[0], obj_coord[1], obj_coord[2]);
-        glEnd();
-
-        if (count >= 9) {
-            glBegin(GL_LINES);
-            glColor3ub(255, 0, 0);
-            Vector3f v1(obj_coord[0], obj_coord[1], obj_coord[2]);
-            Vector3f vEdge(edge_direction[0], edge_direction[1], edge_direction[2]);
-            vEdge.normalize();
-            Vector3f v2 = v1 + vEdge * edge_length;
-
-            glVertex3f(v1(0), v1(1), v1(2));
-            glVertex3f(v2(0), v2(1), v2(2));
-
-            glEnd();
-        }
-
-        for (int i = 0; i < 3; i++) {
-            if (obj_coord[i] < min_obj_coord[i]) min_obj_coord[i] = obj_coord[i];
-            if (obj_coord[i] > max_obj_coord[i]) max_obj_coord[i] = obj_coord[i];
-        }
-    }
-    infile.close();
-
-    glEndList();
+    refresh_display_lists();
 }
 
 GLvoid initializeGL(GLsizei width, GLsizei height)
@@ -530,12 +519,12 @@ GLvoid initializeGL(GLsizei width, GLsizei height)
     glLoadIdentity();
     float center_obj_coord[3];
     for (int i = 0; i < 3; i++) {
-        center_obj_coord[i] = (min_obj_coord[i] + max_obj_coord[i]) / 2.0f;
+        center_obj_coord[i] = (point_cloud.min_coord(i) + point_cloud.max_coord(i)) / 2.0f;
     }
 
     // position the camera looking at the object center
     // note, that in the opengl the camera looks at the negative z direction of the camera reference frame
-    float camera_shift = (max_obj_coord[2] - min_obj_coord[2]);
+    float camera_shift = (point_cloud.max_coord(2) - point_cloud.min_coord(2));
     gluLookAt(center_obj_coord[0], center_obj_coord[1], center_obj_coord[2] + camera_shift,
         center_obj_coord[0], center_obj_coord[1], center_obj_coord[2],
         0.0, 1.0, 0.0);

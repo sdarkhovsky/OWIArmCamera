@@ -13,7 +13,7 @@ namespace ais {
             return false;
         size_t num_point_cloud_cols = point_cloud.points[0].size();
 
-        int nbhd_radius[2] = { 1, 2 };
+        int nbhd_radius[2] = { 1, 5 };
         int total_nbhd_radius = nbhd_radius[0] + nbhd_radius[1];
 
         for (u = total_nbhd_radius; u < num_point_cloud_rows - total_nbhd_radius; u++) {
