@@ -28,6 +28,10 @@
 
 #include "point_cloud.h"
 
+#define MAIN_LOGGER
+#define LOGGING_LEVEL_1
+#include "logger.hpp"
+
 using namespace std;
 using namespace Eigen;
 using namespace pcv;
@@ -82,7 +86,7 @@ c_viewport viewport;
 
 #define POINT_CLOUD 1
 
-GLvoid resize(GLsizei, GLsizei);
+GLvoid resize_viewport(GLsizei, GLsizei);
 GLvoid initializeGL(GLsizei, GLsizei);
 GLvoid drawScene(GLvoid);
 
@@ -197,6 +201,7 @@ void update_points_visibility() {
             }
         }
     }
+
     refresh_display_lists();
 }
 
@@ -299,7 +304,7 @@ LONG WINAPI MainWndProc(
     WPARAM  wParam,
     LPARAM  lParam)
 {
-    LONG    lRet = 1;
+    LONG    lRet = 0;
     PAINTSTRUCT    ps;
     RECT rect;
 
@@ -322,11 +327,11 @@ LONG WINAPI MainWndProc(
     case WM_PAINT:
         BeginPaint(hWnd, &ps);
         EndPaint(hWnd, &ps);
-        break;
+        return 0;
 
     case WM_SIZE:
         GetClientRect(hWnd, &rect);
-        resize(rect.right, rect.bottom);
+        resize_viewport(rect.right, rect.bottom);
         break;
 
     case WM_CLOSE:
@@ -383,7 +388,7 @@ LONG WINAPI MainWndProc(
             // Process other non-character keystrokes. 
             break;
         }
-
+        break;
     case WM_CHAR:
         switch (wParam)
         {
@@ -432,6 +437,7 @@ LONG WINAPI MainWndProc(
 //            ch = (TCHAR)wParam;
             break;
         }
+        break;
 
     case WM_RBUTTONDOWN:
         xPos = GET_X_LPARAM(lParam);
@@ -446,7 +452,7 @@ LONG WINAPI MainWndProc(
 
     case WM_RBUTTONUP:
         ReleaseCapture();
-        return 0;
+        break;
 
     case WM_LBUTTONDOWN:
         xPos = GET_X_LPARAM(lParam);
@@ -457,7 +463,7 @@ LONG WINAPI MainWndProc(
 
         SetCapture(hWnd);
 
-        return 0;
+        break;
 
     case WM_LBUTTONUP:
         if (interactive_mode == c_interactive_mode::selecting_points_to_hide) {
@@ -468,7 +474,7 @@ LONG WINAPI MainWndProc(
         }
         
         ReleaseCapture();
-        return 0;
+        break;
 
     case WM_MOUSEMOVE:
         xPos = GET_X_LPARAM(lParam);
@@ -506,7 +512,7 @@ LONG WINAPI MainWndProc(
 
         last_mouse_pos_x = xPos;
         last_mouse_pos_y = yPos;
-        return 0;
+        break;
         
     case WM_MOUSEWHEEL:
         fwKeys = GET_KEYSTATE_WPARAM(wParam);
@@ -517,6 +523,7 @@ LONG WINAPI MainWndProc(
         if (interactive_mode == c_interactive_mode::idle) {
             translate_camera[2] += mult*translate_camera_speed(2);
         }
+        break;
 
     default:
         lRet = (LONG)DefWindowProc(hWnd, uMsg, wParam, lParam);
@@ -562,7 +569,7 @@ BOOL bSetupPixelFormat(HDC hdc)
 }
 
 /* OpenGL code */
-GLvoid resize(GLsizei width, GLsizei height)
+GLvoid resize_viewport(GLsizei width, GLsizei height)
 {
     GLfloat aspect;
 
@@ -638,8 +645,12 @@ GLvoid initializeGL(GLsizei width, GLsizei height)
         center_obj_coord[0], center_obj_coord[1], center_obj_coord[2],
         0.0, 1.0, 0.0);
 
+#ifdef LOGGING
+//    LOG("initializeGL: point_cloud.points.size = ", point_cloud.points.size(), " width = ", width, " height = ", height);
+#endif
+    resize_viewport(width, height);
+
     refresh_display_lists();
-    resize(width, height);
 }
 
 GLvoid drawScene(GLvoid)

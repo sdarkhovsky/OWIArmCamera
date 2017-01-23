@@ -41,6 +41,7 @@ namespace pcv {
                 if (point.X(i) < min_coord(i)) min_coord(i) = point.X(i);
                 if (point.X(i) > max_coord(i)) max_coord(i) = point.X(i);
             }
+            point.visible = 1;
             points.push_back(point);
         }
         infile.close();

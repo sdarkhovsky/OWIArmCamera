@@ -122,7 +122,13 @@ std::string logger< log_policy >::get_time()
 	time_t raw_time;
 	
 	time( & raw_time );
-	time_str = ctime( &raw_time );
+#ifdef _WINDOWS
+    char buffer[255];
+    ctime_s(buffer, sizeof(buffer), &raw_time);
+    time_str = buffer;
+#else
+    time_str = ctime(&raw_time);
+#endif
 
 	//without the newline character
 	return time_str.substr( 0 , time_str.size() - 1 );
