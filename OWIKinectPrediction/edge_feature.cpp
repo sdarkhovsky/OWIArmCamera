@@ -13,7 +13,7 @@ namespace ais {
             return false;
         size_t num_point_cloud_cols = point_cloud.points[0].size();
 
-        int nbhd_radius[2] = { 1, 5 };
+        int nbhd_radius[2] = { 1, 2 };
         int total_nbhd_radius = nbhd_radius[0] + nbhd_radius[1];
 
         for (u = total_nbhd_radius; u < num_point_cloud_rows - total_nbhd_radius; u++) {
@@ -59,7 +59,7 @@ namespace ais {
                 Vector3f edge_direction_normalized = edge_direction;
                 edge_direction_normalized.normalize();
 
-                float dist_to_tangent_plane, sum_dist_to_tangent_plane = 0, max_dist_to_tangent_plane = 0;
+                float dist_to_tangent_plane, sum_dist_to_tangent_plane = 0, tangent_plane_projection, max_tangent_plane_projection = 0;
                 size_t num_pnts = 0;
                 for (u1 = u - total_nbhd_radius; u1 <= u + total_nbhd_radius; u1++) {
                     for (v1 = v - total_nbhd_radius; v1 <= v + total_nbhd_radius; v1++) {
@@ -68,16 +68,19 @@ namespace ais {
                             continue;
                         }
 
-                        dist_to_tangent_plane = edge_direction_normalized.dot(point_cloud.points[u][v].X - point_cloud.points[u1][v1].X);
-                        if (dist_to_tangent_plane > max_dist_to_tangent_plane)
-                            max_dist_to_tangent_plane = dist_to_tangent_plane;
+                        Vector3f relativeX = point_cloud.points[u][v].X - point_cloud.points[u1][v1].X;
+                        dist_to_tangent_plane = edge_direction_normalized.dot(relativeX);
+                        Vector3f relativeX_tangent_plane_projection = relativeX - edge_direction_normalized*dist_to_tangent_plane;
+                        tangent_plane_projection = relativeX_tangent_plane_projection.norm();
+                        if (tangent_plane_projection > max_tangent_plane_projection)
+                            max_tangent_plane_projection = tangent_plane_projection;
                         sum_dist_to_tangent_plane += dist_to_tangent_plane;
                         num_pnts++;
                     }
                 }
                 float ratio = sum_dist_to_tangent_plane / num_pnts;
-                ratio /= max_dist_to_tangent_plane;
-                if (ratio > 0.4f) {
+                ratio /= max_tangent_plane_projection;
+                if (ratio > 0.25f) {
                     point_cloud.points[u][v].Edge = edge_direction;
                 }
             }
