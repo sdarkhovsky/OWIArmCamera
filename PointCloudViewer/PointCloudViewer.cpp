@@ -65,6 +65,8 @@ float rotate_camera_speed;
 
 float edge_length;
 
+float gl_point_size;
+
 int last_mouse_pos_x;
 int last_mouse_pos_y;
 
@@ -142,6 +144,8 @@ void reset_settings() {
     rotate_camera_speed = 0.05f;
 
     edge_length = 0.01f;
+
+    gl_point_size = 3.0f;
 
     point_cloud.reset_visibility();
 
@@ -439,7 +443,9 @@ LONG WINAPI MainWndProc(
         case 0x53:
         case 0x73:
             // Process S, s
-            point_cloud.write_point_cloud_file(output_point_cloud_file_path);
+            if (output_point_cloud_file_path.size() > 0) {
+                point_cloud.write_point_cloud_file(output_point_cloud_file_path);
+            }
             break;
 
         default:
@@ -595,7 +601,7 @@ GLvoid resize_viewport(GLsizei width, GLsizei height)
     // all vertex data from the eye coordinates to the clip coordinates.
 
     float zNear = (point_cloud.max_coord(2) - point_cloud.min_coord(2)) / 100.0f;;
-    float zFar = zNear + (point_cloud.max_coord(2) - point_cloud.min_coord(2))*3.0f;
+    float zFar = zNear + (point_cloud.max_coord(2) - point_cloud.min_coord(2))*10.0f;
     gluPerspective(45.0, aspect, zNear, zFar);
 
     glMatrixMode(GL_MODELVIEW);
@@ -661,6 +667,8 @@ GLvoid initializeGL(GLsizei width, GLsizei height)
     resize_viewport(width, height);
 
     refresh_display_lists();
+
+    glPointSize(gl_point_size);
 }
 
 GLvoid drawScene(GLvoid)
