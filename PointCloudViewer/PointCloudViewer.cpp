@@ -94,7 +94,9 @@ enum class c_interactive_mode: int
 {
     idle,
     selecting_points_to_hide,
-    updating_points_to_hide
+    updating_points_to_hide,
+    selecting_points_to_keep,
+    updating_points_to_keep
 };
 c_interactive_mode interactive_mode = c_interactive_mode::idle;
 
@@ -153,7 +155,7 @@ bool get_point_screen_coordinate(const c_point_cloud_point& point, const Matrix4
     return true;
 }
 
-void update_points_visibility(int visibility) {
+void update_points_visibility() {
     Vector2i point_screen_coordinates;
 
     GLfloat model_view_matrix_raw[16];
@@ -171,7 +173,7 @@ void update_points_visibility(int visibility) {
     }
 
     for (auto it = point_cloud.points.begin(); it != point_cloud.points.end(); ++it) {
-        if (it->visible == visibility)
+        if (!it->visible)
             continue;
         if (get_point_screen_coordinate(*it, model_view_matrix, projection_matrix, point_screen_coordinates)) {
             bool point_in_selected_box = true;
@@ -181,8 +183,17 @@ void update_points_visibility(int visibility) {
                     break;
                 }
             }
-            if (point_in_selected_box) {
-                it->visible = visibility;
+
+            if (interactive_mode == c_interactive_mode::updating_points_to_keep) {
+                if (!point_in_selected_box) {
+                    it->visible = 0;
+                }
+            } 
+            else
+            if (interactive_mode == c_interactive_mode::updating_points_to_hide) {
+                if (point_in_selected_box) {
+                    it->visible = 0;
+                }
             }
         }
     }
@@ -403,6 +414,13 @@ LONG WINAPI MainWndProc(
             min_visible = Vector2i(INT_MAX, INT_MAX);
             max_visible = Vector2i(INT_MIN, INT_MIN);
             break;
+        case 0x4B:
+        case 0x6B:
+            // Process K, k
+            interactive_mode = c_interactive_mode::selecting_points_to_keep;
+            min_visible = Vector2i(INT_MAX, INT_MAX);
+            max_visible = Vector2i(INT_MIN, INT_MIN);
+            break;
         case 0x52:
         case 0x72:
             // Process R, r
@@ -445,6 +463,10 @@ LONG WINAPI MainWndProc(
         if (interactive_mode == c_interactive_mode::selecting_points_to_hide) {
             interactive_mode = c_interactive_mode::updating_points_to_hide;
         }
+        if (interactive_mode == c_interactive_mode::selecting_points_to_keep) {
+            interactive_mode = c_interactive_mode::updating_points_to_keep;
+        }
+        
         ReleaseCapture();
         return 0;
 
@@ -452,7 +474,9 @@ LONG WINAPI MainWndProc(
         xPos = GET_X_LPARAM(lParam);
         yPos = GET_Y_LPARAM(lParam);
         fwKeys = GET_KEYSTATE_WPARAM(wParam);
-        if (interactive_mode == c_interactive_mode::selecting_points_to_hide) {
+        if (interactive_mode == c_interactive_mode::selecting_points_to_hide ||
+            interactive_mode == c_interactive_mode::selecting_points_to_keep
+            ) {
             if (fwKeys & MK_LBUTTON) {
                 if (xPos < min_visible(0))
                     min_visible(0) = xPos;
@@ -588,15 +612,10 @@ void refresh_display_lists() {
     glEndList();
 }
 
-GLvoid createObjects()
+GLvoid initializeGL(GLsizei width, GLsizei height)
 {
     point_cloud.read_point_cloud_file(point_cloud_file_path);
 
-    refresh_display_lists();
-}
-
-GLvoid initializeGL(GLsizei width, GLsizei height)
-{
     glClearIndex((GLfloat)BLACK_INDEX);
     glClearDepth(1.0);
 
@@ -604,8 +623,6 @@ GLvoid initializeGL(GLsizei width, GLsizei height)
 
     // white background
     glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-
-    createObjects();
 
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
@@ -621,6 +638,7 @@ GLvoid initializeGL(GLsizei width, GLsizei height)
         center_obj_coord[0], center_obj_coord[1], center_obj_coord[2],
         0.0, 1.0, 0.0);
 
+    refresh_display_lists();
     resize(width, height);
 }
 
@@ -641,8 +659,10 @@ GLvoid drawScene(GLvoid)
     // rotate after translation
     glRotatef((GLfloat)rotate_camera_angle, rotate_camera_direction[0], rotate_camera_direction[1], rotate_camera_direction[2]);
 
-    if (interactive_mode == c_interactive_mode::updating_points_to_hide) {
-        update_points_visibility(0);
+    if (interactive_mode == c_interactive_mode::updating_points_to_hide ||
+        interactive_mode == c_interactive_mode::updating_points_to_keep
+        ) {
+        update_points_visibility();
         interactive_mode = c_interactive_mode::idle;
     }
 
