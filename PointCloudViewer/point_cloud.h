@@ -27,6 +27,7 @@ namespace pcv {
 
         std::vector< c_point_cloud_point> points;
         bool read_point_cloud_file(std::string file_path);
+        bool write_point_cloud_file(std::string file_path);
         void reset_visibility();
     };
 }

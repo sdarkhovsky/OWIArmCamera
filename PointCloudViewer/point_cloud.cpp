@@ -49,6 +49,37 @@ namespace pcv {
         return true;
     }
 
+    bool c_point_cloud::write_point_cloud_file(std::string file_path) {
+        // read points from xyz file
+        string line;
+        std::ofstream outfile;
+        outfile.open(file_path, std::ifstream::out);
+
+        for (auto it = points.begin(); it != points.end(); ++it) {
+            if (!it->visible)
+                continue;
+
+            outfile << it->X(0) << " ";
+            outfile << it->X(1) << " ";
+            outfile << it->X(2) << " ";
+            outfile << it->Clr(0) << " ";
+            outfile << it->Clr(1) << " ";
+
+            if (it->Edge != Vector3f::Zero()) {
+                outfile << it->Clr(2) << " ";
+                outfile << it->Edge(0) << " ";
+                outfile << it->Edge(1) << " ";
+                outfile << it->Edge(2) << std::endl;
+            }
+            else {
+                outfile << it->Clr(2) << std::endl;
+            }
+        }
+
+        outfile.close();
+        return true;
+    }
+
     void c_point_cloud::reset_visibility() {
         for (auto it = points.begin(); it != points.end(); ++it) {
             it->visible = true;

@@ -90,7 +90,8 @@ GLvoid resize_viewport(GLsizei, GLsizei);
 GLvoid initializeGL(GLsizei, GLsizei);
 GLvoid drawScene(GLvoid);
 
-string point_cloud_file_path;
+string input_point_cloud_file_path;
+string output_point_cloud_file_path;
 
 c_point_cloud point_cloud;
 
@@ -114,8 +115,11 @@ bool get_command_line_options(vector< string >& arg_list) {
         return false;
 
     for (i = 0; i < arg_list.size(); i = i + 2) {
-        if (arg_list[i] == "-p") {
-            point_cloud_file_path = arg_list[i + 1];
+        if (arg_list[i] == "-i") {
+            input_point_cloud_file_path = arg_list[i + 1];
+        }
+        if (arg_list[i] == "-o") {
+            output_point_cloud_file_path = arg_list[i + 1];
         }
     }
 
@@ -432,6 +436,12 @@ LONG WINAPI MainWndProc(
             reset_settings();
             refresh_display_lists();
             break;
+        case 0x53:
+        case 0x73:
+            // Process S, s
+            point_cloud.write_point_cloud_file(output_point_cloud_file_path);
+            break;
+
         default:
             // Process displayable characters. 
 //            ch = (TCHAR)wParam;
@@ -621,7 +631,7 @@ void refresh_display_lists() {
 
 GLvoid initializeGL(GLsizei width, GLsizei height)
 {
-    point_cloud.read_point_cloud_file(point_cloud_file_path);
+    point_cloud.read_point_cloud_file(input_point_cloud_file_path);
 
     glClearIndex((GLfloat)BLACK_INDEX);
     glClearDepth(1.0);
