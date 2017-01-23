@@ -33,8 +33,13 @@ namespace pcv {
                 linestream >> point.Clr(i);
             }
 
-            for (int i = 0; i < 3; i++) {
-                linestream >> point.Edge(i);
+            if (linestream.good()) {
+                for (int i = 0; i < 3; i++) {
+                    linestream >> point.Edge(i);
+                }
+            }
+            else {
+                point.Edge = Vector3f::Zero();
             }
 
             for (int i = 0; i < 3; i++) {
