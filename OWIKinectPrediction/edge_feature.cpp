@@ -13,7 +13,8 @@ namespace ais {
             return false;
         size_t num_point_cloud_cols = point_cloud.points[0].size();
 
-        int nbhd_radius[2] = { 2, 4 };
+        // todo: define the nbhd_radius depending on the sensor and edge detection resolution
+        int nbhd_radius[2] = { 0, 2 };
         int total_nbhd_radius = nbhd_radius[0] + nbhd_radius[1];
 
         for (u = total_nbhd_radius; u < num_point_cloud_rows - total_nbhd_radius; u++) {
@@ -23,7 +24,10 @@ namespace ais {
                 Vector3f mass_center[2];
                 size_t num_points[2];
 
-                for (j = 0; j <= 1; j++) {
+                if (point_cloud.points[u][v].X == Vector3f::Zero())
+                    continue;
+
+                for (j = 0; j < 2; j++) {
                     mass_center[j] = Vector3f::Zero();
                     num_points[j] = 0;
                 }
@@ -31,9 +35,8 @@ namespace ais {
                 for (u1 = u - total_nbhd_radius; u1 <= u + total_nbhd_radius; u1++) {
                     for (v1 = v - total_nbhd_radius; v1 <= v + total_nbhd_radius; v1++) {
 
-                        if (point_cloud.points[u1][v1].X == Vector3f::Zero()) {
+                        if (point_cloud.points[u1][v1].X == Vector3f::Zero())
                             continue;
-                        }
 
                         if (u1 >= u - nbhd_radius[0] && u1 <= u + nbhd_radius[0] && v1 >= v - nbhd_radius[0] && v1 <= v + nbhd_radius[0]) {
                             j = 0;

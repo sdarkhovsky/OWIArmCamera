@@ -601,7 +601,7 @@ GLvoid resize_viewport(GLsizei width, GLsizei height)
     // all vertex data from the eye coordinates to the clip coordinates.
 
     float zNear = (point_cloud.max_coord(2) - point_cloud.min_coord(2)) / 100.0f;;
-    float zFar = zNear + (point_cloud.max_coord(2) - point_cloud.min_coord(2))*10.0f;
+    float zFar = FLT_MAX;  // zNear + (point_cloud.max_coord(2) - point_cloud.min_coord(2))*10.0f;
     gluPerspective(45.0, aspect, zNear, zFar);
 
     glMatrixMode(GL_MODELVIEW);
