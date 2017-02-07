@@ -62,8 +62,8 @@ private:
     // Current Kinect
     IKinectSensor*          m_pKinectSensor;
     ICoordinateMapper*      m_pCoordinateMapper;
-    CameraSpacePoint*       m_pCameraSpaceDepthFrameCoordinates;
-    ColorSpacePoint*        m_pColorSpaceDepthFrameCoordinates;
+    CameraSpacePoint*        m_pCameraSpacePoints;
+    DepthSpacePoint*        m_pDepthCoordinates;
 
     // Frame reader
     IMultiSourceFrameReader*m_pMultiSourceFrameReader;
