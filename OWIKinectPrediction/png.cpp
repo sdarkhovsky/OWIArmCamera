@@ -6,6 +6,9 @@
 #include <string.h>
 #include <stdarg.h>
 
+#define DEBUGGING
+
+#ifdef DEBUGGING
 #define PNG_DEBUG 3
 #include <png.h>
 
@@ -94,6 +97,6 @@ bool write_png_file(const char* file_name, ais::c_point_cloud& point_cloud)
 
     return true;
 }
-
+#endif
 
 

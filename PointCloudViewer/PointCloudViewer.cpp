@@ -618,10 +618,10 @@ void refresh_display_lists() {
         glVertex3f(it->X(0), it->X(1), it->X(2));
         glEnd();
 
-        if (it->Edge != Vector3f::Zero()) {
+        if (it->Vector != Vector3f::Zero()) {
             glBegin(GL_LINES);
             glColor3ub(255, 0, 0);
-            Vector3f normalized_edge = it->Edge;
+            Vector3f normalized_edge = it->Vector;
             normalized_edge.normalize();
             Vector3f v = it->X + normalized_edge * edge_length;
 

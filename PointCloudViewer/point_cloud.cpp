@@ -67,11 +67,11 @@ namespace pcv {
 
             if (linestream.good()) {
                 for (int i = 0; i < 3; i++) {
-                    linestream >> point.Edge(i);
+                    linestream >> point.Vector(i);
                 }
             }
             else {
-                point.Edge = Vector3f::Zero();
+                point.Vector = Vector3f::Zero();
             }
 
             for (int i = 0; i < 3; i++) {
@@ -102,11 +102,11 @@ namespace pcv {
             outfile << it->Clr(0) << " ";
             outfile << it->Clr(1) << " ";
 
-            if (it->Edge != Vector3f::Zero()) {
+            if (it->Vector != Vector3f::Zero()) {
                 outfile << it->Clr(2) << " ";
-                outfile << it->Edge(0) << " ";
-                outfile << it->Edge(1) << " ";
-                outfile << it->Edge(2) << std::endl;
+                outfile << it->Vector(0) << " ";
+                outfile << it->Vector(1) << " ";
+                outfile << it->Vector(2) << std::endl;
             }
             else {
                 outfile << it->Clr(2) << std::endl;

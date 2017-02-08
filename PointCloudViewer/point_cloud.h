@@ -16,7 +16,7 @@ namespace pcv {
     {
         Vector3f X;
         Vector3f Clr;
-        Vector3f Edge;
+        Vector3f Vector;
         int visible;
     } 	c_point_cloud_point;
 

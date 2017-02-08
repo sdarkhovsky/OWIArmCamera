@@ -81,11 +81,11 @@ bool c_kinect_image::write_file(std::string file_path, c_point_cloud& point_clou
             outfile << point_cloud.points[u][v].X(2) << " ";
             outfile << point_cloud.points[u][v].Clr(0) << " ";
             outfile << point_cloud.points[u][v].Clr(1) << " ";
-            if (image_format == c_image_format::xyze && point_cloud.points[u][v].Edge != Vector3f::Zero()) {
+            if (image_format == c_image_format::xyze && point_cloud.points[u][v].Vector != Vector3f::Zero()) {
                 outfile << point_cloud.points[u][v].Clr(2) << " ";
-                outfile << point_cloud.points[u][v].Edge(0) << " ";
-                outfile << point_cloud.points[u][v].Edge(1) << " ";
-                outfile << point_cloud.points[u][v].Edge(2) << std::endl;
+                outfile << point_cloud.points[u][v].Vector(0) << " ";
+                outfile << point_cloud.points[u][v].Vector(1) << " ";
+                outfile << point_cloud.points[u][v].Vector(2) << std::endl;
             }
             else {
                 outfile << point_cloud.points[u][v].Clr(2) << std::endl;

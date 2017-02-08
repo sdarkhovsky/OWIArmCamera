@@ -84,7 +84,7 @@ namespace ais {
                 float ratio = sum_dist_to_tangent_plane / num_pnts;
                 ratio /= max_tangent_plane_projection;
                 if (ratio > 0.25f) {
-                    point_cloud.points[u][v].Edge = edge_direction;
+                    point_cloud.points[u][v].Vector = edge_direction;
                 }
             }
         }
