@@ -12,19 +12,51 @@ using namespace pcv;
 namespace pcv {
 
     bool c_point_cloud::read_point_cloud_file(std::string file_path) {
+        string line;
+        std::ifstream infile;
+        size_t width, height;
+        size_t u, v;
+
         for (int i = 0; i < 3; i++) {
             min_coord(i) = FLT_MAX;
             max_coord(i) = FLT_MIN;
         }
 
-        // read points from xyz file
-        string line;
-        std::ifstream infile;
+        size_t file_path_size = file_path.size();
+        bool b_kinect_file = false;
+        if (file_path_size > 4) {
+            std::string file_path_ext = file_path.substr(file_path_size - 4, 4);
+            transform(file_path_ext.begin(), file_path_ext.end(), file_path_ext.begin(), ::tolower);
+            if (file_path_ext == ".kin") {
+                b_kinect_file = true;
+            }
+        }
+
         infile.open(file_path, std::ifstream::in);
+
+        if (b_kinect_file) {
+            std::stringstream linestream;
+
+            std::getline(infile, line);
+            linestream << line;
+            linestream >> height;
+
+            std::getline(infile, line);
+            linestream.clear();
+            linestream << line;
+            linestream >> width;
+        }
+
+        // read points
         while (std::getline(infile, line)) {
             c_point_cloud_point point;
-
             std::stringstream linestream(line);
+
+            if (b_kinect_file) {
+                linestream >> u;
+                linestream >> v;
+            }
+
             for (int i = 0; i < 3; i++) {
                 linestream >> point.X(i);
             }

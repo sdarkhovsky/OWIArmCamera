@@ -80,12 +80,15 @@
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>$(ProjectDir)..\..\LoggingCplusplus;$(EIGEN_LIB_DIR)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)..\..\LoggingCplusplus;$(EIGEN_LIB_DIR);$(LIBPNG_INCLUDE_DIR)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <TargetMachine>MachineX86</TargetMachine>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Console</SubSystem>
+      <AdditionalLibraryDirectories>
+      </AdditionalLibraryDirectories>
+      <AdditionalDependencies>"C:\Projects\lpng1628\projects\vstudio\x64\Release Library\zlib.lib";"C:\Projects\lpng1628\projects\vstudio\x64\Release Library\libpng16.lib";kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>copy "$(OutDir)$(TargetName)$(TargetExt)" "$(OutDir)..\..\..\$(TargetName)$(TargetExt)" </Command>
@@ -100,7 +103,7 @@
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <AdditionalIncludeDirectories>$(ProjectDir)..\..\LoggingCplusplus;$(EIGEN_LIB_DIR)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)..\..\LoggingCplusplus;$(EIGEN_LIB_DIR);$(LIBPNG_INCLUDE_DIR)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <TargetMachine>MachineX86</TargetMachine>
@@ -108,6 +111,9 @@
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalLibraryDirectories>
+      </AdditionalLibraryDirectories>
+      <AdditionalDependencies>"C:\Projects\lpng1628\projects\vstudio\x64\Release Library\zlib.lib";"C:\Projects\lpng1628\projects\vstudio\x64\Release Library\libpng16.lib";kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>copy "$(OutDir)$(TargetName)$(TargetExt)" "$(OutDir)..\..\..\$(TargetName)$(TargetExt)" </Command>
@@ -119,10 +125,13 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <PreprocessorDefinitions>_WINDOWS</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(ProjectDir)..\..\LoggingCplusplus;$(EIGEN_LIB_DIR)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)..\..\LoggingCplusplus;$(EIGEN_LIB_DIR);$(LIBPNG_INCLUDE_DIR)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
+      <AdditionalLibraryDirectories>
+      </AdditionalLibraryDirectories>
+      <AdditionalDependencies>"C:\Projects\lpng1628\projects\vstudio\x64\Release Library\zlib.lib";"C:\Projects\lpng1628\projects\vstudio\x64\Release Library\libpng16.lib";kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>copy "$(OutDir)$(TargetName)$(TargetExt)" "$(OutDir)..\..\..\$(TargetName)$(TargetExt)" </Command>
@@ -134,10 +143,13 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
       <PreprocessorDefinitions>_WINDOWS</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(ProjectDir)..\..\LoggingCplusplus;$(EIGEN_LIB_DIR)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)..\..\LoggingCplusplus;$(EIGEN_LIB_DIR);$(LIBPNG_INCLUDE_DIR)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
+      <AdditionalLibraryDirectories>
+      </AdditionalLibraryDirectories>
+      <AdditionalDependencies>"C:\Projects\lpng1628\projects\vstudio\x64\Release Library\zlib.lib";"C:\Projects\lpng1628\projects\vstudio\x64\Release Library\libpng16.lib";kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>copy "$(OutDir)$(TargetName)$(TargetExt)" "$(OutDir)..\..\..\$(TargetName)$(TargetExt)" </Command>
@@ -153,6 +165,7 @@
     <ClCompile Include="..\plane_feature.cpp" />
     <ClCompile Include="..\kinect_image.cpp" />
     <ClCompile Include="..\OWIKinectPrediction.cpp" />
+    <ClCompile Include="..\png.cpp" />
     <ClCompile Include="..\point_cloud.cpp" />
     <ClCompile Include="..\world.cpp" />
   </ItemGroup>

@@ -457,6 +457,21 @@ HRESULT CKinectCapture::InitializeDefaultSensor()
     return hr;
 }
 
+bool CKinectCapture::CheckDataValidity(const DepthSpacePoint& dp, const CameraSpacePoint& cp, int nDepthWidth, int nDepthHeight)
+{
+    // Values that are negative infinity mean it is an invalid color to depth mapping so we skip processing for this pixel
+    if (cp.X != -std::numeric_limits<float>::infinity() && cp.Y != -std::numeric_limits<float>::infinity() && cp.Z != -std::numeric_limits<float>::infinity())
+    {
+        int depthX = static_cast<int>(dp.X + 0.5f);
+        int depthY = static_cast<int>(dp.Y + 0.5f);
+
+        if ((depthX >= 0 && depthX < nDepthWidth) && (depthY >= 0 && depthY < nDepthHeight)) {
+            return true;
+        }
+    }
+    return false;
+}
+
 /// <summary>
 /// Handle new depth and color data
 /// <param name="nTime">timestamp of frame</param>
@@ -527,17 +542,8 @@ void CKinectCapture::ProcessFrame(INT64 nTime,
             DepthSpacePoint dp = m_pDepthCoordinates[colorIndex];
             CameraSpacePoint cp = m_pCameraSpacePoints[colorIndex];
 
-            // Values that are negative infinity means it is an invalid color to depth mapping so we
-            // skip processing for this pixel
-            if (cp.X != -std::numeric_limits<float>::infinity() && cp.Y != -std::numeric_limits<float>::infinity() && cp.Z != -std::numeric_limits<float>::infinity())
-            {
-                int depthX = static_cast<int>(dp.X + 0.5f);
-                int depthY = static_cast<int>(dp.Y + 0.5f);
-
-                if ((depthX >= 0 && depthX < nDepthWidth) && (depthY >= 0 && depthY < nDepthHeight)) {
-                    // set source for copy to the color pixel
-                    pSrc = m_pColorRGBX + colorIndex;
-                }
+            if (CheckDataValidity(dp, cp, nDepthWidth, nDepthHeight)) {
+                pSrc = m_pColorRGBX + colorIndex;
             }
 
             // write output
@@ -560,6 +566,11 @@ void CKinectCapture::ProcessFrame(INT64 nTime,
             file_path = m_pCaptureFilePath;
             file_path += L".kin";
             hr = SaveKinectDataToFile(nDepthWidth, nDepthHeight, nColorWidth, nColorHeight, file_path.c_str(), xyz_format);
+
+            file_path = m_pCaptureFilePath;
+            file_path += L".bmp";
+            hr = SaveBitmapToFile(reinterpret_cast<BYTE*>(m_pOutputRGBX), nColorWidth, nColorHeight, sizeof(RGBQUAD) * 8, file_path.c_str());
+
             PostMessage(m_hWnd, WM_CLOSE, 0, 0);
             return;
 		}
@@ -644,14 +655,14 @@ HRESULT CKinectCapture::SaveKinectDataToFile(int nDepthWidth, int nDepthHeight, 
     if (!xyz_format) {
         std::string s;
 
-        s = std::to_string(nDepthHeight) + "\n";
+        s = std::to_string(nColorHeight) + "\n";
         if (!WriteFile(hFile, s.c_str(), s.size(), &dwBytesWritten, NULL))
         {
             CloseHandle(hFile);
             return E_FAIL;
         }
 
-        s = std::to_string(nDepthWidth) + "\n";
+        s = std::to_string(nColorWidth) + "\n";
         if (!WriteFile(hFile, s.c_str(), s.size(), &dwBytesWritten, NULL))
         {
             CloseHandle(hFile);
@@ -666,34 +677,26 @@ HRESULT CKinectCapture::SaveKinectDataToFile(int nDepthWidth, int nDepthHeight, 
         DepthSpacePoint dp = m_pDepthCoordinates[colorIndex];
         CameraSpacePoint cp = m_pCameraSpacePoints[colorIndex];
 
-        // Values that are negative infinity means it is an invalid color to depth mapping so we
-        // skip processing for this pixel
-        if (cp.X != -std::numeric_limits<float>::infinity() && cp.Y != -std::numeric_limits<float>::infinity() && cp.Z != -std::numeric_limits<float>::infinity())
-        {
-            int depthX = static_cast<int>(dp.X + 0.5f);
-            int depthY = static_cast<int>(dp.Y + 0.5f);
+        if (CheckDataValidity(dp, cp, nDepthWidth, nDepthHeight)) {
+            std::string s;
 
-            if ((depthX >= 0 && depthX < nDepthWidth) && (depthY >= 0 && depthY < nDepthHeight)) {
-                std::string s;
+            if (!xyz_format) {
+                int u = colorIndex / nColorWidth;
+                int v = colorIndex % nColorWidth;
+                s = std::to_string(u) + " " + std::to_string(v) + " ";
+            }
 
-                if (!xyz_format) {
-                    int u = colorIndex / nColorWidth;
-                    int v = colorIndex % nColorWidth;
-                    s = std::to_string(u) + " " + std::to_string(v) + " ";
-                }
+            s = s + std::to_string(cp.X) + " " + std::to_string(cp.Y) + " " + std::to_string(cp.Z);
+            if (bStoreColor) {
+                s = s + " " + std::to_string(pClr->rgbRed) + " " + std::to_string(pClr->rgbGreen) + " " + std::to_string(pClr->rgbBlue);
+            }
 
-                s = s + std::to_string(cp.X) + " " + std::to_string(cp.Y) + " " + std::to_string(cp.Z);
-                if (bStoreColor) {
-                    s = s + " " + std::to_string(pClr->rgbRed) + " " + std::to_string(pClr->rgbGreen) + " " + std::to_string(pClr->rgbBlue);
-                }
+            s = s + "\n";
 
-                s = s + "\n";
-
-                if (!WriteFile(hFile, s.c_str(), s.size(), &dwBytesWritten, NULL))
-                {
-                    CloseHandle(hFile);
-                    return E_FAIL;
-                }
+            if (!WriteFile(hFile, s.c_str(), s.size(), &dwBytesWritten, NULL))
+            {
+                CloseHandle(hFile);
+                return E_FAIL;
             }
         }
 	}
@@ -701,4 +704,71 @@ HRESULT CKinectCapture::SaveKinectDataToFile(int nDepthWidth, int nDepthHeight, 
 	// Close the file
 	CloseHandle(hFile);
 	return S_OK;
+}
+
+
+/// <summary>
+/// Save passed in image data to disk as a bitmap
+/// </summary>
+/// <param name="pBitmapBits">image data to save</param>
+/// <param name="lWidth">width (in pixels) of input image data</param>
+/// <param name="lHeight">height (in pixels) of input image data</param>
+/// <param name="wBitsPerPixel">bits per pixel of image data</param>
+/// <param name="lpszFilePath">full file path to output bitmap to</param>
+/// <returns>indicates success or failure</returns>
+HRESULT CKinectCapture::SaveBitmapToFile(BYTE* pBitmapBits, LONG lWidth, LONG lHeight, WORD wBitsPerPixel, LPCWSTR lpszFilePath)
+{
+    DWORD dwByteCount = lWidth * lHeight * (wBitsPerPixel / 8);
+
+    BITMAPINFOHEADER bmpInfoHeader = { 0 };
+
+    bmpInfoHeader.biSize = sizeof(BITMAPINFOHEADER);  // Size of the header
+    bmpInfoHeader.biBitCount = wBitsPerPixel;             // Bit count
+    bmpInfoHeader.biCompression = BI_RGB;                    // Standard RGB, no compression
+    bmpInfoHeader.biWidth = lWidth;                    // Width in pixels
+    bmpInfoHeader.biHeight = -lHeight;                  // Height in pixels, negative indicates it's stored right-side-up
+    bmpInfoHeader.biPlanes = 1;                         // Default
+    bmpInfoHeader.biSizeImage = dwByteCount;               // Image size in bytes
+
+    BITMAPFILEHEADER bfh = { 0 };
+
+    bfh.bfType = 0x4D42;                                           // 'M''B', indicates bitmap
+    bfh.bfOffBits = bmpInfoHeader.biSize + sizeof(BITMAPFILEHEADER);  // Offset to the start of pixel data
+    bfh.bfSize = bfh.bfOffBits + bmpInfoHeader.biSizeImage;        // Size of image + headers
+
+                                                                   // Create the file on disk to write to
+    HANDLE hFile = CreateFileW(lpszFilePath, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+
+    // Return if error opening file
+    if (NULL == hFile)
+    {
+        return E_ACCESSDENIED;
+    }
+
+    DWORD dwBytesWritten = 0;
+
+    // Write the bitmap file header
+    if (!WriteFile(hFile, &bfh, sizeof(bfh), &dwBytesWritten, NULL))
+    {
+        CloseHandle(hFile);
+        return E_FAIL;
+    }
+
+    // Write the bitmap info header
+    if (!WriteFile(hFile, &bmpInfoHeader, sizeof(bmpInfoHeader), &dwBytesWritten, NULL))
+    {
+        CloseHandle(hFile);
+        return E_FAIL;
+    }
+
+    // Write the RGB Data
+    if (!WriteFile(hFile, pBitmapBits, bmpInfoHeader.biSizeImage, &dwBytesWritten, NULL))
+    {
+        CloseHandle(hFile);
+        return E_FAIL;
+    }
+
+    // Close the file
+    CloseHandle(hFile);
+    return S_OK;
 }

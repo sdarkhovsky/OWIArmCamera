@@ -126,7 +126,11 @@ private:
     /// <param name="wBitsPerPixel">bits per pixel of image data</param>
     /// <param name="lpszFilePath">full file path to output bitmap to</param>
     /// <returns>indicates success or failure</returns>
+    HRESULT                 SaveBitmapToFile(BYTE* pBitmapBits, LONG lWidth, LONG lHeight, WORD wBitsPerPixel, LPCWSTR lpszFilePath);
 
 	HRESULT                 SaveKinectDataToFile(int nDepthWidth, int nDepthHeight, int nColorWidth, int nColorHeight, LPCWSTR lpszFilePath, bool xyz_format);
+
+    bool CKinectCapture::CheckDataValidity(const DepthSpacePoint& dp, const CameraSpacePoint& cp, int nDepthWidth, int nDepthHeight);
+
 };
 

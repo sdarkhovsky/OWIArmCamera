@@ -4,6 +4,12 @@
 #include <fstream>
 #include <string>
 
+#define DEBUGGING
+
+#ifdef DEBUGGING
+bool write_png_file(const char* file_name, ais::c_point_cloud& point_cloud);
+#endif
+
 using namespace std;
 
 namespace ais {
@@ -37,6 +43,12 @@ bool c_kinect_image::read_file(std::string file_path, c_point_cloud& point_cloud
         }
     }
     infile.close();
+
+#ifdef DEBUGGING
+    std::string png_file_path = file_path + ".png";
+    write_png_file(png_file_path.c_str(), point_cloud);
+#endif
+
 	return true;
 }
 
