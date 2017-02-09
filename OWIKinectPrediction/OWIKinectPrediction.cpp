@@ -230,6 +230,13 @@ int main(int argc, char** argv)
 			std::cout << "can't open image file: "  << *it << std::endl;
 			continue;
         }
+
+#if 0
+        c_point_cloud filtered_point_cloud;
+        point_cloud.filter_by_z(filtered_point_cloud, 2.0f);
+        c_kinect_image::write_file("C:\\Projects\\OWIArmCamera\\KinectImages\\filtered_img2.kin", filtered_point_cloud, c_image_format::kinect);
+        break;
+#endif
         
         g_ais.world.add_observation(point_cloud, cur_time);
         

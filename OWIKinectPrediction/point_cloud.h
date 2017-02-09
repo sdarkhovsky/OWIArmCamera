@@ -17,6 +17,8 @@ namespace ais {
         Vector3f X;
         Vector3f Clr;
         Vector3f Vector;
+        Vector3f Conv_Clr;
+        float Clr_edge;
     } 	c_point_cloud_point;
 
     class c_point_cloud {

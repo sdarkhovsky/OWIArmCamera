@@ -6,6 +6,74 @@ using namespace Eigen;
 
 namespace ais {
 
+    
+    bool detect_color_edge_features(c_point_cloud& point_cloud) {
+        size_t u, v, j;
+        int u1, v1;
+        size_t num_point_cloud_rows = point_cloud.points.size();
+        if (num_point_cloud_rows <= 0)
+            return false;
+        size_t num_point_cloud_cols = point_cloud.points[0].size();
+
+        // apply LOG edge detection (see Computer Vision, Shapiro, Stockman) and http://www.di.ubi.pt/~agomes/cvm/teoricas/05-edgedetection.pdf
+        const int mask_radius = 2;
+        float mask[2 * mask_radius + 1][2 * mask_radius + 1] = {
+                             0,  0,  -1,  0,  0,
+                             0, -1,  -2, -1,  0,
+                            -1, -2,  16, -2, -1,
+                             0, -1,  -2, -1,  0,
+                             0,  0,  -1,  0,  0
+        };
+
+        // convolve with the mask
+        for (u = mask_radius; u < num_point_cloud_rows - mask_radius; u++) {
+            assert(point_cloud.points[u].size() == num_point_cloud_cols);
+            for (v = mask_radius; v < num_point_cloud_cols - mask_radius; v++) {
+
+                if (point_cloud.points[u][v].X == Vector3f::Zero())
+                    continue;
+
+                bool undefined_neighbours = false;
+                Vector3f Conv_Clr = Vector3f::Zero(); 
+                for (u1 = -mask_radius; u1 <= mask_radius; u1++) {
+                    for (v1 = -mask_radius; v1 <= mask_radius; v1++) {
+
+                        if (point_cloud.points[u+u1][v+v1].X == Vector3f::Zero()) {
+                            undefined_neighbours = true;
+                            break;
+                        }
+
+                        Conv_Clr += point_cloud.points[u + u1][v + v1].Clr * mask[u1 + mask_radius][v1 + mask_radius];
+                    }
+
+                    if (undefined_neighbours)
+                        break;
+                }
+
+                if (!undefined_neighbours) {
+                    point_cloud.points[u][v].Conv_Clr = Conv_Clr;
+                }
+            }
+        }
+
+        // find zero crossings
+        for (u = 1; u < num_point_cloud_rows - 1; u++) {
+            for (v = 1; v < num_point_cloud_cols - 1; v++) {
+                point_cloud.points[u][v].Clr_edge = 0;
+
+                for (j = 0; j < 3; j++) {
+                    if ((point_cloud.points[u][v].Conv_Clr(j)*point_cloud.points[u - 1][v].Conv_Clr(j) < 0) ||
+                        (point_cloud.points[u][v].Conv_Clr(j)*point_cloud.points[u][v - 1].Conv_Clr(j) < 0)) {
+                        point_cloud.points[u][v].Clr_edge = 1;
+                        break;
+                    }
+                }
+            }
+        }
+
+        return true;
+    }
+
     bool detect_edge_features(c_point_cloud& point_cloud) {
         size_t u, v, u1, v1, j;
         size_t num_point_cloud_rows = point_cloud.points.size();

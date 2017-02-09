@@ -44,7 +44,17 @@ bool c_kinect_image::read_file(std::string file_path, c_point_cloud& point_cloud
     }
     infile.close();
 
-#ifdef DEBUGGING
+#if 1
+    for (u = 0; u < height; u++) {
+        for (v = 0; v < width; v++) {
+            point_cloud.points[u][v].X = Vector3f(u, v, 1.0);
+            if (u < height/2)
+                point_cloud.points[u][v].Clr = Vector3f(0, 0, 255);
+            else
+                point_cloud.points[u][v].Clr = Vector3f(0, 255, 0);
+        }
+    }
+
     std::string png_file_path = file_path + ".png";
     write_png_file(png_file_path.c_str(), point_cloud);
 #endif
@@ -94,6 +104,12 @@ bool c_kinect_image::write_file(std::string file_path, c_point_cloud& point_clou
     }
 
     outfile.close();
+
+#if 1
+    std::string png_file_path = file_path + ".png";
+    write_png_file(png_file_path.c_str(), point_cloud);
+#endif
+
     return true;
 }
 
