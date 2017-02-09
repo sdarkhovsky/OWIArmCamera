@@ -17,7 +17,7 @@ namespace ais {
         for (u = 0; u < detected_planes_point_cloud.points.size(); u++) {
             for (v = 0; v < detected_planes_point_cloud.points[u].size(); v++) {
                 if (plane_regions_bitmap[u][v]) {
-                    detected_planes_point_cloud.points[u][v].Clr = Vector3f(250, 0, 0);
+                    detected_planes_point_cloud.points[u][v].Clr = Vector3f(255, 0, 0);
                 }
             }
         }

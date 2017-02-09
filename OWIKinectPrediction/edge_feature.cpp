@@ -16,6 +16,7 @@ namespace ais {
         size_t num_point_cloud_cols = point_cloud.points[0].size();
 
         // apply LOG edge detection (see Computer Vision, Shapiro, Stockman) and http://www.di.ubi.pt/~agomes/cvm/teoricas/05-edgedetection.pdf
+#if 0
         const int mask_radius = 2;
         float mask[2 * mask_radius + 1][2 * mask_radius + 1] = {
                              0,  0,  -1,  0,  0,
@@ -24,6 +25,14 @@ namespace ais {
                              0, -1,  -2, -1,  0,
                              0,  0,  -1,  0,  0
         };
+#else
+        const int mask_radius = 1;
+        float mask[2 * mask_radius + 1][2 * mask_radius + 1] = {
+                         0, -1,  0, 
+                        -1,  4, -1, 
+                         0, -1,  0 
+        };
+#endif
 
         // convolve with the mask
         for (u = mask_radius; u < num_point_cloud_rows - mask_radius; u++) {
@@ -57,13 +66,24 @@ namespace ais {
         }
 
         // find zero crossings
+        // Threshold the zero - crossings to keep only those strong ones(large difference between the positive maximum and the negative minimum) 
+        // and suppress the weak zero - crossings, which most likely caused by noise.
+        // http://fourier.eng.hmc.edu/e161/lectures/gradient/node8.html
+        const float zero_crossing_thresh = 20;
         for (u = 1; u < num_point_cloud_rows - 1; u++) {
             for (v = 1; v < num_point_cloud_cols - 1; v++) {
                 point_cloud.points[u][v].Clr_edge = 0;
-
+                
                 for (j = 0; j < 3; j++) {
-                    if ((point_cloud.points[u][v].Conv_Clr(j)*point_cloud.points[u - 1][v].Conv_Clr(j) < 0) ||
-                        (point_cloud.points[u][v].Conv_Clr(j)*point_cloud.points[u][v - 1].Conv_Clr(j) < 0)) {
+                    float a = point_cloud.points[u][v].Conv_Clr(j);
+                    float b = point_cloud.points[u - 1][v].Conv_Clr(j);
+                    float c = point_cloud.points[u][v - 1].Conv_Clr(j);
+                    if (a*b < 0 && abs(a - b) > zero_crossing_thresh) {
+                        point_cloud.points[u][v].Clr_edge = 1;
+                        break;
+                    }
+                        
+                    if (a*c < 0 && abs(a - c) > zero_crossing_thresh) {
                         point_cloud.points[u][v].Clr_edge = 1;
                         break;
                     }

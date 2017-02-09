@@ -103,7 +103,8 @@ enum class c_interactive_mode: int
     selecting_points_to_hide,
     updating_points_to_hide,
     selecting_points_to_keep,
-    updating_points_to_keep
+    updating_points_to_keep,
+    filter_points_by_color
 };
 c_interactive_mode interactive_mode = c_interactive_mode::idle;
 
@@ -123,6 +124,10 @@ bool get_command_line_options(vector< string >& arg_list) {
         if (arg_list[i] == "-o") {
             output_point_cloud_file_path = arg_list[i + 1];
         }
+    }
+
+    if (output_point_cloud_file_path.size() == 0) {
+        output_point_cloud_file_path = input_point_cloud_file_path;
     }
 
     return true;
@@ -187,6 +192,14 @@ void update_points_visibility() {
     for (auto it = point_cloud.points.begin(); it != point_cloud.points.end(); ++it) {
         if (!it->visible)
             continue;
+
+        if (interactive_mode == c_interactive_mode::filter_points_by_color) {
+            if (it->Clr != Vector3f(255, 0, 0)) {
+                it->visible = 0;
+            }
+            continue;
+        }
+
         if (get_point_screen_coordinate(*it, model_view_matrix, projection_matrix, point_screen_coordinates)) {
             bool point_in_selected_box = true;
             for (int i = 0; i < 2; i++) {
@@ -419,6 +432,11 @@ LONG WINAPI MainWndProc(
         case 0x45:
         case 0x65:
             // Process E, e
+            break;
+        case 0x46:
+        case 0x66:
+            // Process F, f
+            interactive_mode = c_interactive_mode::filter_points_by_color;
             break;
         case 0x48:
         case 0x68:
@@ -689,7 +707,8 @@ GLvoid drawScene(GLvoid)
     glRotatef((GLfloat)rotate_camera_angle, rotate_camera_direction[0], rotate_camera_direction[1], rotate_camera_direction[2]);
 
     if (interactive_mode == c_interactive_mode::updating_points_to_hide ||
-        interactive_mode == c_interactive_mode::updating_points_to_keep
+        interactive_mode == c_interactive_mode::updating_points_to_keep ||
+        interactive_mode == c_interactive_mode::filter_points_by_color
         ) {
         update_points_visibility();
         interactive_mode = c_interactive_mode::idle;

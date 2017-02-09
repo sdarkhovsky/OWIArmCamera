@@ -29,7 +29,7 @@ c_world_part::c_world_part(c_point_cloud& point_cloud, c_world_time& world_time)
         for (u = 0; u < detected_edges_point_cloud.points.size(); u++) {
             for (v = 0; v < detected_edges_point_cloud.points[u].size(); v++) {
                  if (point_cloud.points[u][v].Clr_edge != 0) {
-                    detected_edges_point_cloud.points[u][v].Clr = Vector3f(250, 0, 0);
+                    detected_edges_point_cloud.points[u][v].Clr = Vector3f(255, 0, 0);
                 }
             }
         }
