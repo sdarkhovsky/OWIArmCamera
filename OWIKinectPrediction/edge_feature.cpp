@@ -108,14 +108,17 @@ namespace ais {
                 Vector3f color_dfdy = point_cloud.points[u][v].Conv_Clr - point_cloud.points[u + 1][v+1].Conv_Clr;
                 float dfdx = 0;
                 float dfdy = 0;
+                float magnitude = 0;
                 for (j = 0; j < 3; j++) {
-                    float fx = abs(color_dfdx(j));
-                    float fy = abs(color_dfdy(j));
-                    if (fx > dfdx) dfdx = fx;
-                    if (fy > dfdy) dfdy = fy;
+                    float mag = max(abs(color_dfdx(j)), abs(color_dfdy(j)));
+                    if (mag > magnitude) {
+                        magnitude = mag;
+                        dfdx = color_dfdx(j);
+                        dfdy = color_dfdy(j);
+                    }
                 }
 
-                point_cloud.points[u][v].gradient_mag = max(abs(dfdx),abs(dfdy));
+                point_cloud.points[u][v].gradient_mag = magnitude;
                 point_cloud.points[u][v].gradient_dir = atan2(dfdy, dfdx);
             }
         }
@@ -129,8 +132,8 @@ namespace ais {
                 if (point_cloud.points[u][v].gradient_mag == 0)
                     continue;
                 int direction = (point_cloud.points[u][v].gradient_dir >= 0)
-                    ? (int)(point_cloud.points[u][v].gradient_dir / (pi / 4.0))
-                    : (int)(-point_cloud.points[u][v].gradient_dir / (pi / 4.0));
+                    ? (int)(point_cloud.points[u][v].gradient_dir / (pi / 3.9))
+                    : (int)(pi+point_cloud.points[u][v].gradient_dir / (pi / 3.9));
                 u1 = u + Del_plus[direction][0];
                 v1 = v + Del_plus[direction][1];
                 if (point_cloud.points[u][v].gradient_mag <= point_cloud.points[u1][v1].gradient_mag)
@@ -143,8 +146,8 @@ namespace ais {
         }
 
         // detect and follow edge
-        float Thresh_high = 15;
-        float Thresh_low = 5;
+        float Thresh_high = 8;
+        float Thresh_low = 4;
         for (u = 1; u < num_point_cloud_rows - 1; u++) {
             for (v = 1; v < num_point_cloud_cols - 1; v++) {
                 if (point_cloud.points[u][v].Clr_edge != 0)
