@@ -1,13 +1,192 @@
 #include <Eigen/Dense>
 #include "point_cloud.h"
 #include "edge_feature.h"
+//#include <vector>
+#include <memory>
+
+bool write_png_file(const char* file_name, ais::c_point_cloud& point_cloud);
 
 using namespace Eigen;
 
 namespace ais {
 
+    bool smooth_color_Gaussian(c_point_cloud& point_cloud, float sigma, int mask_radius) {
+        // calculate the Gaussian mask
+        int i, j;
+        size_t u, v;
+        int u1, v1;
+
+        int mask_size = 2 * mask_radius + 1;
+        vector<vector<float>> mask;
+        mask.resize(mask_size);
+        for (u = 0; u < mask_size; u++)
+            mask[u].resize(mask_size);
+
+        float sum = 0;
+        for (i = -mask_radius; i <= mask_radius; i++) {
+            for (j = -mask_radius; j <= mask_radius; j++) {
+                mask[i + mask_radius][j + mask_radius] = exp(-(float)(i*i + j*j) / (2.0*sigma*sigma));
+                sum += mask[i + mask_radius][j + mask_radius];
+            }
+        }
+        for (i = 0; i < mask_size; i++) {
+            for (j = 0; j < mask_size; j++) {
+                mask[i][j] /= sum;
+            }
+        }
+
+        size_t num_point_cloud_rows = point_cloud.points.size();
+        if (num_point_cloud_rows <= 0)
+            return false;
+        size_t num_point_cloud_cols = point_cloud.points[0].size();
+
+        for (u = mask_radius; u < num_point_cloud_rows - mask_radius; u++) {
+            assert(point_cloud.points[u].size() == num_point_cloud_cols);
+            for (v = mask_radius; v < num_point_cloud_cols - mask_radius; v++) {
+
+                if (point_cloud.points[u][v].X == Vector3f::Zero())
+                    continue;
+
+                bool undefined_neighbours = false;
+                Vector3f Conv_Clr = Vector3f::Zero();
+                for (u1 = -mask_radius; u1 <= mask_radius; u1++) {
+                    for (v1 = -mask_radius; v1 <= mask_radius; v1++) {
+
+                        if (point_cloud.points[u + u1][v + v1].X == Vector3f::Zero()) {
+                            undefined_neighbours = true;
+                            break;
+                        }
+
+                        Conv_Clr += point_cloud.points[u + u1][v + v1].Clr * mask[u1 + mask_radius][v1 + mask_radius];
+                    }
+
+                    if (undefined_neighbours)
+                        break;
+                }
+
+                if (!undefined_neighbours) {
+                    point_cloud.points[u][v].Conv_Clr = Conv_Clr;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    // see Computer Vision, Shapiro, Stockman
+    bool detect_color_edge_features_Canny(c_point_cloud& point_cloud) {
+        size_t u, v, j;
+        int u1, v1;
+        size_t num_point_cloud_rows = point_cloud.points.size();
+        if (num_point_cloud_rows <= 0)
+            return false;
+        size_t num_point_cloud_cols = point_cloud.points[0].size();
+
+        smooth_color_Gaussian(point_cloud, 2.0, 6);
+
+#if 0
+        for (u = 0; u < num_point_cloud_rows; u++) {
+            for (v = 0; v < num_point_cloud_cols; v++) {
+                point_cloud.points[u][v].Clr = point_cloud.points[u][v].Conv_Clr;
+            }
+        }
+        std::string png_file_path = "C:\\Projects\\OWIArmCamera\\KinectImages\\smoothed.png";
+        write_png_file(png_file_path.c_str(), point_cloud);
+        return true;
+#endif
+
+        for (u = 0; u < num_point_cloud_rows-1; u++) {
+            assert(point_cloud.points[u].size() == num_point_cloud_cols);
+            for (v = 0; v < num_point_cloud_cols-1; v++) {
+                // using Roberts mask
+                if (point_cloud.points[u][v].Conv_Clr == Vector3f::Zero() ||
+                    point_cloud.points[u][v + 1].Conv_Clr == Vector3f::Zero() ||
+                    point_cloud.points[u + 1][v].Conv_Clr == Vector3f::Zero() ||
+                    point_cloud.points[u + 1][v + 1].Conv_Clr == Vector3f::Zero())
+                    continue;
+                Vector3f color_dfdx = point_cloud.points[u][v + 1].Conv_Clr - point_cloud.points[u + 1][v].Conv_Clr;
+                Vector3f color_dfdy = point_cloud.points[u][v].Conv_Clr - point_cloud.points[u + 1][v+1].Conv_Clr;
+                float dfdx = 0;
+                float dfdy = 0;
+                for (j = 0; j < 3; j++) {
+                    float fx = abs(color_dfdx(j));
+                    float fy = abs(color_dfdy(j));
+                    if (fx > dfdx) dfdx = fx;
+                    if (fy > dfdy) dfdy = fy;
+                }
+
+                point_cloud.points[u][v].gradient_mag = max(abs(dfdx),abs(dfdy));
+                point_cloud.points[u][v].gradient_dir = atan2(dfdy, dfdx);
+            }
+        }
+
+        // suppress nonmaxima
+        int Del_plus[4][2] = { {1,0},{1,1},{0,1},{-1,1} };
+        int Del_minus[4][2] = { { -1,0 },{ -1,-1 },{ 0,-1 },{ 1,-1 } };
+        float pi = 3.14159265338;
+        for (u = 1; u < num_point_cloud_rows - 1; u++) {
+            for (v = 1; v < num_point_cloud_cols - 1; v++) {
+                if (point_cloud.points[u][v].gradient_mag == 0)
+                    continue;
+                int direction = (point_cloud.points[u][v].gradient_dir >= 0)
+                    ? (int)(point_cloud.points[u][v].gradient_dir / (pi / 4.0))
+                    : (int)(-point_cloud.points[u][v].gradient_dir / (pi / 4.0));
+                u1 = u + Del_plus[direction][0];
+                v1 = v + Del_plus[direction][1];
+                if (point_cloud.points[u][v].gradient_mag <= point_cloud.points[u1][v1].gradient_mag)
+                    point_cloud.points[u][v].gradient_mag = 0;
+                u1 = u + Del_minus[direction][0];
+                v1 = v + Del_minus[direction][1];
+                if (point_cloud.points[u][v].gradient_mag <= point_cloud.points[u1][v1].gradient_mag)
+                    point_cloud.points[u][v].gradient_mag = 0;
+            }
+        }
+
+        // detect and follow edge
+        float Thresh_high = 15;
+        float Thresh_low = 5;
+        for (u = 1; u < num_point_cloud_rows - 1; u++) {
+            for (v = 1; v < num_point_cloud_cols - 1; v++) {
+                if (point_cloud.points[u][v].Clr_edge != 0)
+                    continue;
+
+                if (point_cloud.points[u][v].gradient_mag >= Thresh_high) {
+                    point_cloud.points[u][v].Clr_edge = 1.0;
+                    // follow edge
+                    int eu = u;
+                    int ev = v;
+                    while (true) {
+                        for (u1 = -1; u1 <= 1; u1++) {
+                            for (v1 = -1; v1 <= 1; v1++) {
+                                if (u1 == 0 && v1 == 0)
+                                    continue;
+                                int u2 = eu + u1;
+                                int v2 = ev + v1;
+                                if (u2 < 1 || v2 < 1 || u2 > num_point_cloud_rows - 2 || v2 > num_point_cloud_cols - 2)
+                                    continue;
+                                if (point_cloud.points[u2][v2].Clr_edge != 0)
+                                    continue;
+                                if (point_cloud.points[u2][v2].gradient_mag > Thresh_low) {
+                                    eu = u2;
+                                    ev = v2;
+                                    goto exit;
+                                }
+                            }
+                        }
+                        break;
+
+                    exit:
+                        point_cloud.points[eu][ev].Clr_edge = 1;
+                    }
+                }
+            }
+        }
+
+        return true;
+    }
+
     
-    bool detect_color_edge_features(c_point_cloud& point_cloud) {
+    bool detect_color_edge_features_LOG(c_point_cloud& point_cloud) {
         size_t u, v, j;
         int u1, v1;
         size_t num_point_cloud_rows = point_cloud.points.size();
@@ -18,7 +197,8 @@ namespace ais {
         // apply LOG edge detection (see Computer Vision, Shapiro, Stockman) and http://www.di.ubi.pt/~agomes/cvm/teoricas/05-edgedetection.pdf
 #if 0
         const int mask_radius = 2;
-        float mask[2 * mask_radius + 1][2 * mask_radius + 1] = {
+        const int mask_size = 2 * mask_radius + 1;
+        float mask[mask_size][mask_size] = {
                              0,  0,  -1,  0,  0,
                              0, -1,  -2, -1,  0,
                             -1, -2,  16, -2, -1,
@@ -27,7 +207,8 @@ namespace ais {
         };
 #else
         const int mask_radius = 1;
-        float mask[2 * mask_radius + 1][2 * mask_radius + 1] = {
+        const int mask_size = 2 * mask_radius + 1;
+        float mask[mask_size][mask_size] = {
                          0, -1,  0, 
                         -1,  4, -1, 
                          0, -1,  0 

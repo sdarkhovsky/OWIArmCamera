@@ -18,7 +18,9 @@ c_world_part_state::c_world_part_state(c_point_cloud& _point_cloud, c_world_time
 
 c_world_part::c_world_part(c_point_cloud& point_cloud, c_world_time& world_time) {
 
-    bool result = detect_color_edge_features(point_cloud);
+//    bool result = detect_color_edge_features_LOG(point_cloud);
+    bool result = detect_color_edge_features_Canny(point_cloud);
+
 
 #if 1
     {

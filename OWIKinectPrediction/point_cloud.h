@@ -18,6 +18,8 @@ namespace ais {
         Vector3f Clr;
         Vector3f Vector;
         Vector3f Conv_Clr;
+        float gradient_mag;
+        float gradient_dir;
         float Clr_edge;
     } 	c_point_cloud_point;
 
