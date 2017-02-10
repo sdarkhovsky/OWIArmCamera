@@ -20,24 +20,6 @@ c_world_part::c_world_part(c_point_cloud& point_cloud, c_world_time& world_time)
 
 //    bool result = detect_color_edge_features_LOG(point_cloud);
     bool result = detect_color_edge_features_Canny(point_cloud);
-
-
-#if 1
-    {
-        std::string file_path = "C:\\Projects\\OWIArmCamera\\KinectImages\\detected_color_edges.xyze";
-
-        c_point_cloud detected_edges_point_cloud = point_cloud;
-        size_t u, v;
-        for (u = 0; u < detected_edges_point_cloud.points.size(); u++) {
-            for (v = 0; v < detected_edges_point_cloud.points[u].size(); v++) {
-                 if (point_cloud.points[u][v].Clr_edge != 0) {
-                    detected_edges_point_cloud.points[u][v].Clr = Vector3f(255, 0, 0);
-                }
-            }
-        }
-        c_kinect_image::write_file(file_path, detected_edges_point_cloud, c_image_format::xyz);
-    }
-#endif
 /*
     std::unique_ptr<c_world_part_state> part_state(new c_world_part_state(point_cloud, world_time));
     world_part_states.push_back(std::move(part_state));   

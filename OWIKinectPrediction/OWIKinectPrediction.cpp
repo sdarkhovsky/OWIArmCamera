@@ -239,6 +239,23 @@ int main(int argc, char** argv)
 #endif
         
         g_ais.world.add_observation(point_cloud, cur_time);
+
+#if 1
+{
+    std::string file_path = img_path + ".detected_edge.xyze";
+
+    c_point_cloud detected_edges_point_cloud = point_cloud;
+    size_t u, v;
+    for (u = 0; u < detected_edges_point_cloud.points.size(); u++) {
+        for (v = 0; v < detected_edges_point_cloud.points[u].size(); v++) {
+            if (point_cloud.points[u][v].Clr_edge != 0) {
+                detected_edges_point_cloud.points[u][v].Clr = Vector3f(255, 0, 0);
+            }
+        }
+    }
+    c_kinect_image::write_file(file_path, detected_edges_point_cloud, c_image_format::xyz);
+}
+#endif
         
         int owi_cmd = get_owi_command_from_file_name(*it);
         if (owi_cmd >= 0) {
