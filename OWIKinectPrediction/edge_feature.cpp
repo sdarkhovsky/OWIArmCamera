@@ -127,27 +127,33 @@ namespace ais {
         int Del_plus[4][2] = { {1,0},{1,1},{0,1},{-1,1} };
         int Del_minus[4][2] = { { -1,0 },{ -1,-1 },{ 0,-1 },{ 1,-1 } };
         float pi = 3.14159265338;
+        for (u = 0; u < num_point_cloud_rows; u++) {
+            for (v = 0; v < num_point_cloud_cols; v++) {
+                point_cloud.points[u][v].gradient_mag_temp = point_cloud.points[u][v].gradient_mag;
+            }
+        }
+
         for (u = 1; u < num_point_cloud_rows - 1; u++) {
             for (v = 1; v < num_point_cloud_cols - 1; v++) {
-                if (point_cloud.points[u][v].gradient_mag == 0)
+                if (point_cloud.points[u][v].gradient_mag_temp == 0)
                     continue;
                 int direction = (point_cloud.points[u][v].gradient_dir >= 0)
                     ? (int)(point_cloud.points[u][v].gradient_dir / (pi / 3.9))
                     : (int)(pi+point_cloud.points[u][v].gradient_dir / (pi / 3.9));
                 u1 = u + Del_plus[direction][0];
                 v1 = v + Del_plus[direction][1];
-                if (point_cloud.points[u][v].gradient_mag <= point_cloud.points[u1][v1].gradient_mag)
+                if (point_cloud.points[u][v].gradient_mag_temp <= point_cloud.points[u1][v1].gradient_mag_temp)
                     point_cloud.points[u][v].gradient_mag = 0;
                 u1 = u + Del_minus[direction][0];
                 v1 = v + Del_minus[direction][1];
-                if (point_cloud.points[u][v].gradient_mag <= point_cloud.points[u1][v1].gradient_mag)
+                if (point_cloud.points[u][v].gradient_mag_temp <= point_cloud.points[u1][v1].gradient_mag_temp)
                     point_cloud.points[u][v].gradient_mag = 0;
             }
         }
 
         // detect and follow edge
-        float Thresh_high = 8;
-        float Thresh_low = 4;
+        float Thresh_high = 6;
+        float Thresh_low = 3;
         for (u = 1; u < num_point_cloud_rows - 1; u++) {
             for (v = 1; v < num_point_cloud_cols - 1; v++) {
                 if (point_cloud.points[u][v].Clr_edge != 0)
