@@ -47,24 +47,26 @@ namespace ais {
                 if (point_cloud.points[u][v].X == Vector3f::Zero())
                     continue;
 
-                bool undefined_neighbours = false;
                 Vector3f Conv_Clr = Vector3f::Zero();
+                float total_weight = 0;
+                bool undefined_neighbours = false;
                 for (u1 = -mask_radius; u1 <= mask_radius; u1++) {
                     for (v1 = -mask_radius; v1 <= mask_radius; v1++) {
 
                         if (point_cloud.points[u + u1][v + v1].X == Vector3f::Zero()) {
                             undefined_neighbours = true;
-                            break;
                         }
-
-                        Conv_Clr += point_cloud.points[u + u1][v + v1].Clr * mask[u1 + mask_radius][v1 + mask_radius];
+                        else {
+                            Conv_Clr += point_cloud.points[u + u1][v + v1].Clr * mask[u1 + mask_radius][v1 + mask_radius];
+                            total_weight += mask[u1 + mask_radius][v1 + mask_radius];
+                        }
                     }
-
-                    if (undefined_neighbours)
-                        break;
                 }
 
-                if (!undefined_neighbours) {
+                if (undefined_neighbours) {
+                    point_cloud.points[u][v].Conv_Clr = Conv_Clr / total_weight;
+                }
+                else {
                     point_cloud.points[u][v].Conv_Clr = Conv_Clr;
                 }
             }
@@ -82,7 +84,7 @@ namespace ais {
             return false;
         size_t num_point_cloud_cols = point_cloud.points[0].size();
 
-        smooth_color_Gaussian(point_cloud, 2.0, 6);
+        smooth_color_Gaussian(point_cloud, 2.0, 6);   // other values: (2.0, 6), (1.0, 2), (1.4, 4)
 
 #if 0
         for (u = 0; u < num_point_cloud_rows; u++) {
@@ -370,4 +372,34 @@ namespace ais {
         return true;
     }
 
+
+    bool detect_invalid_data_boundary(c_point_cloud& point_cloud) {
+        size_t u, v, j;
+        int u1, v1;
+        size_t num_point_cloud_rows = point_cloud.points.size();
+        if (num_point_cloud_rows <= 0)
+            return false;
+        size_t num_point_cloud_cols = point_cloud.points[0].size();
+
+        for (u = 1; u < num_point_cloud_rows - 1; u++) {
+            for (v = 1; v < num_point_cloud_cols - 1; v++) {
+                if (point_cloud.points[u][v].X == Vector3f::Zero())
+                    continue;
+
+                for (u1 = -1; u1 <= 1; u1++) {
+                    for (v1 = -1; v1 <= 1; v1++) {
+                        if (u1 == 0 && v1 == 0)
+                            continue;
+                        if (point_cloud.points[u + u1][v + v1].X == Vector3f::Zero()) {
+                            goto boundary_point;
+                        }
+                    }
+                }
+                continue;
+            boundary_point:
+                point_cloud.points[u][v].Clr_edge = 1.0;
+            }
+        }
+        return true;
+    }
 }
