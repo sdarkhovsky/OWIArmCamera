@@ -127,7 +127,7 @@ bool get_command_line_options(vector< string >& arg_list) {
     }
 
     if (output_point_cloud_file_path.size() == 0) {
-        output_point_cloud_file_path = input_point_cloud_file_path;
+        output_point_cloud_file_path = input_point_cloud_file_path + ".out.xyze";
     }
 
     return true;
