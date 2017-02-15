@@ -22,10 +22,14 @@ namespace ais {
         float gradient_mag_temp;
         float gradient_dir;
         float Clr_edge;
+        float Edge_Curvature;
+        float High_Curvature;
     } 	c_point_cloud_point;
 
     class c_point_cloud {
     public:
+        c_point_cloud() {
+        }
         void filter_by_z(c_point_cloud& filtered_point_cloud, float max_z);
         std::vector< std::vector<c_point_cloud_point>> points;
     };

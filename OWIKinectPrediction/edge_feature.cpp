@@ -10,6 +10,64 @@ using namespace Eigen;
 
 namespace ais {
 
+    bool calculate_edge_curvature(c_point_cloud& point_cloud) {
+        size_t u, v, j;
+        int u1, v1;
+        int u2, v2;
+        int u_nbhr[8];
+        int v_nbhr[8];
+        int num_nbhrs;
+
+        size_t num_point_cloud_rows = point_cloud.points.size();
+        if (num_point_cloud_rows <= 0)
+            return false;
+        size_t num_point_cloud_cols = point_cloud.points[0].size();
+
+        for (u = 1; u < num_point_cloud_rows - 1; u++) {
+            for (v = 1; v < num_point_cloud_cols - 1; v++) {
+                if (point_cloud.points[u][v].Clr_edge) {
+                    num_nbhrs = 0;
+                    for (u1 = -1; u1 <= 1; u1++) {
+                        for (v1 = -1; v1 <= 1; v1++) {
+                            if (u1 == 0 && v1 == 0)
+                                continue;
+                            u2 = u + u1;
+                            v2 = v + v1;
+                            if (point_cloud.points[u2][v2].Clr_edge != 0) {
+                                u_nbhr[num_nbhrs] = u2;
+                                v_nbhr[num_nbhrs] = v2;
+                                num_nbhrs++;
+                            }
+                        }
+                    }
+                    if (num_nbhrs == 2) {
+                        u1 = u_nbhr[0];
+                        v1 = v_nbhr[0];
+                        u2 = u_nbhr[1];
+                        v2 = v_nbhr[1];
+
+                        Vector3f dX2_ds = point_cloud.points[u2][v2].X - point_cloud.points[u][v].X;
+                        Vector3f dX1_ds = point_cloud.points[u][v].X - point_cloud.points[u1][v1].X;
+                        float dX2_ds_norm = dX2_ds.norm();
+                        float dX1_ds_norm = dX1_ds.norm();
+                        if (dX2_ds_norm > 0 && dX1_ds_norm > 0) {
+                            dX2_ds /= dX2_ds_norm;
+                            dX1_ds /= dX1_ds_norm;
+                            Vector3f d2X_ds2 = (dX2_ds - dX1_ds) / dX1_ds_norm;
+                            point_cloud.points[u][v].Edge_Curvature = d2X_ds2.norm();
+                            float High_Curvature_Threshold = 1;
+                            if (point_cloud.points[u][v].Edge_Curvature > High_Curvature_Threshold) {
+                                point_cloud.points[u][v].High_Curvature = point_cloud.points[u][v].Edge_Curvature;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return true;
+    }
+
     bool smooth_color_Gaussian(c_point_cloud& point_cloud, float sigma, int mask_radius) {
         // calculate the Gaussian mask
         int i, j;

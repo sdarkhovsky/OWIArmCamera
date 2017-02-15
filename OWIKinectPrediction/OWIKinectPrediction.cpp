@@ -225,12 +225,12 @@ int main(int argc, char** argv)
         
         c_point_cloud point_cloud;
         
+//        generate_point_cloud_prism(point_cloud);
         if (!c_kinect_image::read_file( img_path, point_cloud ))
 		{
 			std::cout << "can't open image file: "  << *it << std::endl;
 			continue;
         }
-
 #if 0
         c_point_cloud filtered_point_cloud;
         point_cloud.filter_by_z(filtered_point_cloud, 2.0f);
@@ -249,7 +249,10 @@ int main(int argc, char** argv)
     for (u = 0; u < detected_edges_point_cloud.points.size(); u++) {
         for (v = 0; v < detected_edges_point_cloud.points[u].size(); v++) {
             if (point_cloud.points[u][v].Clr_edge != 0) {
-                detected_edges_point_cloud.points[u][v].Clr = Vector3f(255, 0, 0);
+                if (point_cloud.points[u][v].High_Curvature != 0)
+                    detected_edges_point_cloud.points[u][v].Clr = Vector3f(0, 255, 0);
+                else
+                    detected_edges_point_cloud.points[u][v].Clr = Vector3f(255, 0, 0);
             }
         }
     }

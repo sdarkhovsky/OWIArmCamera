@@ -50,8 +50,8 @@ namespace ais {
     void generate_point_cloud_prism(c_point_cloud& point_cloud) {
         int u, v;
 
-        size_t num_point_cloud_rows = 424;
-        size_t num_point_cloud_cols = 512;
+        size_t num_point_cloud_rows = 106;  // 424;
+        size_t num_point_cloud_cols = 128;  // 512;
         float step_u = 0.1f;
         float step_v = 0.1f;
 
@@ -79,7 +79,12 @@ namespace ais {
                 float y = u*step_u;
                 float z = (-plane[pl](3) - plane[pl](0)*x - plane[pl](1)*y) / plane[pl](2);
                 point_cloud.points[u][v].X = Vector3f(x, y, z);
-                point_cloud.points[u][v].Clr = Vector3f(0, 255.0, 0);
+                if (u > num_point_cloud_rows * 3 / 4 || u < num_point_cloud_rows / 4 || v > num_point_cloud_cols * 3 / 4 || v < num_point_cloud_cols / 4) {
+                    point_cloud.points[u][v].Clr = Vector3f(0, 0, 255.0);
+                }
+                else {
+                    point_cloud.points[u][v].Clr = Vector3f(255.0, 255.0, 255.0);
+                }
             }
         }
     }
