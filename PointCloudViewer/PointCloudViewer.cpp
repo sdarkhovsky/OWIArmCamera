@@ -429,6 +429,14 @@ LONG WINAPI MainWndProc(
         case 0x0D:
             // Process a carriage return. 
             break;
+
+        case 0x44:
+        case 0x64:
+            // Process D, d
+            translate_camera_speed /= 1.2f;
+            rotate_camera_speed /= 1.2f;
+            break;
+
         case 0x45:
         case 0x65:
             // Process E, e
@@ -452,18 +460,32 @@ LONG WINAPI MainWndProc(
             min_visible = Vector2i(INT_MAX, INT_MAX);
             max_visible = Vector2i(INT_MIN, INT_MIN);
             break;
+
+        case 0x50:
+        case 0x70:
+            // Process P, p
+            gl_point_size += 1.0f;
+            break;
         case 0x52:
         case 0x72:
             // Process R, r
             reset_settings();
             refresh_display_lists();
             break;
+
         case 0x53:
         case 0x73:
             // Process S, s
             if (output_point_cloud_file_path.size() > 0) {
                 point_cloud.write_point_cloud_file(output_point_cloud_file_path);
             }
+            break;
+
+        case 0x55:
+        case 0x75:
+            // Process U, u
+            translate_camera_speed *= 1.2f;
+            rotate_camera_speed *= 1.2f;
             break;
 
         default:
@@ -685,13 +707,13 @@ GLvoid initializeGL(GLsizei width, GLsizei height)
     resize_viewport(width, height);
 
     refresh_display_lists();
-
-    glPointSize(gl_point_size);
 }
 
 GLvoid drawScene(GLvoid)
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    glPointSize(gl_point_size);
 
     glMatrixMode(GL_MODELVIEW);
     glPushMatrix();

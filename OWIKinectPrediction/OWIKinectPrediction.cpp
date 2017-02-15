@@ -225,12 +225,17 @@ int main(int argc, char** argv)
         
         c_point_cloud point_cloud;
         
-//        generate_point_cloud_prism(point_cloud);
+        
+#define READ_FROM_FILE
+#ifdef READ_FROM_FILE
         if (!c_kinect_image::read_file( img_path, point_cloud ))
 		{
 			std::cout << "can't open image file: "  << *it << std::endl;
 			continue;
         }
+#else
+        generate_point_cloud_prism(point_cloud);
+#endif
 #if 0
         c_point_cloud filtered_point_cloud;
         point_cloud.filter_by_z(filtered_point_cloud, 2.0f);
