@@ -17,6 +17,7 @@ namespace ais {
         Vector3f X;
         Vector3f Clr;
         Vector3f Vector;
+        Vector3f Conv_X;
         Vector3f Conv_Clr;
         float gradient_mag;
         float gradient_mag_temp;
@@ -30,7 +31,10 @@ namespace ais {
     public:
         c_point_cloud() {
         }
-        void filter_by_z(c_point_cloud& filtered_point_cloud, float max_z);
+
+        void filter_by_z(float max_z);
+        bool fix();
+
         std::vector< std::vector<c_point_cloud_point>> points;
     };
 

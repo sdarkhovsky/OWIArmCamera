@@ -2,18 +2,51 @@
 
 namespace ais {
 
-    void c_point_cloud::filter_by_z(c_point_cloud& filtered_point_cloud, float max_z) {
+    bool c_point_cloud::fix() {
+        size_t u, v;
+        Vector3f X1, X2;
+        size_t num_point_cloud_rows = points.size();
+        size_t num_point_cloud_cols = points[0].size();
+
+        size_t u1, v1, u2, v2;
+        for (u = 0; u < num_point_cloud_rows; u++) {
+            v = 0;
+            while (v < num_point_cloud_cols) {
+                if (points[u][v].X == Vector3f::Zero()) {
+                    v++;
+                    continue;
+                }
+
+                v1 = v;
+                X1 = points[u][v].X;
+
+                while (v < num_point_cloud_cols && points[u][v].X == points[u][v1].X) v++;
+
+                if (v >= num_point_cloud_cols)
+                    break;
+
+                v2 = v;
+                X2 = points[u][v2].X;
+
+                for (v = v1 + 1; v < v2; v++) {
+                    points[u][v].X = X1 + (X2 - X1) / (float)(v2 - v1)*(float)(v - v1);
+                }
+            }
+        }
+
+        return true;
+    }
+
+    void c_point_cloud::filter_by_z(float max_z) {
         size_t u, v;
         size_t num_point_cloud_rows = points.size();
         size_t num_point_cloud_cols = points[0].size();
 
-        filtered_point_cloud.points.resize(num_point_cloud_rows);
-
         for (u = 0; u < num_point_cloud_rows; u++) {
-            filtered_point_cloud.points[u].resize(num_point_cloud_cols);
             for (v = 0; v < num_point_cloud_cols; v++) {
-                if (points[u][v].X(2) <= max_z) {
-                    filtered_point_cloud.points[u][v] = points[u][v];
+                if (points[u][v].X(2) > max_z) {
+                    points[u][v].X = Vector3f::Zero();
+                    points[u][v].Clr = Vector3f::Zero();
                 }
             }
         }

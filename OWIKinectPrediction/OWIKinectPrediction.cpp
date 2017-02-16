@@ -236,11 +236,8 @@ int main(int argc, char** argv)
 #else
         generate_point_cloud_prism(point_cloud);
 #endif
-#if 0
-        c_point_cloud filtered_point_cloud;
-        point_cloud.filter_by_z(filtered_point_cloud, 2.0f);
-        c_kinect_image::write_file("C:\\Projects\\OWIArmCamera\\KinectImages\\filtered_img2.kin", filtered_point_cloud, c_image_format::kinect);
-        break;
+#if 1
+        point_cloud.filter_by_z(0.8f);
 #endif
         
         g_ais.world.add_observation(point_cloud, cur_time);
