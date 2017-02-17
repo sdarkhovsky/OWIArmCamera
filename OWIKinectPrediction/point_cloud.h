@@ -23,8 +23,14 @@ namespace ais {
         float gradient_mag_temp;
         float gradient_dir;
         float Clr_edge;
+#define CALCULATE_TANGENT_TURN_ANGLE
+#ifdef CALCULATE_TANGENT_TURN_ANGLE
+        float high_tangent_turn_angle;
+#endif
+#ifdef CALCULATE_CURVATURE
         float Edge_Curvature;
         float High_Curvature;
+#endif
     } 	c_point_cloud_point;
 
     class c_point_cloud {

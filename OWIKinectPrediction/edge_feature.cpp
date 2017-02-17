@@ -10,6 +10,8 @@ using namespace Eigen;
 
 namespace ais {
 
+    float pi = 3.14159265358;
+
     bool calculate_gaussian_mask(vector<vector<float>>& mask, float sigma, int mask_radius) {
         int i, j;
         int mask_size = 2 * mask_radius + 1;
@@ -32,7 +34,7 @@ namespace ais {
         return true;
     }
 
-    bool smooth_edge_X_Gaussian(c_point_cloud& point_cloud, float sigma, int mask_radius) {
+    bool smooth_edge_X_Gaussian_old(c_point_cloud& point_cloud, float sigma, int mask_radius) {
         // calculate the Gaussian mask
         int i, j;
         size_t u, v;
@@ -81,6 +83,47 @@ namespace ais {
         return true;
     }
 
+    bool smooth_edge_X_Gaussian(c_point_cloud& point_cloud, float sigma, int mask_radius) {
+        // calculate the Gaussian mask
+        int i, j;
+        size_t u, v;
+        int u1, v1;
+
+        vector<vector<float>> mask;
+        calculate_gaussian_mask(mask, sigma, mask_radius);
+
+        size_t num_point_cloud_rows = point_cloud.points.size();
+        if (num_point_cloud_rows <= 0)
+            return false;
+        size_t num_point_cloud_cols = point_cloud.points[0].size();
+
+        for (u = mask_radius; u < num_point_cloud_rows - mask_radius; u++) {
+            assert(point_cloud.points[u].size() == num_point_cloud_cols);
+            for (v = mask_radius; v < num_point_cloud_cols - mask_radius; v++) {
+
+                if (point_cloud.points[u][v].Clr_edge == 0)
+                    continue;
+
+                Vector3f Conv_X = Vector3f::Zero();
+                float total_weight = 0;
+                for (u1 = -mask_radius; u1 <= mask_radius; u1++) {
+                    for (v1 = -mask_radius; v1 <= mask_radius; v1++) {
+
+                        if (point_cloud.points[u + u1][v + v1].Clr_edge == 0)
+                            continue;
+
+                        Conv_X += point_cloud.points[u + u1][v + v1].X * mask[u1 + mask_radius][v1 + mask_radius];
+                        total_weight += mask[u1 + mask_radius][v1 + mask_radius];
+                    }
+                }
+
+                point_cloud.points[u][v].Conv_X = Conv_X / total_weight;
+            }
+        }
+
+        return true;
+    }
+
     bool calculate_edge_curvature(c_point_cloud& point_cloud) {
         size_t u, v, j;
         int u1, v1;
@@ -88,7 +131,9 @@ namespace ais {
 
         int nbhrs[8][2] = { { -1,-1 },{ -1,0 },{ -1,1 },{ 0,1 },{ 1,1 },{ 1,0 },{ 1,-1 },{ 0,-1 } };
 
-        smooth_edge_X_Gaussian(point_cloud, 1.4, 4);   // other values: (2.0, 6), (1.0, 2), (1.4, 4)
+        smooth_edge_X_Gaussian(point_cloud, 2.0, 6);   // other values: (2.0, 6), (1.0, 2), (1.4, 4)
+
+        float high_angle_cos = cos(75.0/180.0*pi);
 
         size_t num_point_cloud_rows = point_cloud.points.size();
         if (num_point_cloud_rows <= 0)
@@ -97,6 +142,10 @@ namespace ais {
 
         for (u = 1; u < num_point_cloud_rows - 1; u++) {
             for (v = 1; v < num_point_cloud_cols - 1; v++) {
+
+                //11111111111111111111111111111111111111111
+//                if (v != 923 || u != 748) continue;
+
                 if (point_cloud.points[u][v].Clr_edge) {
                     int num_edge_nghbrs = 0;
                     // an edge point often has more than 2 nghbr points in the 8-nbhd
@@ -122,7 +171,7 @@ namespace ais {
                         j = (j+1) % 8;
                     }
 
-                    float High_Curvature_Threshold = 10;
+                    float High_Curvature_Threshold = 1000;
 //#define MARK_EDGE_ENDS
 #ifdef MARK_EDGE_ENDS
                     if (num_edge_nghbrs == 1) {
@@ -143,12 +192,21 @@ namespace ais {
 
                             dX2_ds /= dX2_ds_norm;
                             dX1_ds /= dX1_ds_norm;
+
+#ifdef CALCULATE_TANGENT_TURN_ANGLE
+                            // calculating angle between tangent rather than curvature involves is less prone to the noise
+                            float angle_cosine = dX1_ds.dot(dX2_ds);
+                            if (angle_cosine < high_angle_cos)
+                                point_cloud.points[u][v].high_tangent_turn_angle = 1.0;
+#endif
+#ifdef CALCULATE_CURVATURE
                             Vector3f d2X_ds2 = (dX2_ds - dX1_ds) / dX1_ds_norm;
                             point_cloud.points[u][v].Edge_Curvature = d2X_ds2.norm();
 
                             if (point_cloud.points[u][v].Edge_Curvature > High_Curvature_Threshold) {
                                 point_cloud.points[u][v].High_Curvature = point_cloud.points[u][v].Edge_Curvature;
                             }
+#endif
                         }
                     }
                 }
@@ -260,7 +318,6 @@ namespace ais {
         // suppress nonmaxima
         int Del_plus[4][2] = { {1,0},{1,1},{0,1},{-1,1} };
         int Del_minus[4][2] = { { -1,0 },{ -1,-1 },{ 0,-1 },{ 1,-1 } };
-        float pi = 3.14159265338;
         for (u = 0; u < num_point_cloud_rows; u++) {
             for (v = 0; v < num_point_cloud_cols; v++) {
                 point_cloud.points[u][v].gradient_mag_temp = point_cloud.points[u][v].gradient_mag;

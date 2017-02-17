@@ -251,7 +251,14 @@ int main(int argc, char** argv)
     for (u = 0; u < detected_edges_point_cloud.points.size(); u++) {
         for (v = 0; v < detected_edges_point_cloud.points[u].size(); v++) {
             if (point_cloud.points[u][v].Clr_edge != 0) {
+
+#ifdef CALCULATE_CURVATURE
                 if (point_cloud.points[u][v].High_Curvature != 0)
+#else
+#ifdef CALCULATE_TANGENT_TURN_ANGLE
+                if (point_cloud.points[u][v].high_tangent_turn_angle != 0)
+#endif
+#endif
                     detected_edges_point_cloud.points[u][v].Clr = Vector3f(0, 255, 0);
                 else
                     detected_edges_point_cloud.points[u][v].Clr = Vector3f(255, 0, 0);

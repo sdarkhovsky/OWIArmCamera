@@ -9,6 +9,7 @@ namespace ais {
         size_t num_point_cloud_cols = points[0].size();
 
         size_t u1, v1, u2, v2;
+        // fix repeating same X for same u, different vs
         for (u = 0; u < num_point_cloud_rows; u++) {
             v = 0;
             while (v < num_point_cloud_cols) {
@@ -30,6 +31,32 @@ namespace ais {
 
                 for (v = v1 + 1; v < v2; v++) {
                     points[u][v].X = X1 + (X2 - X1) / (float)(v2 - v1)*(float)(v - v1);
+                }
+            }
+        }
+
+        // fix repeating same X for different us, same v
+        for (v = 0; v < num_point_cloud_cols; v++) {
+            u = 0;
+            while (u < num_point_cloud_rows) {
+                if (points[u][v].X == Vector3f::Zero()) {
+                    u++;
+                    continue;
+                }
+
+                u1 = u;
+                X1 = points[u][v].X;
+
+                while (u < num_point_cloud_rows && points[u][v].X == points[u1][v].X) u++;
+
+                if (u >= num_point_cloud_rows)
+                    break;
+
+                u2 = u;
+                X2 = points[u2][v].X;
+
+                for (u = u1 + 1; u < u2; u++) {
+                    points[u][v].X = X1 + (X2 - X1) / (float)(u2 - u1)*(float)(u - u1);
                 }
             }
         }
