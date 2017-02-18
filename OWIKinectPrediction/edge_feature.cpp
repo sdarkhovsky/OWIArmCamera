@@ -164,8 +164,8 @@ namespace ais {
         size_t u, v, j;
         int u1, v1;
         int u2, v2;
-        float corner_angle_cosine_thresh = cos(150.0 / 180.0*pi);
-        const int num_advance_iter = 5;
+        float corner_angle_cosine_thresh = cos(130.0 / 180.0*pi);
+        const int num_advance_iter = 4;
 
 //        smooth_edge_X_Gaussian(point_cloud, 2.0, 6);   // other values: (2.0, 6), (1.0, 2), (1.4, 4)
 
@@ -198,11 +198,10 @@ namespace ais {
                     }
 
                     if (num_edge_nghbrs < 2) {
-                        //#define MARK_EDGE_ENDS
+//#define MARK_EDGE_ENDS
 #ifdef MARK_EDGE_ENDS
                         if (num_edge_nghbrs == 1) {
-                            point_cloud.points[u][v].Edge_Curvature = High_Curvature_Threshold;
-                            point_cloud.points[u][v].High_Curvature = point_cloud.points[u][v].Edge_Curvature;
+                            point_cloud.points[u][v].edge_corner = 1.0;
                         }
 #endif
                         continue;
