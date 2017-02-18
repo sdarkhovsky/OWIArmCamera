@@ -20,8 +20,7 @@ c_world_part::c_world_part(c_point_cloud& point_cloud, c_world_time& world_time)
 
 //    bool result = detect_color_edge_features_LOG(point_cloud);
     bool result = detect_color_edge_features_Canny(point_cloud);
-    result = calculate_edge_curvature(point_cloud);
-//    result = detect_invalid_data_boundary(point_cloud);
+    result = find_edge_corners(point_cloud);
 /*
     std::unique_ptr<c_world_part_state> part_state(new c_world_part_state(point_cloud, world_time));
     world_part_states.push_back(std::move(part_state));   

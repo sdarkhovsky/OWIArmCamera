@@ -23,14 +23,7 @@ namespace ais {
         float gradient_mag_temp;
         float gradient_dir;
         float Clr_edge;
-#define CALCULATE_TANGENT_TURN_ANGLE
-#ifdef CALCULATE_TANGENT_TURN_ANGLE
-        float high_tangent_turn_angle;
-#endif
-#ifdef CALCULATE_CURVATURE
-        float Edge_Curvature;
-        float High_Curvature;
-#endif
+        float edge_corner;
     } 	c_point_cloud_point;
 
     class c_point_cloud {
@@ -38,7 +31,7 @@ namespace ais {
         c_point_cloud() {
         }
 
-        void filter_by_z(float max_z);
+        void filter_by_xyz(const Vector3f& min_xyz, const Vector3f& max_xyz);
         bool fix();
 
         std::vector< std::vector<c_point_cloud_point>> points;

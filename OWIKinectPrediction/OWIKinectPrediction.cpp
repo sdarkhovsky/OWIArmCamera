@@ -237,7 +237,9 @@ int main(int argc, char** argv)
         generate_point_cloud_prism(point_cloud);
 #endif
 #if 1
-        point_cloud.filter_by_z(0.8f);
+        Vector3f max_xyz = Vector3f(0.04, 0.2, 0.8f);
+        Vector3f min_xyz = Vector3f(-0.04, -0.2, 0);
+        point_cloud.filter_by_xyz(min_xyz, max_xyz);
 #endif
         
         g_ais.world.add_observation(point_cloud, cur_time);
@@ -252,13 +254,7 @@ int main(int argc, char** argv)
         for (v = 0; v < detected_edges_point_cloud.points[u].size(); v++) {
             if (point_cloud.points[u][v].Clr_edge != 0) {
 
-#ifdef CALCULATE_CURVATURE
-                if (point_cloud.points[u][v].High_Curvature != 0)
-#else
-#ifdef CALCULATE_TANGENT_TURN_ANGLE
-                if (point_cloud.points[u][v].high_tangent_turn_angle != 0)
-#endif
-#endif
+                if (point_cloud.points[u][v].edge_corner != 0)
                     detected_edges_point_cloud.points[u][v].Clr = Vector3f(0, 255, 0);
                 else
                     detected_edges_point_cloud.points[u][v].Clr = Vector3f(255, 0, 0);

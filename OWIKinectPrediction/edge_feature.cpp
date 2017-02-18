@@ -124,90 +124,138 @@ namespace ais {
         return true;
     }
 
-    bool calculate_edge_curvature(c_point_cloud& point_cloud) {
+    // edge_dir must be normalized
+    bool advance_along_edge(const c_point_cloud& point_cloud, Vector2i& edge_pnt, Vector2i edge_dir) {
+        int ut, vt, u1, v1;
+        int u = edge_pnt(0);
+        int v = edge_pnt(1);
+        int max_deviation = -1; // the point opposite to the edge_dir
+        int deviation;
+        assert(edge_dir.norm() == 1.0);
+        Vector2i dir, new_edge_dir, new_edge_pnt;
+        for (ut = -1; ut <= 1; ut++) {
+            for (vt = -1; vt <= 1; vt++) {
+                if (ut == 0 && vt == 0)
+                    continue;
+                u1 = u + ut;
+                v1 = v + vt;
+                if (point_cloud.points[u1][v1].Clr_edge != 0) {
+                    dir = Vector2i(u1 - u, v1 - v);
+                    dir.normalize();
+                    deviation = edge_dir.dot(dir);
+                    if (deviation > max_deviation) {
+                        max_deviation = deviation;
+                        new_edge_dir = dir;
+                        new_edge_pnt = Vector2i(u1, v1);
+                    }
+                }
+            }
+        }
+
+        if (max_deviation > -1) {
+            edge_dir = new_edge_dir;
+            edge_pnt = new_edge_pnt;
+            return true;
+        }
+        return false;
+    }
+
+    bool find_edge_corners(c_point_cloud& point_cloud) {
         size_t u, v, j;
         int u1, v1;
         int u2, v2;
+        float corner_angle_cosine_thresh = cos(150.0 / 180.0*pi);
+        const int num_advance_iter = 5;
 
-        int nbhrs[8][2] = { { -1,-1 },{ -1,0 },{ -1,1 },{ 0,1 },{ 1,1 },{ 1,0 },{ 1,-1 },{ 0,-1 } };
-
-        smooth_edge_X_Gaussian(point_cloud, 2.0, 6);   // other values: (2.0, 6), (1.0, 2), (1.4, 4)
-
-        float high_angle_cos = cos(75.0/180.0*pi);
+//        smooth_edge_X_Gaussian(point_cloud, 2.0, 6);   // other values: (2.0, 6), (1.0, 2), (1.4, 4)
 
         size_t num_point_cloud_rows = point_cloud.points.size();
         if (num_point_cloud_rows <= 0)
             return false;
         size_t num_point_cloud_cols = point_cloud.points[0].size();
-
+        int ut, vt;
         for (u = 1; u < num_point_cloud_rows - 1; u++) {
             for (v = 1; v < num_point_cloud_cols - 1; v++) {
 
-                //11111111111111111111111111111111111111111
-//                if (v != 923 || u != 748) continue;
+//                if (!(u == 542 && v == 1013))
+//                    continue;
 
                 if (point_cloud.points[u][v].Clr_edge) {
                     int num_edge_nghbrs = 0;
-                    // an edge point often has more than 2 nghbr points in the 8-nbhd
-                    for (j = 0; j < 8; j++) {
-                        u1 = u + nbhrs[j][0];
-                        v1 = v + nbhrs[j][1];
-                        if (point_cloud.points[u1][v1].Clr_edge != 0) {
-                            num_edge_nghbrs++;
-                            break;
+                    Vector2i edge_pnt;
+                    Vector2i init_edge_dir;
+                    for (ut = -1; ut <= 1;ut++) {
+                        for (vt = -1; vt <= 1; vt++) {
+                            if (ut == 0 && vt == 0) 
+                                continue;
+                            u1 = u + ut;
+                            v1 = v + vt;
+                            if (point_cloud.points[u1][v1].Clr_edge != 0) {
+                                num_edge_nghbrs++;
+                                edge_pnt = Vector2i(u1, v1);
+                            }
                         }
                     }
 
-                    j = (j+3) % 8; // start looking for edge continuation from almost opposite end
-                    int terminate_j = (j + 7) % 8;
-
-                    while (j != terminate_j) {
-                        u2 = u + nbhrs[j][0];
-                        v2 = v + nbhrs[j][1];
-                        if ((u2 != u1 || v2 != v1) && point_cloud.points[u2][v2].Clr_edge != 0) {
-                            num_edge_nghbrs++;
-                            break;
-                        }
-                        j = (j+1) % 8;
-                    }
-
-                    float High_Curvature_Threshold = 1000;
-//#define MARK_EDGE_ENDS
+                    if (num_edge_nghbrs < 2) {
+                        //#define MARK_EDGE_ENDS
 #ifdef MARK_EDGE_ENDS
-                    if (num_edge_nghbrs == 1) {
-                        point_cloud.points[u][v].Edge_Curvature = High_Curvature_Threshold;
-                        point_cloud.points[u][v].High_Curvature = point_cloud.points[u][v].Edge_Curvature;
+                        if (num_edge_nghbrs == 1) {
+                            point_cloud.points[u][v].Edge_Curvature = High_Curvature_Threshold;
+                            point_cloud.points[u][v].High_Curvature = point_cloud.points[u][v].Edge_Curvature;
+                        }
+#endif
                         continue;
                     }
-#endif
 
-                    if (num_edge_nghbrs == 2) {
+                    init_edge_dir = edge_pnt - Vector2i(u, v);
+                    init_edge_dir.normalize();
+                    Vector2i edge_dir = init_edge_dir;
+                    for (j = 0; j < num_advance_iter; j++) {
+                        if (advance_along_edge(point_cloud, edge_pnt, edge_dir))
+                            continue;
+                        break;
+                    }
+                    if (j < num_advance_iter)
+                        continue;
 
-                        Vector3f dX2_ds = point_cloud.points[u2][v2].X - point_cloud.points[u][v].X;
-                        Vector3f dX1_ds = point_cloud.points[u][v].X - point_cloud.points[u1][v1].X;
-                        float dX2_ds_norm = dX2_ds.norm();
-                        float dX1_ds_norm = dX1_ds.norm();
+                    u1 = edge_pnt(0);
+                    v1 = edge_pnt(1);
 
-                        if (dX2_ds_norm > 0 && dX1_ds_norm > 0) {
+                    // advance in opposite direction
+                    edge_dir = -init_edge_dir;
+                    edge_pnt = Vector2i(u, v);
 
-                            dX2_ds /= dX2_ds_norm;
-                            dX1_ds /= dX1_ds_norm;
+                    for (j = 0; j < num_advance_iter; j++) {
+                        if (advance_along_edge(point_cloud, edge_pnt, edge_dir))
+                            continue;
+                        break;
+                    }
+                    if (j < num_advance_iter)
+                        continue;
 
-#ifdef CALCULATE_TANGENT_TURN_ANGLE
-                            // calculating angle between tangent rather than curvature involves is less prone to the noise
-                            float angle_cosine = dX1_ds.dot(dX2_ds);
-                            if (angle_cosine < high_angle_cos)
-                                point_cloud.points[u][v].high_tangent_turn_angle = 1.0;
-#endif
-#ifdef CALCULATE_CURVATURE
-                            Vector3f d2X_ds2 = (dX2_ds - dX1_ds) / dX1_ds_norm;
-                            point_cloud.points[u][v].Edge_Curvature = d2X_ds2.norm();
+                    u2 = edge_pnt(0);
+                    v2 = edge_pnt(1);
 
-                            if (point_cloud.points[u][v].Edge_Curvature > High_Curvature_Threshold) {
-                                point_cloud.points[u][v].High_Curvature = point_cloud.points[u][v].Edge_Curvature;
-                            }
-#endif
-                        }
+                    Vector3f dir1 = point_cloud.points[u1][v1].X - point_cloud.points[u][v].X;
+                    Vector3f dir2 = point_cloud.points[u2][v2].X - point_cloud.points[u][v].X;
+                    dir1.normalize();
+                    dir2.normalize();
+
+                    // on the edges there is often big difference in Z coordinate when the edge also corresponds to a step in Z direction
+                    // to filter such cases of incorrect flagging straight line segments as corners, we calculate also angles between xy directions
+
+                    Vector2f dir1_xy = Vector2f(point_cloud.points[u1][v1].X(0), point_cloud.points[u1][v1].X(1)) - Vector2f(point_cloud.points[u][v].X(0), point_cloud.points[u][v].X(1));
+                    Vector2f dir2_xy = Vector2f(point_cloud.points[u2][v2].X(0), point_cloud.points[u2][v2].X(1)) - Vector2f(point_cloud.points[u][v].X(0), point_cloud.points[u][v].X(1));
+                    dir1_xy.normalize();
+                    dir2_xy.normalize();
+
+                    // calculating angle between tangent rather than curvature is less prone to the noise
+                    float corner_angle_cosine = dir1.dot(dir2);
+                    float corner_angle_cosine_xy = dir1_xy.dot(dir2_xy);
+
+                    if (corner_angle_cosine > corner_angle_cosine_thresh && corner_angle_cosine_xy > corner_angle_cosine_thresh) {
+                        point_cloud.points[u][v].edge_corner = 1.0;
                     }
                 }
             }
@@ -558,37 +606,6 @@ namespace ais {
             }
         }
 
-        return true;
-    }
-
-
-    bool detect_invalid_data_boundary(c_point_cloud& point_cloud) {
-        size_t u, v, j;
-        int u1, v1;
-        size_t num_point_cloud_rows = point_cloud.points.size();
-        if (num_point_cloud_rows <= 0)
-            return false;
-        size_t num_point_cloud_cols = point_cloud.points[0].size();
-
-        for (u = 1; u < num_point_cloud_rows - 1; u++) {
-            for (v = 1; v < num_point_cloud_cols - 1; v++) {
-                if (point_cloud.points[u][v].X == Vector3f::Zero())
-                    continue;
-
-                for (u1 = -1; u1 <= 1; u1++) {
-                    for (v1 = -1; v1 <= 1; v1++) {
-                        if (u1 == 0 && v1 == 0)
-                            continue;
-                        if (point_cloud.points[u + u1][v + v1].X == Vector3f::Zero()) {
-                            goto boundary_point;
-                        }
-                    }
-                }
-                continue;
-            boundary_point:
-                point_cloud.points[u][v].Clr_edge = 1.0;
-            }
-        }
         return true;
     }
 }
