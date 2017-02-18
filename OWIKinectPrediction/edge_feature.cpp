@@ -164,7 +164,7 @@ namespace ais {
         size_t u, v, j;
         int u1, v1;
         int u2, v2;
-        float corner_angle_cosine_thresh = cos(130.0 / 180.0*pi);
+        float corner_angle_cosine_thresh = cos(160.0 / 180.0*pi);
         const int num_advance_iter = 4;
 
 //        smooth_edge_X_Gaussian(point_cloud, 2.0, 6);   // other values: (2.0, 6), (1.0, 2), (1.4, 4)
@@ -249,11 +249,18 @@ namespace ais {
                     dir1_xy.normalize();
                     dir2_xy.normalize();
 
+                    Vector2f dir1_uv = Vector2f(v1,u1) - Vector2f(v,u);
+                    Vector2f dir2_uv = Vector2f(v2, u2) - Vector2f(v,u);
+                    dir1_uv.normalize();
+                    dir2_uv.normalize();
+
                     // calculating angle between tangent rather than curvature is less prone to the noise
                     float corner_angle_cosine = dir1.dot(dir2);
                     float corner_angle_cosine_xy = dir1_xy.dot(dir2_xy);
+                    float corner_angle_cosine_uv = dir1_uv.dot(dir2_uv);
 
-                    if (corner_angle_cosine > corner_angle_cosine_thresh && corner_angle_cosine_xy > corner_angle_cosine_thresh) {
+                    if (corner_angle_cosine_uv > corner_angle_cosine_thresh) {
+//                    if (corner_angle_cosine > corner_angle_cosine_thresh && corner_angle_cosine_xy > corner_angle_cosine_thresh) {
                         point_cloud.points[u][v].edge_corner = 1.0;
                     }
                 }
