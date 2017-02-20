@@ -17,29 +17,31 @@ public:
     double time;
 };
 
-class c_world_part_state {
-public:
-    c_world_part_state(c_point_cloud& point_cloud, c_world_time& world_time);
-    c_world_time time;
-    
-    c_point_cloud point_cloud;
-};
-
 class c_world_part {
 public:
     c_world_part(c_point_cloud& point_cloud, c_world_time& world_time);
-    
-    std::vector <  std::unique_ptr<c_world_part_state> > world_part_states;    
+
+    c_world_time time;
+    c_point_cloud point_cloud;
 };
 
 class c_world {
 public:
     
+    ~c_world() {
+        for (auto it = world_parts.begin(); it != world_parts.end(); it++) {
+            delete *it;
+        }
+        world_parts.clear();
+    }
     void add_observation( c_point_cloud& point_cloud, double time);
-    void match_world_parts(std::unique_ptr<c_world_part>& world_part);
     void predict();
+    c_point_cloud& get_last_processed_point_cloud() {
+        size_t i = world_parts.size() - 1;
+        return world_parts[i]->point_cloud;
+    }
     
-    std::vector < std::unique_ptr<c_world_part> > world_parts;
+    std::vector < c_world_part* > world_parts;
 };
 
 }
