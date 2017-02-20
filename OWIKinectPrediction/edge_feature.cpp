@@ -181,8 +181,8 @@ namespace ais {
         for (u = 1; u < num_point_cloud_rows - 1; u++) {
             for (v = 1; v < num_point_cloud_cols - 1; v++) {
 
-                if (!(u == 570 && v == 1009))
-                    continue;
+//                if (!(u == 570 && v == 1009))
+//                    continue;
 
                 if (point_cloud.points[u][v].Clr_edge) {
                     int num_edge_nghbrs = 0;

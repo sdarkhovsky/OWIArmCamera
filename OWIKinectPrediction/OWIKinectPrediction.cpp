@@ -250,11 +250,11 @@ int main(int argc, char** argv)
 
     c_point_cloud detected_edges_point_cloud = point_cloud;
     size_t u, v;
-    float corner_angle_cosine_thresh = cos(135.0 / 180.0*pi);
+    float corner_angle_cosine_thresh = cos(150.0 / 180.0*pi);
     for (u = 0; u < detected_edges_point_cloud.points.size(); u++) {
         for (v = 0; v < detected_edges_point_cloud.points[u].size(); v++) {
             if (point_cloud.points[u][v].Clr_edge != 0) {
-                if (point_cloud.points[u][v].min_edge_corner_angle_cos < corner_angle_cosine_thresh)
+                if (point_cloud.points[u][v].min_edge_corner_angle_cos > corner_angle_cosine_thresh)
                     detected_edges_point_cloud.points[u][v].Clr = Vector3f(0, 255, 0);
                 else
                     detected_edges_point_cloud.points[u][v].Clr = Vector3f(255, 0, 0);
