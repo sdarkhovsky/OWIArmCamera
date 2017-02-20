@@ -163,7 +163,7 @@ namespace ais {
         int i1, i2, i3;
         int u1, v1;
         int u2, v2;
-        const int num_advance_iter = 1;
+        const int num_advance_iter = 3;
         Vector2i corner_pts[3]; // u,v coordinates of the corner points
         Vector3f corner_pts_nbhd[3][3];
         Vector3f dir1, dir2;
@@ -181,7 +181,7 @@ namespace ais {
         for (u = 1; u < num_point_cloud_rows - 1; u++) {
             for (v = 1; v < num_point_cloud_cols - 1; v++) {
 
-//                if (!(u == 570 && v == 1009))
+//                if (!(u == 555 && v == 1053))
 //                    continue;
 
                 if (point_cloud.points[u][v].Clr_edge) {
