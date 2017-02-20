@@ -236,7 +236,7 @@ int main(int argc, char** argv)
 #else
         generate_point_cloud_prism(point_cloud);
 #endif
-#if 0
+#if 1
         Vector3f max_xyz = Vector3f(0.04, 0.2, 0.8f);
         Vector3f min_xyz = Vector3f(-0.04, -0.2, 0);
         point_cloud.filter_by_xyz(min_xyz, max_xyz);
@@ -250,11 +250,11 @@ int main(int argc, char** argv)
 
     c_point_cloud detected_edges_point_cloud = point_cloud;
     size_t u, v;
+    float corner_angle_cosine_thresh = cos(135.0 / 180.0*pi);
     for (u = 0; u < detected_edges_point_cloud.points.size(); u++) {
         for (v = 0; v < detected_edges_point_cloud.points[u].size(); v++) {
             if (point_cloud.points[u][v].Clr_edge != 0) {
-
-                if (point_cloud.points[u][v].edge_corner != 0)
+                if (point_cloud.points[u][v].min_edge_corner_angle_cos < corner_angle_cosine_thresh)
                     detected_edges_point_cloud.points[u][v].Clr = Vector3f(0, 255, 0);
                 else
                     detected_edges_point_cloud.points[u][v].Clr = Vector3f(255, 0, 0);

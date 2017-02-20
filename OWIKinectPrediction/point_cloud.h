@@ -12,6 +12,8 @@ using namespace Eigen;
 
 namespace ais {
 
+    const float pi = 3.14159265358;
+
     typedef struct _c_point_cloud_point
     {
         Vector3f X;
@@ -24,6 +26,7 @@ namespace ais {
         float gradient_dir;
         float Clr_edge;
         float edge_corner;
+        float min_edge_corner_angle_cos;
     } 	c_point_cloud_point;
 
     class c_point_cloud {
