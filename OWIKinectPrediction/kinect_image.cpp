@@ -25,17 +25,21 @@ bool c_kinect_image::read_file(std::string file_path, c_point_cloud& point_cloud
         point_cloud.points[i].resize(width);
     }
 
+    Vector3f X, Clr;
     while (!infile.eof()) 
     {
         infile >> u;
         infile >> v;
+        infile >> X(0);
+        infile >> X(1);
+        infile >> X(2);
+        infile >> Clr(0);
+        infile >> Clr(1);
+        infile >> Clr(2);
+
         if (u < height && v < width) {
-            infile >> point_cloud.points[u][v].X(0);
-            infile >> point_cloud.points[u][v].X(1);
-            infile >> point_cloud.points[u][v].X(2);
-            infile >> point_cloud.points[u][v].Clr(0);
-            infile >> point_cloud.points[u][v].Clr(1);
-            infile >> point_cloud.points[u][v].Clr(2);
+            point_cloud.points[u][v].X = X;
+            point_cloud.points[u][v].Clr = Clr;
             point_cloud.points[u][v].uv = Vector2i(u, v);
         }
     }

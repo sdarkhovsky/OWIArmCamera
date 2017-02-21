@@ -243,8 +243,7 @@ int main(int argc, char** argv)
         point_cloud.filter_by_xyz(min_xyz, max_xyz);
 #endif
     
-        g_ais.world.base_image_path = img_path;
-        g_ais.world.add_observation(point_cloud, cur_time);
+        g_ais.world.add_observation(point_cloud, cur_time, img_path);
 
         int owi_cmd = get_owi_command_from_file_name(*it);
         if (owi_cmd >= 0) {

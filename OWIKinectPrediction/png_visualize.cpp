@@ -74,7 +74,100 @@ namespace ais {
 
 
     bool png_visualize_point_cloud_correspondence(const char* file_name, vector <c_point_correspondence>& map, c_point_cloud& src_point_cloud, c_point_cloud& tgt_point_cloud) {
-        return true;
+        int x, y, i, j;
+        png_structp png_ptr;
+        png_infop info_ptr;
+        bool result = true;
+        int src_x, src_y, tgt_x, tgt_y;
+        Vector3i line_clr(0, 0, 255);
+
+        int src_width = src_point_cloud.points[0].size();
+        int src_height = src_point_cloud.points.size();
+        int tgt_width = tgt_point_cloud.points[0].size();
+        int tgt_height = tgt_point_cloud.points.size();
+        int gap_width = 10;
+
+        if (src_height != tgt_height)
+            return false;
+
+        int width = src_width + gap_width + tgt_width;
+        int height = src_height;
+
+        /* create file */
+        FILE *fp = fopen(file_name, "wb");
+        if (!fp)
+            return false;
+
+        if (!png_visualize_prepare(fp, width, height, &png_ptr, &info_ptr))
+            return false;
+
+        png_bytep * row_pointers;
+        row_pointers = (png_bytep*)malloc(sizeof(png_bytep) * height);
+        if (!row_pointers)
+            goto Cleanup;
+        for (y = 0; y < height; y++) {
+            row_pointers[y] = (png_byte*)malloc(png_get_rowbytes(png_ptr, info_ptr));
+            if (!row_pointers[y])
+                goto Cleanup;
+        }
+
+        int tgt_img_start = src_width + gap_width;
+        for (y = 0; y < height; y++) {
+            png_byte* row = row_pointers[y];
+            for (x = 0; x < width; x++) {
+                png_byte* ptr = &(row[x * 4]);
+
+                if (x < src_width) {
+                    for (i = 0; i < 3; i++)
+                        ptr[i] = src_point_cloud.points[y][x].Clr(i);
+                }
+                else {
+                    if (x < tgt_img_start) {
+                        for (i = 0; i < 3; i++)
+                            ptr[i] = 0;
+                    }
+                    else {
+                        for (i = 0; i < 3; i++)
+                            ptr[i] = tgt_point_cloud.points[y][x - tgt_img_start].Clr(i);
+                    }
+                }
+
+                ptr[3] = 255;
+            }
+        }
+
+        for (auto it = map.begin(); it != map.end(); it++) {
+            Vector2i start = it->src_uv;
+            Vector2i end = it->tgt_uv + Vector2i(0, tgt_img_start);
+            int x_len = end(1) - start(1);
+            Vector2i dir = (end - start);
+
+            // the line connecting start and end)
+            for (j = 0; j < x_len; j++) {
+                Vector2i pnt = start + j*dir/x_len;
+                png_byte* row = row_pointers[pnt(0)];
+                png_byte* ptr = &(row[pnt(1) * 4]);
+                for (i = 0; i < 3; i++)
+                    ptr[i] = line_clr(i);
+                ptr[3] = 255;
+            }
+        }
+
+        png_visualize_complete(png_ptr, row_pointers);
+
+    Cleanup:
+        /* cleanup heap allocation */
+        if (row_pointers) {
+            for (y = 0; y < height; y++) {
+                if (row_pointers[y])
+                    free(row_pointers[y]);
+            }
+            free(row_pointers);
+        }
+
+        fclose(fp);
+
+        return result;
     }
 
     bool png_visualize_point_cloud(const char* file_name, c_point_cloud& point_cloud)

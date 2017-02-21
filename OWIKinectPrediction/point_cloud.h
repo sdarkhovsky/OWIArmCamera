@@ -16,8 +16,17 @@ namespace ais {
     class c_point_cloud_point {
         public:
         c_point_cloud_point() {
+            X = Vector3f::Zero();
+            Clr = Vector3f::Zero();
+            Vector = Vector3f::Zero();
+            Conv_X = Vector3f::Zero();
+            Conv_Clr = Vector3f::Zero();
+            gradient_mag = 0;
+            gradient_mag_temp = 0;
+            gradient_dir = 0;
             Clr_edge = 0;
             min_edge_corner_angle_cos = -1.0;
+            uv = Vector2i::Zero();
         }
         Vector3f X;
         Vector3f Clr;

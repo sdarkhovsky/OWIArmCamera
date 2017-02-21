@@ -4,6 +4,7 @@
 #include "point_cloud.h"
 
 #include <vector>
+#include <string>
 #include <memory>
 
 namespace ais {
@@ -34,12 +35,11 @@ public:
         }
         world_parts.clear();
     }
-    void add_observation( c_point_cloud& point_cloud, double time);
+    void add_observation( c_point_cloud& point_cloud, double time, const string& img_path);
     void predict();
 
-    void match_world_part(c_world_part* wp);
+    void match_world_part(c_world_part* wp, const string& img_path);
     
-    std::string base_image_path;
     std::vector < c_world_part* > world_parts;
 };
 

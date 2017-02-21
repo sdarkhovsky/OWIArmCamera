@@ -23,12 +23,16 @@ c_world_part::c_world_part(c_point_cloud& _point_cloud, c_world_time& world_time
     result = find_edge_corners(point_cloud);
 }
 
-void c_world::match_world_part(c_world_part* wp) {
+void c_world::match_world_part(c_world_part* wp, const string& img_path) {
     size_t u, v, u1, v1, u2, v2;
     int i, j;
     vector <c_point_correspondence> map;
     vector <Vector2i> src_corner_pts;
     vector <Vector2i> tgt_corner_pts;
+
+    if (world_parts.size() == 0)
+        return;
+
     auto prev_wp = world_parts.back();
 
     for (u = 0; u < wp->point_cloud.points.size(); u++) {
@@ -64,24 +68,26 @@ void c_world::match_world_part(c_world_part* wp) {
         }
     }
 
-    std::string file_path = base_image_path + ".correspondence.png";
-    png_visualize_point_cloud_correspondence(file_path.c_str(), map, wp->point_cloud, prev_wp->point_cloud);
+    if (img_path.size() > 0) {
+        std::string file_path = img_path + ".correspondence.png";
+        png_visualize_point_cloud_correspondence(file_path.c_str(), map, wp->point_cloud, prev_wp->point_cloud);
+    }
 }
 
-void c_world::add_observation( c_point_cloud& point_cloud, double time) {
+void c_world::add_observation( c_point_cloud& point_cloud, double time, const string& img_path) {
     c_world_time world_time(time);
 
     c_world_part* wp = new c_world_part(point_cloud, world_time);
-    match_world_part(wp);
+    match_world_part(wp, img_path);
 
     world_parts.push_back(wp);
 
     #if 1
     {
-        if (base_image_path.size() > 0) {
-            std::string file_path = base_image_path + ".detected_edge.xyze";
+        if (img_path.size() > 0) {
+            std::string file_path = img_path + ".detected_edge.xyze";
 
-            c_point_cloud detected_edges_point_cloud = point_cloud;
+            c_point_cloud detected_edges_point_cloud = wp->point_cloud;
             size_t u, v;
 
             for (u = 0; u < detected_edges_point_cloud.points.size(); u++) {
