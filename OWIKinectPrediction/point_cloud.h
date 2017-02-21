@@ -6,13 +6,12 @@
 #include <set>
 
 #include <Eigen/Dense>
+#include "definitions.h"
 
 using namespace std;
 using namespace Eigen;
 
 namespace ais {
-
-    const float pi = 3.14159265358;
 
     class c_point_cloud_point {
         public:
@@ -30,6 +29,21 @@ namespace ais {
         float gradient_dir;
         float Clr_edge;
         float min_edge_corner_angle_cos;
+        Vector2i uv;
+    };
+
+    class c_point_correspondence {
+    public:
+        c_point_correspondence(Vector2i _src_uv, float _src_angle_cos, Vector2i _tgt_uv, float _tgt_angle_cos) {
+            src_uv = _src_uv;
+            src_angle_cos = _src_angle_cos;
+            tgt_uv = _tgt_uv;
+            tgt_angle_cos = _tgt_angle_cos;
+        }
+        Vector2i src_uv;
+        float src_angle_cos;
+        Vector2i tgt_uv;
+        float tgt_angle_cos;
     };
 
     class c_point_cloud {

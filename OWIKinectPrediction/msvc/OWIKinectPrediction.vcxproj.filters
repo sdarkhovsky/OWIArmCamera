@@ -39,7 +39,7 @@
     <ClCompile Include="..\edge_feature.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\png.cpp">
+    <ClCompile Include="..\png_visualize.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -62,10 +62,13 @@
     <ClInclude Include="..\line_feature.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\typedef.h">
+    <ClInclude Include="..\edge_feature.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\edge_feature.h">
+    <ClInclude Include="..\definitions.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\png_visualize.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -36,11 +36,10 @@ public:
     }
     void add_observation( c_point_cloud& point_cloud, double time);
     void predict();
-    c_point_cloud& get_last_processed_point_cloud() {
-        size_t i = world_parts.size() - 1;
-        return world_parts[i]->point_cloud;
-    }
+
+    void match_world_part(c_world_part* wp);
     
+    std::string base_image_path;
     std::vector < c_world_part* > world_parts;
 };
 

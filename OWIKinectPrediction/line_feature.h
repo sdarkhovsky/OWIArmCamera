@@ -2,8 +2,6 @@
 #define LINE_FEATURE_H
 
 #include <vector>
-#include "typedef.h"
-
 using namespace std;
 
 namespace ais {

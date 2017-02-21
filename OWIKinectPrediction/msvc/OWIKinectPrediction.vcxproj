@@ -165,7 +165,7 @@
     <ClCompile Include="..\plane_feature.cpp" />
     <ClCompile Include="..\kinect_image.cpp" />
     <ClCompile Include="..\OWIKinectPrediction.cpp" />
-    <ClCompile Include="..\png.cpp" />
+    <ClCompile Include="..\png_visualize.cpp" />
     <ClCompile Include="..\point_cloud.cpp" />
     <ClCompile Include="..\world.cpp" />
   </ItemGroup>
@@ -173,8 +173,9 @@
     <ClInclude Include="..\ais.h" />
     <ClInclude Include="..\edge_feature.h" />
     <ClInclude Include="..\kinect_image.h" />
+    <ClInclude Include="..\png_visualize.h" />
     <ClInclude Include="..\point_cloud.h" />
-    <ClInclude Include="..\typedef.h" />
+    <ClInclude Include="..\definitions.h" />
     <ClInclude Include="..\world.h" />
     <ClInclude Include="..\line_feature.h" />
     <ClInclude Include="..\plane_feature.h" />

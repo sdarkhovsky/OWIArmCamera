@@ -1,10 +1,11 @@
 #include <Eigen/Dense>
 #include "point_cloud.h"
 #include "edge_feature.h"
-//#include <vector>
+#include "png_visualize.h"
+
 #include <memory>
 
-bool write_png_file(const char* file_name, ais::c_point_cloud& point_cloud);
+
 
 using namespace Eigen;
 
@@ -380,7 +381,7 @@ namespace ais {
             }
         }
         std::string png_file_path = "C:\\Projects\\OWIArmCamera\\KinectImages\\smoothed.png";
-        write_png_file(png_file_path.c_str(), point_cloud);
+        png_visualize_point_cloud(png_file_path.c_str(), point_cloud);
         return true;
 #endif
 

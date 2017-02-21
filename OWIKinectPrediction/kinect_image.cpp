@@ -4,11 +4,7 @@
 #include <fstream>
 #include <string>
 
-#define DEBUGGING
-
-#ifdef DEBUGGING
-bool write_png_file(const char* file_name, ais::c_point_cloud& point_cloud);
-#endif
+#include "png_visualize.h"
 
 using namespace std;
 
@@ -40,6 +36,7 @@ bool c_kinect_image::read_file(std::string file_path, c_point_cloud& point_cloud
             infile >> point_cloud.points[u][v].Clr(0);
             infile >> point_cloud.points[u][v].Clr(1);
             infile >> point_cloud.points[u][v].Clr(2);
+            point_cloud.points[u][v].uv = Vector2i(u, v);
         }
     }
     infile.close();
@@ -48,7 +45,7 @@ bool c_kinect_image::read_file(std::string file_path, c_point_cloud& point_cloud
 
 #if 1
     std::string png_file_path = file_path + ".png";
-    write_png_file(png_file_path.c_str(), point_cloud);
+    png_visualize_point_cloud(png_file_path.c_str(), point_cloud);
 #endif
 
 	return true;
@@ -99,7 +96,7 @@ bool c_kinect_image::write_file(std::string file_path, c_point_cloud& point_clou
 
 #if 1
     std::string png_file_path = file_path + ".png";
-    write_png_file(png_file_path.c_str(), point_cloud);
+    png_visualize_point_cloud(png_file_path.c_str(), point_cloud);
 #endif
 
     return true;
