@@ -17,6 +17,8 @@ public:
 
     static bool read_file( std::string file_path, c_point_cloud& point_cloud );
     static bool write_file(std::string file_path, c_point_cloud& point_cloud, c_image_format image_format);
+private:
+    static void c_kinect_image::get_cloud_point_color(c_point_cloud_point& cloud_point, Vector3f& Clr);
 };
 
 

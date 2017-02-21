@@ -73,6 +73,27 @@ namespace ais {
     }
 
 
+    void set_image_pixel(c_point_cloud_point& cloud_point, png_byte* pixel_ptr) {
+        if (cloud_point.Clr_edge != 0) {
+            if (cloud_point.min_edge_corner_angle_cos > corner_angle_cosine_thresh) {
+                pixel_ptr[0] = 0;
+                pixel_ptr[1] = 255;
+                pixel_ptr[2] = 0;
+            }
+            else {
+                pixel_ptr[0] = 255;
+                pixel_ptr[1] = 0;
+                pixel_ptr[2] = 0;
+            }
+        } 
+        else {
+            pixel_ptr[0] = cloud_point.Clr(0);
+            pixel_ptr[1] = cloud_point.Clr(1);
+            pixel_ptr[2] = cloud_point.Clr(2);
+        }
+        pixel_ptr[3] = 255;
+    }
+
     bool png_visualize_point_cloud_correspondence(const char* file_name, vector <c_point_correspondence>& map, c_point_cloud& src_point_cloud, c_point_cloud& tgt_point_cloud) {
         int x, y, i, j;
         png_structp png_ptr;
@@ -111,6 +132,7 @@ namespace ais {
                 goto Cleanup;
         }
 
+        // copy images with edge and corner marks
         int tgt_img_start = src_width + gap_width;
         for (y = 0; y < height; y++) {
             png_byte* row = row_pointers[y];
@@ -118,21 +140,18 @@ namespace ais {
                 png_byte* ptr = &(row[x * 4]);
 
                 if (x < src_width) {
-                    for (i = 0; i < 3; i++)
-                        ptr[i] = src_point_cloud.points[y][x].Clr(i);
+                    set_image_pixel(src_point_cloud.points[y][x], ptr);
                 }
                 else {
                     if (x < tgt_img_start) {
                         for (i = 0; i < 3; i++)
                             ptr[i] = 0;
+                        ptr[3] = 255;
                     }
                     else {
-                        for (i = 0; i < 3; i++)
-                            ptr[i] = tgt_point_cloud.points[y][x - tgt_img_start].Clr(i);
+                        set_image_pixel(tgt_point_cloud.points[y][x - tgt_img_start], ptr);
                     }
                 }
-
-                ptr[3] = 255;
             }
         }
 
@@ -203,9 +222,7 @@ namespace ais {
             for (x = 0; x < width; x++) {
                 png_byte* ptr = &(row[x * 4]);
 
-                for (i = 0; i < 3; i++)
-                    ptr[i] = point_cloud.points[y][x].Clr(i);
-                ptr[3] = 255;
+                set_image_pixel(point_cloud.points[y][x], ptr);
             }
         }
 

@@ -53,7 +53,7 @@ void c_world::match_world_part(c_world_part* wp, const string& img_path) {
         }
     }
 
-    const float angle_cos_tol = 3.0* 2.0 / 180.0;
+    const float angle_cos_tol = 1.0* 2.0 / 180.0;
     for (i = 0; i < src_corner_pts.size(); i++) {
         u1 = src_corner_pts[i](0);
         v1 = src_corner_pts[i](1);
@@ -87,20 +87,7 @@ void c_world::add_observation( c_point_cloud& point_cloud, double time, const st
         if (img_path.size() > 0) {
             std::string file_path = img_path + ".detected_edge.xyze";
 
-            c_point_cloud detected_edges_point_cloud = wp->point_cloud;
-            size_t u, v;
-
-            for (u = 0; u < detected_edges_point_cloud.points.size(); u++) {
-                for (v = 0; v < detected_edges_point_cloud.points[u].size(); v++) {
-                    if (detected_edges_point_cloud.points[u][v].Clr_edge != 0) {
-                        if (detected_edges_point_cloud.points[u][v].min_edge_corner_angle_cos > corner_angle_cosine_thresh)
-                            detected_edges_point_cloud.points[u][v].Clr = Vector3f(0, 255, 0);
-                        else
-                            detected_edges_point_cloud.points[u][v].Clr = Vector3f(255, 0, 0);
-                    }
-                }
-            }
-            c_kinect_image::write_file(file_path, detected_edges_point_cloud, c_image_format::xyz);
+            c_kinect_image::write_file(file_path, wp->point_cloud, c_image_format::xyz);
         }
     }
     #endif
