@@ -58,7 +58,7 @@ namespace ais {
 
     void c_kinect_image::get_cloud_point_color(c_point_cloud_point& cloud_point, Vector3f& Clr) {
         if (cloud_point.Clr_edge != 0) {
-            if (cloud_point.min_edge_corner_angle_cos > corner_angle_cosine_thresh)
+            if (cloud_point.edge_corner_angle_cos > corner_angle_cosine_thresh)
                 Clr = Vector3f(0, 255, 0);
             else
                 Clr = Vector3f(255, 0, 0);

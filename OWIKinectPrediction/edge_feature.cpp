@@ -168,6 +168,7 @@ namespace ais {
         Vector2i corner_pts[3]; // u,v coordinates of the corner points
         Vector3f corner_pts_nbhd[3][3];
         Vector3f dir1, dir2;
+        Vector3f min_dir1, min_dir2;
 
         int Del_plus[4][2] = { { 1,0 },{ 1,1 },{ 0,1 },{ -1,1 } };
         int Del_minus[4][2] = { { -1,0 },{ -1,-1 },{ 0,-1 },{ 1,-1 } };
@@ -272,13 +273,18 @@ namespace ais {
                                 dir2.normalize();
 
                                 float angle_cos = dir1.dot(dir2);
-                                if (angle_cos < min_angle_cos)
+                                if (angle_cos < min_angle_cos) {
                                     min_angle_cos = angle_cos;
+                                    min_dir1 = dir1;
+                                    min_dir2 = dir2;
+                                }
                             }
                         }
                     }
 
-                    point_cloud.points[u][v].min_edge_corner_angle_cos = min_angle_cos;
+                    point_cloud.points[u][v].edge_corner_angle_cos = min_angle_cos;
+                    point_cloud.points[u][v].edge_corner_dir1 = min_dir1;
+                    point_cloud.points[u][v].edge_corner_dir2 = min_dir2;
 #if 0
                     dir1 = point_cloud.points[u1][v1].X - point_cloud.points[u][v].X;
                     dir2 = point_cloud.points[u2][v2].X - point_cloud.points[u][v].X;

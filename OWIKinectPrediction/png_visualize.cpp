@@ -73,9 +73,9 @@ namespace ais {
     }
 
 
-    void set_image_pixel(c_point_cloud_point& cloud_point, png_byte* pixel_ptr) {
+    inline void set_image_pixel(c_point_cloud_point& cloud_point, png_byte* pixel_ptr) {
         if (cloud_point.Clr_edge != 0) {
-            if (cloud_point.min_edge_corner_angle_cos > corner_angle_cosine_thresh) {
+            if (cloud_point.edge_corner_angle_cos > corner_angle_cosine_thresh) {
                 pixel_ptr[0] = 0;
                 pixel_ptr[1] = 255;
                 pixel_ptr[2] = 0;

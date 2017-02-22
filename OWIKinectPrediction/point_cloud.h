@@ -25,7 +25,7 @@ namespace ais {
             gradient_mag_temp = 0;
             gradient_dir = 0;
             Clr_edge = 0;
-            min_edge_corner_angle_cos = -1.0;
+            edge_corner_angle_cos = -1.0;
             uv = Vector2i::Zero();
         }
         Vector3f X;
@@ -37,22 +37,20 @@ namespace ais {
         float gradient_mag_temp;
         float gradient_dir;
         float Clr_edge;
-        float min_edge_corner_angle_cos;
+        float edge_corner_angle_cos;
+        Vector3f edge_corner_dir1;
+        Vector3f edge_corner_dir2;
         Vector2i uv;
     };
 
     class c_point_correspondence {
     public:
-        c_point_correspondence(Vector2i _src_uv, float _src_angle_cos, Vector2i _tgt_uv, float _tgt_angle_cos) {
+        c_point_correspondence(Vector2i _src_uv, Vector2i _tgt_uv) {
             src_uv = _src_uv;
-            src_angle_cos = _src_angle_cos;
             tgt_uv = _tgt_uv;
-            tgt_angle_cos = _tgt_angle_cos;
         }
         Vector2i src_uv;
-        float src_angle_cos;
         Vector2i tgt_uv;
-        float tgt_angle_cos;
     };
 
     class c_point_cloud {
