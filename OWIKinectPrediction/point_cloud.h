@@ -41,6 +41,7 @@ namespace ais {
         Vector3f edge_corner_dir1;
         Vector3f edge_corner_dir2;
         Vector2i uv;
+        int object_assigned;
     };
 
     class c_point_correspondence {
