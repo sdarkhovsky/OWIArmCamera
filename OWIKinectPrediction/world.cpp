@@ -24,11 +24,26 @@ c_observed_scene::c_observed_scene(c_point_cloud& _point_cloud, c_world_time& wo
     calculate_scene_relations();
 }
 
+void c_observed_scene::get_near_pnts(c_object_point& pnt, list<c_point_cloud_point*>& near_pnts) {
+    //todo:
+}
 
-bool c_observed_scene::compatible(c_object_point& pnt, bool mark_compatible_point=true) {
-    // set object_assigned=true for the compatible scene points 
-    //111111111111111111111111111111111111111111
-    return true;
+bool c_observed_scene::compatible(c_object_point& pnt, bool mark_compatible_point) {
+
+    list<c_point_cloud_point*> near_pnts;
+    get_near_pnts(pnt, near_pnts);
+    float compatible_point_color_difference_tolerance = 15.0;
+    for (auto it = near_pnts.begin(); it != near_pnts.end(); it++) {
+        Vector3f Clr_diff = (*it)->Clr - pnt.Clr;
+        float Clr_diff_magnitude = Clr_diff.norm();
+        if (Clr_diff_magnitude < compatible_point_color_difference_tolerance) {
+            if (mark_compatible_point)
+                (*it)->object_assigned = true;
+            return true;
+        }
+    }
+
+    return false;
 }
 
 bool c_observed_scene::calculate_scene_relations() {

@@ -84,6 +84,7 @@ public:
     }
 
     bool compatible(c_object_point& pnt, bool mark_compatible_point=true);
+    void get_near_pnts(c_object_point& pnt, list<c_point_cloud_point*>& near_pnts);
 
     bool calculate_scene_relations();
 
