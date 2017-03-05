@@ -88,7 +88,7 @@
       <SubSystem>Console</SubSystem>
       <AdditionalLibraryDirectories>
       </AdditionalLibraryDirectories>
-      <AdditionalDependencies>"C:\Projects\lpng1628\projects\vstudio\x64\Release Library\zlib.lib";"C:\Projects\lpng1628\projects\vstudio\x64\Release Library\libpng16.lib";kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>"C:\Program Files\PCL\lib\pcl_octree_debug.lib";"C:\Projects\lpng1628\projects\vstudio\x64\Release Library\zlib.lib";"C:\Projects\lpng1628\projects\vstudio\x64\Release Library\libpng16.lib";kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>copy "$(OutDir)$(TargetName)$(TargetExt)" "$(OutDir)..\..\..\$(TargetName)$(TargetExt)" </Command>
@@ -113,7 +113,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalLibraryDirectories>
       </AdditionalLibraryDirectories>
-      <AdditionalDependencies>"C:\Projects\lpng1628\projects\vstudio\x64\Release Library\zlib.lib";"C:\Projects\lpng1628\projects\vstudio\x64\Release Library\libpng16.lib";kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>"C:\Program Files\PCL\lib\pcl_octree_debug.lib";"C:\Projects\lpng1628\projects\vstudio\x64\Release Library\zlib.lib";"C:\Projects\lpng1628\projects\vstudio\x64\Release Library\libpng16.lib";kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>copy "$(OutDir)$(TargetName)$(TargetExt)" "$(OutDir)..\..\..\$(TargetName)$(TargetExt)" </Command>
@@ -131,7 +131,7 @@
       <SubSystem>Console</SubSystem>
       <AdditionalLibraryDirectories>
       </AdditionalLibraryDirectories>
-      <AdditionalDependencies>"C:\Projects\lpng1628\projects\vstudio\x64\Release Library\zlib.lib";"C:\Projects\lpng1628\projects\vstudio\x64\Release Library\libpng16.lib";kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>"C:\Program Files\PCL\lib\pcl_octree_debug.lib";"C:\Projects\lpng1628\projects\vstudio\x64\Release Library\zlib.lib";"C:\Projects\lpng1628\projects\vstudio\x64\Release Library\libpng16.lib";kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>copy "$(OutDir)$(TargetName)$(TargetExt)" "$(OutDir)..\..\..\$(TargetName)$(TargetExt)" </Command>
@@ -149,7 +149,7 @@
       <SubSystem>Console</SubSystem>
       <AdditionalLibraryDirectories>
       </AdditionalLibraryDirectories>
-      <AdditionalDependencies>"C:\Projects\lpng1628\projects\vstudio\x64\Release Library\zlib.lib";"C:\Projects\lpng1628\projects\vstudio\x64\Release Library\libpng16.lib";kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>"C:\Program Files\PCL\lib\pcl_octree_debug.lib";"C:\Projects\lpng1628\projects\vstudio\x64\Release Library\zlib.lib";"C:\Projects\lpng1628\projects\vstudio\x64\Release Library\libpng16.lib";kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>copy "$(OutDir)$(TargetName)$(TargetExt)" "$(OutDir)..\..\..\$(TargetName)$(TargetExt)" </Command>

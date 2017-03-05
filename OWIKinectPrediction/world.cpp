@@ -80,8 +80,8 @@ bool c_observed_scene::calculate_scene_relations() {
                 }
                 //11111111111111111
 
-                c_object_relation relation(c_object_point(wp.point_cloud.points[u][v]),
-                    wp.point_cloud.points[u][v].edge_corner_angle_cos, wp.point_cloud.points[u][v].edge_corner_dir1, wp.point_cloud.points[u][v].edge_corner_dir1);
+                c_object_relation relation(c_object_point(point_cloud.points[u][v]),
+                    point_cloud.points[u][v].edge_corner_angle_cos, point_cloud.points[u][v].edge_corner_dir1, point_cloud.points[u][v].edge_corner_dir1);
 
                 relations.push_back(relation);
             }
@@ -112,23 +112,29 @@ bool c_object_relation::calculate_transformation(c_object_relation& tgt_relation
 
 void c_world::match_observed_scene_relation_to_existing_objects(c_observed_scene& scene, c_object_relation& relation) {
     for (auto wo = world_objects.begin(); wo != world_objects.end(); wo++) {
-        if (!(*wo)->relation.compatible(relation))
+        if (!wo->relation.compatible(relation))
             continue;
 
-        c_object_transformation transformation;
-
-        (*wo)->relation.calculate_transformation(relation, transformation);
+        c_object_transformation transformation[2];
+        for (int i = 0; i < 2; i++) {
+            wo->relation.calculate_transformation(relation, transformation[i], i);
+        }
 
         c_object_point transformed_obj_point;
-        auto pt = (*wo)->points.begin();
-        while (pt != (*wo)->points.end()) {
-            transformation.transform_object_point(*pt, transformed_obj_point);
-            if (scene.compatible(transformed_obj_point)) {
+        auto pt = wo->points.begin();
+        while (pt != wo->points.end()) {
+            bool point_compatible_with_scene = false;
+            for (int i = 0; i < 2; i++) {
+                transformation[i].transform_object_point(*pt, transformed_obj_point);
+                point_compatible_with_scene = point_compatible_with_scene || scene.compatible(transformed_obj_point);
+            }
+
+            if (point_compatible_with_scene) {
                 pt++;
                 continue;
             }
             else {
-                pt = (*wo)->points.erase(pt);
+                pt = wo->points.erase(pt);
                 continue;
             }
         }
@@ -177,14 +183,14 @@ void c_world::match_observed_scene_relation_to_previous_scenes(c_observed_scene&
             continue;
 
         c_object_transformation transformation;
+        for (int i = 0; i < 2; i++) {
+            (*it).calculate_transformation(relation, transformation, i);
 
-        (*it).calculate_transformation(relation, transformation);
-
-        c_world_object detected_object(*it, transformation);
-
-        detect_object_in_scenes_from_transformation(scene, prev_scene, detected_object);
-        if (detected_object.points.size() > 0) {
-            world_objects.push_back(detected_object);
+            c_world_object detected_object(*it, transformation);
+            detect_object_in_scenes_from_transformation(scene, prev_scene, detected_object);
+            if (detected_object.points.size() > 0) {
+                world_objects.push_back(detected_object);
+            }
         }
     }
 

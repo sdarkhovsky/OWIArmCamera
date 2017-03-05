@@ -109,12 +109,6 @@ public:
 class c_world {
 public:
     
-    ~c_world() {
-        for (auto it = world_objects.begin(); it != world_objects.end(); it++) {
-            delete *it;
-        }
-        world_objects.clear();
-    }
     void add_observation( c_point_cloud& point_cloud, double time, string& img_path);
     void match_observed_scene(c_observed_scene& scene, string& img_path);
     void match_observed_scene_relation_to_existing_objects(c_observed_scene& scene, c_object_relation& relation);
@@ -123,7 +117,7 @@ public:
 
     void predict();
 
-    std::vector < c_world_object* > world_objects;
+    std::vector < c_world_object > world_objects;
     std::vector < c_observed_scene > observed_scenes;
 };
 
