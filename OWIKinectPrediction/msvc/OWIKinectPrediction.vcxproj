@@ -80,7 +80,7 @@
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>$(ProjectDir)..\..\LoggingCplusplus;$(EIGEN_LIB_DIR);$(ProjectDir)..\..\..\lpng1628</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)..\..\LoggingCplusplus;$(EIGEN_LIB_DIR);$(ProjectDir)..\..\..\lpng1628;C:\Program Files\PCL\include\pcl-1.8;C:\Projects\eigen-eigen-f562a193118d;C:\Boost</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <TargetMachine>MachineX86</TargetMachine>
@@ -103,7 +103,7 @@
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <AdditionalIncludeDirectories>$(ProjectDir)..\..\LoggingCplusplus;$(EIGEN_LIB_DIR);$(ProjectDir)..\..\..\lpng1628</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)..\..\LoggingCplusplus;$(EIGEN_LIB_DIR);$(ProjectDir)..\..\..\lpng1628;C:\Program Files\PCL\include\pcl-1.8;C:\Projects\eigen-eigen-f562a193118d;C:\Boost</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <TargetMachine>MachineX86</TargetMachine>
@@ -125,7 +125,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <PreprocessorDefinitions>_WINDOWS</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(ProjectDir)..\..\LoggingCplusplus;$(EIGEN_LIB_DIR);$(ProjectDir)..\..\..\lpng1628</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)..\..\LoggingCplusplus;$(EIGEN_LIB_DIR);$(ProjectDir)..\..\..\lpng1628;C:\Program Files\PCL\include\pcl-1.8;C:\Projects\eigen-eigen-f562a193118d;C:\Boost</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -143,7 +143,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
       <PreprocessorDefinitions>_WINDOWS</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(ProjectDir)..\..\LoggingCplusplus;$(EIGEN_LIB_DIR);$(ProjectDir)..\..\..\lpng1628</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)..\..\LoggingCplusplus;$(EIGEN_LIB_DIR);$(ProjectDir)..\..\..\lpng1628;C:\Program Files\PCL\include\pcl-1.8;C:\Projects\eigen-eigen-f562a193118d;C:\Boost</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -162,6 +162,7 @@
     <ClCompile Include="..\..\joint_commands.cpp" />
     <ClCompile Include="..\ais.cpp" />
     <ClCompile Include="..\edge_feature.cpp" />
+    <ClCompile Include="..\pcl_octree.cpp" />
     <ClCompile Include="..\plane_feature.cpp" />
     <ClCompile Include="..\kinect_image.cpp" />
     <ClCompile Include="..\OWIKinectPrediction.cpp" />
@@ -173,6 +174,7 @@
     <ClInclude Include="..\ais.h" />
     <ClInclude Include="..\edge_feature.h" />
     <ClInclude Include="..\kinect_image.h" />
+    <ClInclude Include="..\pcl_octree.h" />
     <ClInclude Include="..\png_visualize.h" />
     <ClInclude Include="..\point_cloud.h" />
     <ClInclude Include="..\definitions.h" />

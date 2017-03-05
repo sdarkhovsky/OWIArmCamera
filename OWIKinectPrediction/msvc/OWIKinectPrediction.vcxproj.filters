@@ -42,6 +42,9 @@
     <ClCompile Include="..\png_visualize.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\pcl_octree.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\ais.h">
@@ -69,6 +72,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\png_visualize.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pcl_octree.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

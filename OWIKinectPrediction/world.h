@@ -7,6 +7,8 @@
 #include <string>
 #include <memory>
 
+#include "pcl_octree.h"
+
 namespace ais {
 class c_world_time {
 public:    
@@ -49,7 +51,9 @@ public:
         dir1 = _dir1;
         dir2 = _dir2;
     }
-    c_object_relation(c_object_relation& object_relation) = default;
+//    c_object_relation(c_object_relation& object_relation) = default;
+    c_object_relation(const c_object_relation& object_relation) = default;
+ //   c_object_relation& operator=(c_object_relation& object_relation) = default;
 
     const float angle_cos_tolerance = 3.0* 2.0 / 180.0;
     bool compatible(c_object_relation& relation) {
@@ -81,16 +85,25 @@ public:
         time = scene.time;
         relations = scene.relations;
         point_cloud.points = std::move(scene.point_cloud.points);
+
+        num_point_cloud_rows = scene.num_point_cloud_rows;
+        num_point_cloud_cols = scene.num_point_cloud_cols;
+
+        pcl_octree.add_points(point_cloud);
     }
 
     bool compatible(c_object_point& pnt, bool mark_compatible_point=true);
-    void get_near_pnts(c_object_point& pnt, list<c_point_cloud_point*>& near_pnts);
+    void get_near_pnts(c_object_point& pnt, std::vector<int>& pointIdxNKNSearch, std::vector<float>& pointNKNSquaredDistance);
 
     bool calculate_scene_relations();
 
     c_world_time time;
     c_point_cloud point_cloud;
     list <c_object_relation> relations;
+    c_pcl_octree pcl_octree;
+
+    size_t num_point_cloud_rows;
+    size_t num_point_cloud_cols;
 };
 
 class c_world {

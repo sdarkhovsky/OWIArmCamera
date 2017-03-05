@@ -18,27 +18,39 @@ c_observed_scene::c_observed_scene(c_point_cloud& _point_cloud, c_world_time& wo
     point_cloud = _point_cloud;
     time = world_time;
 
+    num_point_cloud_rows = point_cloud.points.size();
+    num_point_cloud_cols = point_cloud.points[0].size();
+
 //  detect_color_edge_features_LOG(point_cloud);
     detect_color_edge_features_Canny(point_cloud);
     find_edge_corners(point_cloud);
     calculate_scene_relations();
+
+    pcl_octree.add_points(point_cloud);
 }
 
-void c_observed_scene::get_near_pnts(c_object_point& pnt, list<c_point_cloud_point*>& near_pnts) {
-    //todo:
+void c_observed_scene::get_near_pnts(c_object_point& pnt, std::vector<int>& pointIdxNKNSearch, std::vector<float>& pointNKNSquaredDistance) {
+    pcl::PointXYZ searchPoint(pnt.X(0), pnt.X(1), pnt.X(2));
+    int K = 4;
+    pcl_octree.nearestKSearch(searchPoint, K, pointIdxNKNSearch, pointNKNSquaredDistance);
 }
 
 bool c_observed_scene::compatible(c_object_point& pnt, bool mark_compatible_point) {
 
-    list<c_point_cloud_point*> near_pnts;
-    get_near_pnts(pnt, near_pnts);
+    std::vector<int> pointIdxNKNSearch;
+    std::vector<float> pointNKNSquaredDistance;
+    get_near_pnts(pnt, pointIdxNKNSearch, pointNKNSquaredDistance);
+
     float compatible_point_color_difference_tolerance = 15.0;
-    for (auto it = near_pnts.begin(); it != near_pnts.end(); it++) {
-        Vector3f Clr_diff = (*it)->Clr - pnt.Clr;
+    for (size_t i = 0; i <  pointIdxNKNSearch.size(); i++) {
+        size_t u = pointIdxNKNSearch[i] / num_point_cloud_cols;
+        size_t v = pointIdxNKNSearch[i] % num_point_cloud_cols;
+
+        Vector3f Clr_diff = point_cloud.points[u][v].Clr - pnt.Clr;
         float Clr_diff_magnitude = Clr_diff.norm();
         if (Clr_diff_magnitude < compatible_point_color_difference_tolerance) {
             if (mark_compatible_point)
-                (*it)->object_assigned = true;
+                point_cloud.points[u][v].object_assigned = true;
             return true;
         }
     }
