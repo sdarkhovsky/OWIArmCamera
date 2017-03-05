@@ -15,7 +15,6 @@ namespace pcv {
         string line;
         std::ifstream infile;
         size_t width, height;
-        size_t u, v;
 
         for (int i = 0; i < 3; i++) {
             min_coord(i) = FLT_MAX;
@@ -53,8 +52,12 @@ namespace pcv {
             std::stringstream linestream(line);
 
             if (b_kinect_file) {
-                linestream >> u;
-                linestream >> v;
+                linestream >> point.u;
+                linestream >> point.v;
+            }
+            else {
+                point.u = 0;
+                point.v = 0;
             }
 
             for (int i = 0; i < 3; i++) {
@@ -92,9 +95,51 @@ namespace pcv {
         std::ofstream outfile;
         outfile.open(file_path, std::ifstream::out);
 
+        size_t file_path_size = file_path.size();
+        bool b_kinect_file = false;
+        if (file_path_size > 4) {
+            std::string file_path_ext = file_path.substr(file_path_size - 4, 4);
+            transform(file_path_ext.begin(), file_path_ext.end(), file_path_ext.begin(), ::tolower);
+            if (file_path_ext == ".kin") {
+                b_kinect_file = true;
+            }
+        }
+
+        int min_u = INT_MAX;
+        int max_u = INT_MIN;
+        int min_v = INT_MAX;
+        int max_v = INT_MIN;
+        int height = 0;
+        int width = 0;
+        if (b_kinect_file) {
+            for (auto it = points.begin(); it != points.end(); ++it) {
+                if (!it->visible)
+                    continue;
+                if (it->u < min_u)
+                    min_u = it->u;
+                if (it->u > max_u)
+                    max_u = it->u;
+                if (it->v < min_v)
+                    min_v = it->v;
+                if (it->v > max_v)
+                    max_v = it->v;
+            }
+
+            height = max_u - min_u + 1;
+            width = max_v - min_v + 1;
+
+            outfile << height << std::endl;
+            outfile << width << std::endl;
+        }
+
         for (auto it = points.begin(); it != points.end(); ++it) {
             if (!it->visible)
                 continue;
+
+            if (b_kinect_file) {
+                outfile << (it->u - min_u) << " ";
+                outfile << (it->v - min_v) << " ";
+            }
 
             outfile << it->X(0) << " ";
             outfile << it->X(1) << " ";

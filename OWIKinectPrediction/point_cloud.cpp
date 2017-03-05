@@ -64,23 +64,31 @@ namespace ais {
         return true;
     }
 
-    void c_point_cloud::filter_by_xyz(const Vector3f& min_xyz, const Vector3f& max_xyz) {
+    size_t c_point_cloud::filter_by_xyz(const Vector3f& min_xyz, const Vector3f& max_xyz) {
         size_t u, v, j;
         size_t num_point_cloud_rows = points.size();
         size_t num_point_cloud_cols = points[0].size();
+        size_t num_pnts = 0;
 
         for (u = 0; u < num_point_cloud_rows; u++) {
             for (v = 0; v < num_point_cloud_cols; v++) {
+                bool point_filtered = false;
+
                 for (j = 0; j < 3; j++) {
                     if (points[u][v].X(j) > max_xyz(j) || points[u][v].X(j) < min_xyz(j)) {
                         points[u][v].X = Vector3f::Zero();
                         points[u][v].Clr = Vector3f::Zero();
+
+                        point_filtered = true;
                         break;
                     }
                 }
+
+                if (!point_filtered)
+                    num_pnts++;
             }
         }
-
+        return num_pnts;
     }
 
     void generate_point_cloud_plane(c_point_cloud& point_cloud) {

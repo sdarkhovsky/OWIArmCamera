@@ -59,7 +59,7 @@ namespace ais {
         c_point_cloud() {
         }
 
-        void filter_by_xyz(const Vector3f& min_xyz, const Vector3f& max_xyz);
+        size_t filter_by_xyz(const Vector3f& min_xyz, const Vector3f& max_xyz);
         bool fix();
 
         std::vector< std::vector<c_point_cloud_point>> points;

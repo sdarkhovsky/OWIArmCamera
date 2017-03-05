@@ -18,6 +18,8 @@ namespace pcv {
         Vector3f Clr;
         Vector3f Vector;
         int visible;
+        int u;
+        int v;
     } 	c_point_cloud_point;
 
     class c_point_cloud {

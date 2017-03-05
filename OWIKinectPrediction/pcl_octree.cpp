@@ -14,7 +14,10 @@ namespace ais {
         for (size_t u = 0; u < cloud->height; u++) {
             size_t row_start = u*cloud->width;
             for (size_t v = 0; v < cloud->width; v++) {
-                Vector3f X = point_cloud.points[u][v].X;
+                if (point_cloud.points[u][v].X == Vector3f::Zero()) // the input .kin files have no points for some u,v
+                    continue;
+
+                Vector3f& X = point_cloud.points[u][v].X;
                 pcl::PointXYZ& pnt = cloud->points[row_start + v];
                 pnt.x = X(0);
                 pnt.y = X(1);
