@@ -27,6 +27,7 @@ namespace ais {
             Clr_edge = 0;
             edge_corner_angle_cos = -1.0;
             uv = Vector2i::Zero();
+            object_assigned = 0;
         }
         Vector3f X;
         Vector3f Clr;

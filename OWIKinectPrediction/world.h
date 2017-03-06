@@ -78,7 +78,7 @@ public:
 
 class c_observed_scene {
 public:
-    c_observed_scene(c_point_cloud& point_cloud, c_world_time& world_time);
+    c_observed_scene(c_point_cloud& point_cloud, c_world_time& world_time, string& img_path);
 
     // move constructors
     c_observed_scene(c_observed_scene&& scene) {
@@ -86,10 +86,9 @@ public:
         relations = scene.relations;
         point_cloud.points = std::move(scene.point_cloud.points);
 
-        num_point_cloud_rows = scene.num_point_cloud_rows;
-        num_point_cloud_cols = scene.num_point_cloud_cols;
+        img_path = scene.img_path;
 
-        pcl_octree.add_points(point_cloud);
+        pcl_octree.add_points(point_cloud, octree_ind_to_uv);
     }
 
     bool compatible(c_object_point& pnt, bool mark_compatible_point=true);
@@ -100,17 +99,18 @@ public:
     c_world_time time;
     c_point_cloud point_cloud;
     list <c_object_relation> relations;
-    c_pcl_octree pcl_octree;
 
-    size_t num_point_cloud_rows;
-    size_t num_point_cloud_cols;
+    c_pcl_octree pcl_octree;
+    std::vector<Vector2i> octree_ind_to_uv;
+
+    string img_path;
 };
 
 class c_world {
 public:
     
     void add_observation( c_point_cloud& point_cloud, double time, string& img_path);
-    void match_observed_scene(c_observed_scene& scene, string& img_path);
+    void match_observed_scene(c_observed_scene& scene);
     void match_observed_scene_relation_to_existing_objects(c_observed_scene& scene, c_object_relation& relation);
     void match_observed_scene_relation_to_previous_scenes(c_observed_scene& scene, c_object_relation& relation);
     void detect_object_in_scenes_from_transformation(c_observed_scene& scene, c_observed_scene& prev_scene, c_world_object& detected_object);

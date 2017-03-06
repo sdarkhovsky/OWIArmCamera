@@ -15,7 +15,7 @@ namespace ais {
     class c_pcl_octree {
     public:
         c_pcl_octree() : cloud(new pcl::PointCloud<pcl::PointXYZ>), octree(pcl_octree_resolution) {};
-        bool add_points(c_point_cloud& point_cloud);
+        bool add_points(c_point_cloud& point_cloud, std::vector<Vector2i>& octree_ind_to_uv);
         bool voxelSearch(pcl::PointXYZ& searchPoint, std::vector<int>& pointIdxVec);
         bool nearestKSearch(pcl::PointXYZ& searchPoint, int K, std::vector<int>& pointIdxNKNSearch, std::vector<float>& pointNKNSquaredDistance);
         bool radiusSearch(pcl::PointXYZ& searchPoint, float radius, std::vector<int>& pointIdxRadiusSearch, std::vector<float>& pointRadiusSquaredDistance);

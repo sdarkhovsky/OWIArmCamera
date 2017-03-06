@@ -13,20 +13,19 @@ c_world_time::c_world_time(double _time) {
     time = _time;
 }
     
-c_observed_scene::c_observed_scene(c_point_cloud& _point_cloud, c_world_time& world_time) {
+c_observed_scene::c_observed_scene(c_point_cloud& _point_cloud, c_world_time& world_time, string& _img_path) {
 
     point_cloud = _point_cloud;
     time = world_time;
 
-    num_point_cloud_rows = point_cloud.points.size();
-    num_point_cloud_cols = point_cloud.points[0].size();
+    img_path = _img_path;
 
 //  detect_color_edge_features_LOG(point_cloud);
     detect_color_edge_features_Canny(point_cloud);
     find_edge_corners(point_cloud);
     calculate_scene_relations();
 
-    pcl_octree.add_points(point_cloud);
+    pcl_octree.add_points(point_cloud, octree_ind_to_uv);
 }
 
 void c_observed_scene::get_near_pnts(c_object_point& pnt, std::vector<int>& pointIdxNKNSearch, std::vector<float>& pointNKNSquaredDistance) {
@@ -43,8 +42,11 @@ bool c_observed_scene::compatible(c_object_point& pnt, bool mark_compatible_poin
 
     float compatible_point_color_difference_tolerance = 15.0;
     for (size_t i = 0; i <  pointIdxNKNSearch.size(); i++) {
-        size_t u = pointIdxNKNSearch[i] / num_point_cloud_cols;
-        size_t v = pointIdxNKNSearch[i] % num_point_cloud_cols;
+
+        Vector2i& uv = octree_ind_to_uv[pointIdxNKNSearch[i]];
+
+        size_t u = uv(0);
+        size_t v = uv(1);
 
         Vector3f Clr_diff = point_cloud.points[u][v].Clr - pnt.Clr;
         float Clr_diff_magnitude = Clr_diff.norm();
@@ -75,13 +77,20 @@ bool c_observed_scene::calculate_scene_relations() {
             if (point_cloud.points[u][v].edge_corner_angle_cos > corner_angle_cosine_thresh) {
 
                 //111111111111111111
-                if (!((v == 1006 && u == 608) || (v == 1006 && u == 608) || (v == 993 && u == 604) || (v == 994 && u == 603))) {
-                    continue;
+                if (img_path == "C:\\Projects\\OWIArmCamera\\KinectImages/img0.kin") {
+                    if (!(u == 24 && v == 25)) {
+                        continue;
+                    }
+                }
+                if (img_path == "C:\\Projects\\OWIArmCamera\\KinectImages/img1_shoulder_1.kin") {
+                    if (!(u == 23 && v == 31)) {
+                        continue;
+                    }
                 }
                 //11111111111111111
 
                 c_object_relation relation(c_object_point(point_cloud.points[u][v]),
-                    point_cloud.points[u][v].edge_corner_angle_cos, point_cloud.points[u][v].edge_corner_dir1, point_cloud.points[u][v].edge_corner_dir1);
+                    point_cloud.points[u][v].edge_corner_angle_cos, point_cloud.points[u][v].edge_corner_dir1, point_cloud.points[u][v].edge_corner_dir2);
 
                 relations.push_back(relation);
             }
@@ -142,7 +151,7 @@ void c_world::match_observed_scene_relation_to_existing_objects(c_observed_scene
 }
 
 void c_world::detect_object_in_scenes_from_transformation(c_observed_scene& scene, c_observed_scene& prev_scene, c_world_object& detected_object) {
-    size_t u, v, prev_u, prev_v;
+    size_t prev_u, prev_v;
     int i, j;
 
     size_t prev_num_point_cloud_rows = prev_scene.point_cloud.points.size();
@@ -151,11 +160,11 @@ void c_world::detect_object_in_scenes_from_transformation(c_observed_scene& scen
     for (prev_u = 0; prev_u < prev_num_point_cloud_rows; prev_u++) {
         for (prev_v = 0; prev_v < prev_num_point_cloud_cols; prev_v++) {
 
-            if (prev_scene.point_cloud.points[u][v].object_assigned != 0)
+            if (prev_scene.point_cloud.points[prev_u][prev_v].object_assigned != 0)
                 continue;
 
             c_object_point transformed_obj_point;
-            c_object_point prev_point(prev_scene.point_cloud.points[u][v]);
+            c_object_point prev_point(prev_scene.point_cloud.points[prev_u][prev_v]);
             detected_object.transformation.transform_object_point(prev_point, transformed_obj_point);
             if (scene.compatible(transformed_obj_point)) {
                 detected_object.points.push_back(prev_point);
@@ -214,7 +223,7 @@ void c_world::match_observed_scene_relation_to_previous_scenes(c_observed_scene&
 }
 
 
-void c_world::match_observed_scene(c_observed_scene& scene, string& img_path) {
+void c_world::match_observed_scene(c_observed_scene& scene) {
     size_t u, v, u1, v1, u2, v2;
     int i, j;
 
@@ -232,8 +241,8 @@ void c_world::match_observed_scene(c_observed_scene& scene, string& img_path) {
 void c_world::add_observation( c_point_cloud& point_cloud, double time, string& img_path) {
     c_world_time world_time(time);
 
-    c_observed_scene scene(point_cloud, world_time);
-    match_observed_scene(scene, img_path);
+    c_observed_scene scene(point_cloud, world_time, img_path);
+    match_observed_scene(scene);
 
     #if 1
     {
