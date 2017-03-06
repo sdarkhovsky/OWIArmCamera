@@ -160,6 +160,9 @@ void c_world::detect_object_in_scenes_from_transformation(c_observed_scene& scen
     for (prev_u = 0; prev_u < prev_num_point_cloud_rows; prev_u++) {
         for (prev_v = 0; prev_v < prev_num_point_cloud_cols; prev_v++) {
 
+            if (prev_scene.point_cloud.points[prev_u][prev_v].X == Vector3f::Zero()) 
+                continue;
+
             if (prev_scene.point_cloud.points[prev_u][prev_v].object_assigned != 0)
                 continue;
 
