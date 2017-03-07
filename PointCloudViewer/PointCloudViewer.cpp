@@ -127,7 +127,7 @@ bool get_command_line_options(vector< string >& arg_list) {
     }
 
     if (output_point_cloud_file_path.size() == 0) {
-        output_point_cloud_file_path = input_point_cloud_file_path + ".out.xyze";
+        output_point_cloud_file_path = input_point_cloud_file_path + ".out.kin";
     }
 
     return true;
@@ -697,7 +697,7 @@ GLvoid initializeGL(GLsizei width, GLsizei height)
     // position the camera looking at the object center
     // note, that in the opengl the camera looks at the negative z direction of the camera reference frame
     float camera_shift = (point_cloud.max_coord(2) - point_cloud.min_coord(2));
-    gluLookAt(center_obj_coord[0], center_obj_coord[1], center_obj_coord[2] + camera_shift,
+    gluLookAt(center_obj_coord[0], center_obj_coord[1], center_obj_coord[2] - camera_shift,
         center_obj_coord[0], center_obj_coord[1], center_obj_coord[2],
         0.0, 1.0, 0.0);
 
@@ -718,12 +718,20 @@ GLvoid drawScene(GLvoid)
     glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
 
+    // rotation is always done around the origin point (0,0,0) of the a currect reference frame
+    // if we want to rotate a view around a point we need to translate origin to that point (multiply by corresponding translation matrix), 
+    // rotate (multiply by corresponding rotation matrix) and then translate back to return the rotation pivot point to its position
+
     // zoom the view
     // the camera originally (in initializeGL) was shifted in the positive z direction (of the point cloud reference frame) 
     // from the point cloud center and looking at the point cloud center. 
     // The camera is always at the origin of the camera reference frame looking in its negative z direction, where the point cloud is supposed to be.
     // when the positive Z translation is applied to the point cloud points in the camera reference frame, 
     // their negative z coordinates get smaller in magnitude, they get closer to the origin, which creates zooming effect
+
+    // modelview matrix is R1 t1    after multiplying by  I  t2     we get    R1   R1*t2 + t1
+    //                     0   1                          0   1               0    1      
+    // 
     glTranslatef(translate_camera[0], translate_camera[1], translate_camera[2]);
     // rotate after translation
     glRotatef((GLfloat)rotate_camera_angle, rotate_camera_direction[0], rotate_camera_direction[1], rotate_camera_direction[2]);
