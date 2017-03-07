@@ -42,6 +42,7 @@ public:
     Matrix3f rotation;
     Vector3f translation_before_rotation;
     Vector3f translation_after_rotation;
+    bool is_identity;
 };
 
 class c_object_relation {
@@ -56,7 +57,6 @@ public:
     c_object_relation(const c_object_relation& object_relation) = default;
  //   c_object_relation& operator=(c_object_relation& object_relation) = default;
 
-    const float angle_cos_tolerance = 3.0* 2.0 / 180.0;
     bool compatible(c_object_relation& relation) {
         return (abs(angle_cos_value - relation.angle_cos_value) < angle_cos_tolerance);
     }

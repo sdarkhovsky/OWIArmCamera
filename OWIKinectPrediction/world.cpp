@@ -30,7 +30,7 @@ c_observed_scene::c_observed_scene(c_point_cloud& _point_cloud, c_world_time& wo
 
 void c_observed_scene::get_near_pnts(c_object_point& pnt, std::vector<int>& pointIdxNKNSearch, std::vector<float>& pointNKNSquaredDistance) {
     pcl::PointXYZ searchPoint(pnt.X(0), pnt.X(1), pnt.X(2));
-    int K = 4;
+    int K = 8;
     pcl_octree.nearestKSearch(searchPoint, K, pointIdxNKNSearch, pointNKNSquaredDistance);
 }
 
@@ -38,23 +38,32 @@ bool c_observed_scene::compatible(c_object_point& pnt, bool mark_compatible_poin
 
     std::vector<int> pointIdxNKNSearch;
     std::vector<float> pointNKNSquaredDistance;
+    float clr_diff_magnitude, min_clr_diff_magnitude = FLT_MAX;
+    size_t u, v, min_u, min_v;
     get_near_pnts(pnt, pointIdxNKNSearch, pointNKNSquaredDistance);
 
-    float compatible_point_color_difference_tolerance = 15.0;
-    for (size_t i = 0; i <  pointIdxNKNSearch.size(); i++) {
+    for (size_t i = 0; i < pointIdxNKNSearch.size(); i++) {
 
         Vector2i& uv = octree_ind_to_uv[pointIdxNKNSearch[i]];
 
-        size_t u = uv(0);
-        size_t v = uv(1);
+        u = uv(0);
+        v = uv(1);
 
-        Vector3f Clr_diff = point_cloud.points[u][v].Clr - pnt.Clr;
-        float Clr_diff_magnitude = Clr_diff.norm();
-        if (Clr_diff_magnitude < compatible_point_color_difference_tolerance) {
-            if (mark_compatible_point)
-                point_cloud.points[u][v].object_assigned = true;
-            return true;
+        clr_diff_magnitude = (point_cloud.points[u][v].Clr - pnt.Clr).norm();
+
+        // std:cout << "i= " << i << " u=" << u << " v= " << v << " diff=" << clr_diff_magnitude << std::endl;
+
+        if (clr_diff_magnitude < min_clr_diff_magnitude) {
+            min_u = u;
+            min_v = v;
+            min_clr_diff_magnitude = clr_diff_magnitude;
         }
+    }
+
+    if (min_clr_diff_magnitude < compatible_point_color_difference_tolerance) {
+        if (mark_compatible_point)
+            point_cloud.points[min_u][min_v].object_assigned = true;
+        return true;
     }
 
     return false;
@@ -76,6 +85,7 @@ bool c_observed_scene::calculate_scene_relations() {
 
             if (point_cloud.points[u][v].edge_corner_angle_cos > corner_angle_cosine_thresh) {
 
+#ifdef SMALL_KINS
                 //111111111111111111
                 if (img_path == "C:\\Projects\\OWIArmCamera\\KinectImages/img0.kin") {
                     if (!(u == 24 && v == 25)) {
@@ -88,6 +98,22 @@ bool c_observed_scene::calculate_scene_relations() {
                     }
                 }
                 //11111111111111111
+#endif
+#define MEDIUM_KINS
+#ifdef MEDIUM_KINS
+                //111111111111111111
+                if (img_path == "C:\\Projects\\OWIArmCamera\\KinectImages/img0.kin") {
+                    if (!(u == 197 && v == 701)) {
+                        continue;
+                    }
+                }
+                if (img_path == "C:\\Projects\\OWIArmCamera\\KinectImages/img1_shoulder_1.kin") {
+                    if (!(u == 186 && v == 715)) {
+                        continue;
+                    }
+                }
+                //11111111111111111
+#endif
 
                 c_object_relation relation(c_object_point(point_cloud.points[u][v]),
                     point_cloud.points[u][v].edge_corner_angle_cos, point_cloud.points[u][v].edge_corner_dir1, point_cloud.points[u][v].edge_corner_dir2);
@@ -118,6 +144,9 @@ bool c_object_relation::calculate_transformation(c_object_relation& tgt_relation
     tgt_M << tgt_relation.dir1, tgt_relation.dir2, tgt_relation.dir1.cross(tgt_relation.dir2);
     // for the rotation matrix to be truly orthogonal the angles in the realations must be the same
     transformation.rotation = tgt_M*src_M.inverse();
+
+    transformation.is_identity = ((transformation.translation_before_rotation + transformation.translation_after_rotation).norm() < translation_zero_tolerance) &&
+        ((transformation.rotation - Matrix3f::Identity()).norm() < distance_to_identity_matrix_tolerance);
     return true;
 }
 
@@ -162,6 +191,12 @@ void c_world::detect_object_in_scenes_from_transformation(c_observed_scene& scen
     for (prev_u = 0; prev_u < prev_num_point_cloud_rows; prev_u++) {
         for (prev_v = 0; prev_v < prev_num_point_cloud_cols; prev_v++) {
 
+//1111111111111111111111111111111111111111111111
+            if (prev_u == 32 && prev_v == 69) {
+                int aaa = 0;
+            }
+//1111111111111111111111111111111111111111111111111
+
             if (prev_scene.point_cloud.points[prev_u][prev_v].X == Vector3f::Zero()) 
                 continue;
 
@@ -199,6 +234,9 @@ void c_world::match_observed_scene_relation_to_previous_scenes(c_observed_scene&
         c_object_transformation transformation;
         for (int i = 0; i < 2; i++) {
             (*it).calculate_transformation(relation, transformation, i);
+
+            if (transformation.is_identity)
+                continue;
 
             c_world_object detected_object(*it, transformation);
             detect_object_in_scenes_from_transformation(scene, prev_scene, detected_object);

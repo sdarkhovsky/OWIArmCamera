@@ -49,7 +49,6 @@ namespace ais {
         }
 
         // mark plane regions
-        float normal_deviation_tolerance = 1.0f - 0.1f;
         plane_regions_bitmap.clear();
         plane_regions_bitmap.resize(num_point_cloud_rows);
         for (u = 0; u < num_point_cloud_rows; u++) {

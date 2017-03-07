@@ -447,8 +447,6 @@ namespace ais {
         }
 
         // detect and follow edge
-        float Thresh_high = 6;
-        float Thresh_low = 3;
         for (u = 1; u < num_point_cloud_rows - 1; u++) {
             for (v = 1; v < num_point_cloud_cols - 1; v++) {
                 if (point_cloud.points[u][v].Clr_edge != 0)
@@ -554,7 +552,6 @@ namespace ais {
         // Threshold the zero - crossings to keep only those strong ones(large difference between the positive maximum and the negative minimum) 
         // and suppress the weak zero - crossings, which most likely caused by noise.
         // http://fourier.eng.hmc.edu/e161/lectures/gradient/node8.html
-        const float zero_crossing_thresh = 20;
         for (u = 1; u < num_point_cloud_rows - 1; u++) {
             for (v = 1; v < num_point_cloud_cols - 1; v++) {
                 point_cloud.points[u][v].Clr_edge = 0;
