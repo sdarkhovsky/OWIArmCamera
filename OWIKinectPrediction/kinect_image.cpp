@@ -55,19 +55,6 @@ namespace ais {
         return true;
     }
 
-
-    void c_kinect_image::get_cloud_point_color(c_point_cloud_point& cloud_point, Vector3f& Clr) {
-        if (cloud_point.Clr_edge != 0) {
-            if (cloud_point.edge_corner_angle_cos > corner_angle_cosine_thresh)
-                Clr = Vector3f(0, 255, 0);
-            else
-                Clr = Vector3f(255, 0, 0);
-        }
-        else {
-            Clr = cloud_point.Clr;
-        }
-    }
-
     bool c_kinect_image::write_file(std::string file_path, c_point_cloud& point_cloud, c_image_format image_format)
     {
         string line;
@@ -89,7 +76,7 @@ namespace ais {
             for (v = 0; v < width; v++) {
                 if (point_cloud.points[u][v].X == Vector3f::Zero()) // the input .kin files have no points for some u,v
                     continue;
-                get_cloud_point_color(point_cloud.points[u][v], Clr);
+                get_cloud_point_rendering_color(point_cloud.points[u][v], Clr);
 
                 if (image_format == c_image_format::kinect) {
                     outfile << u << " ";

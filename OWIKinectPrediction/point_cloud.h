@@ -75,6 +75,7 @@ namespace ais {
     void generate_point_cloud_plane(c_point_cloud& point_cloud);
     void generate_point_cloud_prism(c_point_cloud& point_cloud);
 
+    void get_cloud_point_rendering_color(c_point_cloud_point& cloud_point, Vector3f& Clr);
 }
 
 #endif

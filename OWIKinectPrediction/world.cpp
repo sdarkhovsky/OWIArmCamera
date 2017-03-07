@@ -100,8 +100,10 @@ bool c_observed_scene::calculate_scene_relations() {
     return true;
 }
 
-bool c_object_relation::calculate_transformation(c_object_relation& tgt_relation, c_object_transformation& transf, bool switch_dir_mapping) {
-    transf.translation = tgt_relation.pnt.X - pnt.X;
+bool c_object_relation::calculate_transformation(c_object_relation& tgt_relation, c_object_transformation& transformation, bool switch_dir_mapping) {
+
+    transformation.translation_before_rotation = - pnt.X;
+    transformation.translation_after_rotation = tgt_relation.pnt.X;
 
     Vector3f src_dir1 = dir1;
     Vector3f src_dir2 = dir2;
@@ -114,8 +116,8 @@ bool c_object_relation::calculate_transformation(c_object_relation& tgt_relation
     Matrix3f src_M, tgt_M;
     src_M << src_dir1, src_dir2, src_dir1.cross(src_dir2);
     tgt_M << tgt_relation.dir1, tgt_relation.dir2, tgt_relation.dir1.cross(tgt_relation.dir2);
-    transf.rotation = src_M.inverse()*tgt_M;
-
+    // for the rotation matrix to be truly orthogonal the angles in the realations must be the same
+    transformation.rotation = tgt_M*src_M.inverse();
     return true;
 }
 

@@ -160,4 +160,20 @@ namespace ais {
         }
     }
 
+    void get_cloud_point_rendering_color(c_point_cloud_point& cloud_point, Vector3f& Clr) {
+        if (cloud_point.object_assigned) {
+            Clr = Vector3f(0, 0, 255);
+            return;
+        }
+
+        if (cloud_point.Clr_edge == 0) {
+            Clr = cloud_point.Clr;
+            return;
+        }
+
+        if (cloud_point.edge_corner_angle_cos > corner_angle_cosine_thresh)
+            Clr = Vector3f(0, 255, 0);
+        else
+            Clr = Vector3f(255, 0, 0);
+    }
 }

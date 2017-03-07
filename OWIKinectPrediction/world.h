@@ -36,11 +36,12 @@ class c_object_transformation {
 public:
     void transform_object_point(c_object_point& in, c_object_point& out) {
         out = in;
-        out.X = rotation * in.X + translation;
+        out.X = rotation * (in.X + translation_before_rotation) + translation_after_rotation;
     }
 
     Matrix3f rotation;
-    Vector3f translation;
+    Vector3f translation_before_rotation;
+    Vector3f translation_after_rotation;
 };
 
 class c_object_relation {
@@ -59,7 +60,7 @@ public:
     bool compatible(c_object_relation& relation) {
         return (abs(angle_cos_value - relation.angle_cos_value) < angle_cos_tolerance);
     }
-    bool calculate_transformation(c_object_relation& tgt_relation, c_object_transformation& transf, bool switch_dir_mapping);
+    bool calculate_transformation(c_object_relation& tgt_relation, c_object_transformation& transformation, bool switch_dir_mapping);
     c_object_point pnt;
     float angle_cos_value;
     Vector3f dir1;

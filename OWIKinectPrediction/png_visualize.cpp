@@ -74,23 +74,11 @@ namespace ais {
 
 
     inline void set_image_pixel(c_point_cloud_point& cloud_point, png_byte* pixel_ptr) {
-        if (cloud_point.Clr_edge != 0) {
-            if (cloud_point.edge_corner_angle_cos > corner_angle_cosine_thresh) {
-                pixel_ptr[0] = 0;
-                pixel_ptr[1] = 255;
-                pixel_ptr[2] = 0;
-            }
-            else {
-                pixel_ptr[0] = 255;
-                pixel_ptr[1] = 0;
-                pixel_ptr[2] = 0;
-            }
-        } 
-        else {
-            pixel_ptr[0] = cloud_point.Clr(0);
-            pixel_ptr[1] = cloud_point.Clr(1);
-            pixel_ptr[2] = cloud_point.Clr(2);
-        }
+        Vector3f Clr;
+        get_cloud_point_rendering_color(cloud_point, Clr);
+        pixel_ptr[0] = Clr(0);
+        pixel_ptr[1] = Clr(1);
+        pixel_ptr[2] = Clr(2);
         pixel_ptr[3] = 255;
     }
 
