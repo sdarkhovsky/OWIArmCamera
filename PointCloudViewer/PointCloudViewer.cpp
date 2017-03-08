@@ -589,7 +589,7 @@ LONG WINAPI MainWndProc(
         if (interactive_mode == c_interactive_mode::idle) {
             Vector3f translation = mult*(lookat_pnt - eye_pnt);
             translation.normalize();
-            translation = -translation*translate_camera_speed;
+            translation = translation*translate_camera_speed;
             eye_pnt = eye_pnt + translation;
             lookat_pnt = lookat_pnt + translation;
         }

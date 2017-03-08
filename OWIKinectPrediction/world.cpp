@@ -290,9 +290,9 @@ void c_world::add_observation( c_point_cloud& point_cloud, double time, string& 
     #if 1
     {
         if (img_path.size() > 0) {
-            std::string file_path = img_path + ".detected_edge.xyze";
+            std::string file_path = img_path + ".detected_edge.kin";
 
-            c_kinect_image::write_file(file_path, scene.point_cloud, c_image_format::xyz);
+            c_kinect_image::write_file(file_path, scene.point_cloud, c_image_format::kinect);
         }
     }
     #endif

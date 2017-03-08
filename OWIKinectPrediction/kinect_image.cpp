@@ -94,7 +94,7 @@ namespace ais {
                     outfile << point_cloud.points[u][v].Vector(2) << std::endl;
                 }
                 else {
-                    outfile << point_cloud.points[u][v].Clr(2) << std::endl;
+                    outfile << Clr(2) << std::endl;
                 }
             }
         }
