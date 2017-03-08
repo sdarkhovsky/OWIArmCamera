@@ -137,14 +137,7 @@ void reset_camera_position() {
     // position the camera looking at the object center
 
     lookat_pnt = (point_cloud.min_coord + point_cloud.max_coord) / 2.0f;
-    eye_pnt = lookat_pnt + Vector3f(0, 0, point_cloud.max_coord(2) - point_cloud.min_coord(2));
-
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
-
-    gluLookAt(eye_pnt(0), eye_pnt(1), eye_pnt(2),
-        lookat_pnt(0), lookat_pnt(1), lookat_pnt(2),
-        0.0, 1.0, 0.0);
+    eye_pnt = lookat_pnt - Vector3f(0, 0, point_cloud.max_coord(2) - point_cloud.min_coord(2));
 }
 
 void reset_settings() {
@@ -281,7 +274,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
     /* Create the frame */
     ghWnd = CreateWindow(szAppName,
-        "Generic OpenGL Sample",
+        "Point Cloud Viewer",
         WS_OVERLAPPEDWINDOW | WS_CLIPSIBLINGS | WS_CLIPCHILDREN,
         CW_USEDEFAULT,
         CW_USEDEFAULT,
@@ -559,7 +552,7 @@ LONG WINAPI MainWndProc(
         else 
         if (interactive_mode == c_interactive_mode::idle) {
             if (fwKeys & MK_LBUTTON) {
-                Vector3f translation = Vector3f(last_mouse_pos_y - yPos, last_mouse_pos_x - xPos,0).cross(lookat_pnt-eye_pnt);
+                Vector3f translation = Vector3f(-(last_mouse_pos_y - yPos), last_mouse_pos_x - xPos,0).cross(lookat_pnt-eye_pnt);
                 translation.normalize();
                 translation = -translation*translate_camera_speed;
                 eye_pnt = eye_pnt + translation;
@@ -610,6 +603,7 @@ LONG WINAPI MainWndProc(
     return lRet;
 }
 
+#ifdef COLOR_INDEX
 BOOL bSetupPixelFormat(HDC hdc)
 {
     PIXELFORMATDESCRIPTOR pfd, *ppfd;
@@ -642,6 +636,40 @@ BOOL bSetupPixelFormat(HDC hdc)
         return FALSE;
     }
 
+    return TRUE;
+}
+#endif
+
+BOOL bSetupPixelFormat(HDC hdc)
+{
+    PIXELFORMATDESCRIPTOR pfd = {
+        sizeof(PIXELFORMATDESCRIPTOR),   // size of this pfd  
+        1,                     // version number  
+        PFD_DRAW_TO_WINDOW |   // support window  
+        PFD_SUPPORT_OPENGL |   // support OpenGL  
+        PFD_DOUBLEBUFFER,      // double buffered  
+        PFD_TYPE_RGBA,         // RGBA type  
+        24,                    // 24-bit color depth  
+        0, 0, 0, 0, 0, 0,      // color bits ignored  
+        0,                     // no alpha buffer  
+        0,                     // shift bit ignored  
+        0,                     // no accumulation buffer  
+        0, 0, 0, 0,            // accum bits ignored  
+        32,                    // 32-bit z-buffer  
+        0,                     // no stencil buffer  
+        0,                     // no auxiliary buffer  
+        PFD_MAIN_PLANE,        // main layer  
+        0,                     // reserved  
+        0, 0, 0                // layer masks ignored  
+    };
+
+    int  iPixelFormat;
+
+    // get the best available match of pixel format for the device context   
+    iPixelFormat = ChoosePixelFormat(hdc, &pfd);
+
+    // make that the pixel format of the device context  
+    SetPixelFormat(hdc, iPixelFormat, &pfd);
     return TRUE;
 }
 
@@ -741,8 +769,6 @@ GLvoid drawScene(GLvoid)
     }
 
     glCallList(POINT_CLOUD);
-
-    glPopMatrix();
-
+     
     SWAPBUFFERS;
 }
