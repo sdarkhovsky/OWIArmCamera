@@ -161,8 +161,9 @@ namespace ais {
 
     bool advance_along_edge(const c_point_cloud& point_cloud, Vector2i& edge_dir, Vector2i& edge_pnt) {
         size_t u2, v2, j;
-        const int max_num_advance_iter = 5;
-        const float min_edge_pnt_distance = 0.0001f;
+        const int max_num_advance_iter = 20;
+        const float min_edge_pnt_distance = 0.01f; 
+        const float max_edge_pnt_distance = 1.0f; 
         float edge_pnt_distance;
         size_t u1 = edge_pnt(0);
         size_t v1 = edge_pnt(1);
@@ -176,7 +177,8 @@ namespace ais {
             // Requiring the min allowed distance between the corner points increases robustness of the corner relation.
             // In addition, it also filters out repeated X coordinates for different u,v in Kinect data
             edge_pnt_distance = (point_cloud.points[u2][v2].X - point_cloud.points[u1][v1].X).norm();
-            if (edge_pnt_distance > min_edge_pnt_distance)
+            if (edge_pnt_distance > min_edge_pnt_distance &&
+                edge_pnt_distance < max_edge_pnt_distance)
                 return true;
         }
 
@@ -200,6 +202,15 @@ namespace ais {
         int ut, vt;
         for (u = 1; u < num_point_cloud_rows - 1; u++) {
             for (v = 1; v < num_point_cloud_cols - 1; v++) {
+
+#if 0
+                //1111111111111111111111111111111111111111111
+                bool pass = ((u == 193 && v == 771));
+                if (!pass)
+                    continue;
+                //1111111111111111111111111111111111111111111
+#endif
+
 
                 if (point_cloud.points[u][v].Clr_edge) {
                     int num_edge_nghbrs = 0;
@@ -233,6 +244,7 @@ namespace ais {
                     Vector2i edge_dir = init_edge_dir;
 
                     corner_pts[0] = Vector2i(u, v);
+                    edge_pnt = corner_pts[0];
 
                     if (!advance_along_edge(point_cloud, edge_dir, edge_pnt))
                         continue;
