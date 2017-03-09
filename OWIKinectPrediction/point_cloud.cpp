@@ -2,7 +2,9 @@
 
 namespace ais {
 
-    bool c_point_cloud::fix() {
+    // Note:
+    // The fix_uv_X_map is itself buggy.It assigns wrong X values especially on the boundary of the objects and background
+    bool c_point_cloud::fix_uv_X_map() {
         size_t u, v;
         Vector3f X1, X2;
         size_t num_point_cloud_rows = points.size();
@@ -171,7 +173,7 @@ namespace ais {
             return;
         }
 
-        if (cloud_point.edge_corner_angle_cos > corner_angle_cosine_thresh)
+        if (cloud_point.edge_corner_angle_cos != -1.0)
             Clr = Vector3f(0, 255, 0);
         else
             Clr = Vector3f(255, 0, 0);

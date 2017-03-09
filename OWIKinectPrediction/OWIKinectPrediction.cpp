@@ -234,10 +234,15 @@ int main(int argc, char** argv)
 			std::cout << "can't open image file: "  << *it << std::endl;
 			continue;
         }
+
+#if 0
+        std::string file_path1 = img_path + ".test.kin";
+        c_kinect_image::write_file(file_path1, point_cloud, c_image_format::kinect);
+#endif
 #else
         generate_point_cloud_prism(point_cloud);
 #endif
-#if 1
+#if 0
         Vector3f max_xyz = Vector3f(0.04, 0.2, 0.8f);
         Vector3f min_xyz = Vector3f(-0.04, -0.2, 0);
         point_cloud.filter_by_xyz(min_xyz, max_xyz);

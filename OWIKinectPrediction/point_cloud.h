@@ -61,7 +61,7 @@ namespace ais {
         }
 
         size_t filter_by_xyz(const Vector3f& min_xyz, const Vector3f& max_xyz);
-        bool fix();
+        bool fix_uv_X_map();
 
         std::vector< std::vector<c_point_cloud_point>> points;
     };

@@ -45,7 +45,9 @@ namespace ais {
         }
         infile.close();
 
-        point_cloud.fix();
+        // Note:
+        // The fix_uv_X_map is itself buggy.It assigns wrong X values especially on the boundary of the objects and background
+        // point_cloud.fix_uv_X_map();  
 
 #if 1
         std::string png_file_path = file_path + ".png";

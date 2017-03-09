@@ -83,7 +83,7 @@ bool c_observed_scene::calculate_scene_relations() {
             if (point_cloud.points[u][v].Clr_edge == 0)
                 continue;
 
-            if (point_cloud.points[u][v].edge_corner_angle_cos > corner_angle_cosine_thresh) {
+            if (point_cloud.points[u][v].edge_corner_angle_cos != -1.0) {
 
 #ifdef SMALL_KINS
                 //111111111111111111

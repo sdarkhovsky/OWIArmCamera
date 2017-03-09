@@ -124,7 +124,7 @@ namespace ais {
     }
 
     // edge_dir must be normalized
-    bool advance_along_edge(const c_point_cloud& point_cloud, Vector2i& edge_pnt, Vector2i edge_dir) {
+    bool advance_step_along_edge(const c_point_cloud& point_cloud, Vector2i& edge_dir, Vector2i& edge_pnt) {
         int ut, vt, u1, v1;
         int u = edge_pnt(0);
         int v = edge_pnt(1);
@@ -159,19 +159,37 @@ namespace ais {
         return false;
     }
 
+    bool advance_along_edge(const c_point_cloud& point_cloud, Vector2i& edge_dir, Vector2i& edge_pnt) {
+        size_t u2, v2, j;
+        const int max_num_advance_iter = 5;
+        const float min_edge_pnt_distance = 0.0001f;
+        float edge_pnt_distance;
+        size_t u1 = edge_pnt(0);
+        size_t v1 = edge_pnt(1);
+
+        for (j = 0; j < max_num_advance_iter; j++) {
+            if (!advance_step_along_edge(point_cloud, edge_dir, edge_pnt))
+                break;
+
+            u2 = edge_pnt(0);
+            v2 = edge_pnt(1);
+            // Requiring the min allowed distance between the corner points increases robustness of the corner relation.
+            // In addition, it also filters out repeated X coordinates for different u,v in Kinect data
+            edge_pnt_distance = (point_cloud.points[u2][v2].X - point_cloud.points[u1][v1].X).norm();
+            if (edge_pnt_distance > min_edge_pnt_distance)
+                return true;
+        }
+
+        return false;
+    }
+
     bool find_edge_corners(c_point_cloud& point_cloud) {
         size_t u, v, j;
         int i1, i2, i3;
         int u1, v1;
         int u2, v2;
-        const int num_advance_iter = 3;
         Vector2i corner_pts[3]; // u,v coordinates of the corner points
-        Vector3f corner_pts_nbhd[3][3];
-        Vector3f dir1, dir2;
-        Vector3f min_dir1, min_dir2;
-
-        int Del_plus[4][2] = { { 1,0 },{ 1,1 },{ 0,1 },{ -1,1 } };
-        int Del_minus[4][2] = { { -1,0 },{ -1,-1 },{ 0,-1 },{ 1,-1 } };
+        Vector3f dir1, dir2, X, X1, X2;
 
 //        smooth_edge_X_Gaussian(point_cloud, 2.0, 6);   // other values: (2.0, 6), (1.0, 2), (1.4, 4)
 
@@ -182,9 +200,6 @@ namespace ais {
         int ut, vt;
         for (u = 1; u < num_point_cloud_rows - 1; u++) {
             for (v = 1; v < num_point_cloud_cols - 1; v++) {
-
-//                if (!(u == 555 && v == 1053))
-//                    continue;
 
                 if (point_cloud.points[u][v].Clr_edge) {
                     int num_edge_nghbrs = 0;
@@ -216,75 +231,40 @@ namespace ais {
                     init_edge_dir = edge_pnt - Vector2i(u, v);
                     init_edge_dir.normalize();
                     Vector2i edge_dir = init_edge_dir;
-                    for (j = 0; j < num_advance_iter; j++) {
-                        if (advance_along_edge(point_cloud, edge_pnt, edge_dir))
-                            continue;
-                        break;
-                    }
-                    if (j < num_advance_iter)
+
+                    corner_pts[0] = Vector2i(u, v);
+
+                    if (!advance_along_edge(point_cloud, edge_dir, edge_pnt))
                         continue;
 
-                    corner_pts[0] = edge_pnt;
+                    corner_pts[1] = edge_pnt;
 
                     // advance in opposite direction
                     edge_dir = -init_edge_dir;
                     edge_pnt = Vector2i(u, v);
 
-                    corner_pts[1] = edge_pnt;
-
-
-                    for (j = 0; j < num_advance_iter; j++) {
-                        if (advance_along_edge(point_cloud, edge_pnt, edge_dir))
-                            continue;
-                        break;
-                    }
-                    if (j < num_advance_iter)
+                    if (!advance_along_edge(point_cloud, edge_dir, edge_pnt))
                         continue;
 
                     corner_pts[2] = edge_pnt;
 
                     // by now corner_pts contain 3 consecutive points of the edge with suspected corner point in the middle (corner_pts[1])
+                    X = point_cloud.points[corner_pts[0](0)][corner_pts[0](1)].X;
+                    X1 = point_cloud.points[corner_pts[1](0)][corner_pts[1](1)].X;
+                    X2 = point_cloud.points[corner_pts[2](0)][corner_pts[2](1)].X;
+                    dir1 = X1 - X;
+                    dir2 = X2 - X;
+                    dir1.normalize();
+                    dir2.normalize();
 
-                    for (j = 0; j < 3; j++) {
-                        u1 = corner_pts[j](0);
-                        v1 = corner_pts[j](1);
-                        corner_pts_nbhd[j][0] = point_cloud.points[u1][v1].X;
+                    float angle_cos = dir1.dot(dir2);
 
-                        int direction = (point_cloud.points[u1][v1].gradient_dir >= 0)
-                            ? (int)(point_cloud.points[u1][v1].gradient_dir / (pi / 3.9))
-                            : (int)(pi + point_cloud.points[u1][v1].gradient_dir / (pi / 3.9));
-                        u2 = u1 + Del_plus[direction][0];
-                        v2 = v1 + Del_plus[direction][1];
-                        corner_pts_nbhd[j][1] = point_cloud.points[u2][v2].X;
-
-                        u2 = u1 + Del_minus[direction][0];
-                        v2 = v1 + Del_minus[direction][1];
-                        corner_pts_nbhd[j][2] = point_cloud.points[u2][v2].X;
+                    const float corner_angle_cosine_thresh = cos(135.0 / 180.0*pi);
+                    if (angle_cos > corner_angle_cosine_thresh) {
+                        point_cloud.points[u][v].edge_corner_angle_cos = angle_cos;
+                        point_cloud.points[u][v].edge_corner_dir1 = dir1;
+                        point_cloud.points[u][v].edge_corner_dir2 = dir2;
                     }
-
-                    float min_angle_cos = 1;
-                    for (i1 = 0; i1 < 3; i1++) {
-                        for (i2 = 0; i2 < 3; i2++) {
-                            for (i3 = 0; i3 < 3; i3++) {
-                                // corner point in the middle with index 1
-                                dir1 = corner_pts_nbhd[0][i2] - corner_pts_nbhd[1][i1];
-                                dir2 = corner_pts_nbhd[2][i3] - corner_pts_nbhd[1][i1];
-                                dir1.normalize();
-                                dir2.normalize();
-
-                                float angle_cos = dir1.dot(dir2);
-                                if (angle_cos < min_angle_cos) {
-                                    min_angle_cos = angle_cos;
-                                    min_dir1 = dir1;
-                                    min_dir2 = dir2;
-                                }
-                            }
-                        }
-                    }
-
-                    point_cloud.points[u][v].edge_corner_angle_cos = min_angle_cos;
-                    point_cloud.points[u][v].edge_corner_dir1 = min_dir1;
-                    point_cloud.points[u][v].edge_corner_dir2 = min_dir2;
 #if 0
                     dir1 = point_cloud.points[u1][v1].X - point_cloud.points[u][v].X;
                     dir2 = point_cloud.points[u2][v2].X - point_cloud.points[u][v].X;
