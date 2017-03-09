@@ -22,6 +22,7 @@ c_observed_scene::c_observed_scene(c_point_cloud& _point_cloud, c_world_time& wo
 
 //  detect_color_edge_features_LOG(point_cloud);
     detect_color_edge_features_Canny(point_cloud);
+    remove_edges_between_objects(point_cloud);
     find_edge_corners(point_cloud);
     calculate_scene_relations();
 
@@ -99,7 +100,7 @@ bool c_observed_scene::calculate_scene_relations() {
                 }
                 //11111111111111111
 #endif
-#define MEDIUM_KINS
+//#define MEDIUM_KINS
 #ifdef MEDIUM_KINS
                 //111111111111111111
                 if (img_path == "C:\\Projects\\OWIArmCamera\\KinectImages/img0.kin") {
@@ -191,12 +192,6 @@ void c_world::detect_object_in_scenes_from_transformation(c_observed_scene& scen
     for (prev_u = 0; prev_u < prev_num_point_cloud_rows; prev_u++) {
         for (prev_v = 0; prev_v < prev_num_point_cloud_cols; prev_v++) {
 
-//1111111111111111111111111111111111111111111111
-            if (prev_u == 32 && prev_v == 69) {
-                int aaa = 0;
-            }
-//1111111111111111111111111111111111111111111111111
-
             if (prev_scene.point_cloud.points[prev_u][prev_v].X == Vector3f::Zero()) 
                 continue;
 
@@ -285,7 +280,11 @@ void c_world::add_observation( c_point_cloud& point_cloud, double time, string& 
     c_world_time world_time(time);
 
     c_observed_scene scene(point_cloud, world_time, img_path);
+
+//#define MATCH_OBSERVED_SCENE
+#ifdef MATCH_OBSERVED_SCENE
     match_observed_scene(scene);
+#endif
 
     #if 1
     {

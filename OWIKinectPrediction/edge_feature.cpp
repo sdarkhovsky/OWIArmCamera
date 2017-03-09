@@ -11,6 +11,47 @@ using namespace Eigen;
 
 namespace ais {
 
+    // the edges between objects are not preserved between POV
+    bool remove_edges_between_objects(c_point_cloud& point_cloud) {
+        size_t u, v, j, u1, v1;
+        int ut, vt;
+        // filter out the edges for which the nbhd points 3d coordinates vary significantly 
+        const int nbhd_filter_size = 2;
+        const float nbhd_X_diff_tolerance = 0.03;
+        size_t num_point_cloud_rows = point_cloud.points.size();
+        if (num_point_cloud_rows <= 0)
+            return false;
+        size_t num_point_cloud_cols = point_cloud.points[0].size();
+        for (u = nbhd_filter_size; u < num_point_cloud_rows - nbhd_filter_size; u++) {
+            for (v = nbhd_filter_size; v < num_point_cloud_cols - nbhd_filter_size; v++) {
+
+                if (point_cloud.points[u][v].Clr_edge) {
+                    float max_nbhd_X_diff = 0;
+                    for (ut = -nbhd_filter_size; ut <= nbhd_filter_size; ut++) {
+                        for (vt = -nbhd_filter_size; vt <= nbhd_filter_size; vt++) {
+                            if (ut == 0 && vt == 0)
+                                continue;
+                            u1 = u + ut;
+                            v1 = v + vt;
+                            float X_diff = (point_cloud.points[u1][v1].X - point_cloud.points[u][v].X).norm();
+                            if (X_diff > max_nbhd_X_diff)
+                                max_nbhd_X_diff = X_diff;
+
+                            if (max_nbhd_X_diff > nbhd_X_diff_tolerance) {
+                                goto exit_loops;
+                            }
+                        }
+                    }
+                    exit_loops:
+                    if (max_nbhd_X_diff > nbhd_X_diff_tolerance)
+                        point_cloud.points[u][v].Clr_edge = 0;
+                }
+            }
+        }
+
+        return true;
+    }
+
     bool calculate_gaussian_mask(vector<vector<float>>& mask, float sigma, int mask_radius) {
         int i, j;
         int mask_size = 2 * mask_radius + 1;
