@@ -100,9 +100,18 @@ enum class c_interactive_mode: int
     updating_points_to_hide,
     selecting_points_to_keep,
     updating_points_to_keep,
-    filter_points_by_color
+    filter_points
 };
 c_interactive_mode interactive_mode = c_interactive_mode::idle;
+
+
+enum class c_filter_points_mode : int
+{
+    filter_nothing,
+    filter_edges
+};
+c_filter_points_mode filter_points_mode = c_filter_points_mode::filter_nothing;
+
 
 Vector2i min_visible;
 Vector2i max_visible;
@@ -141,6 +150,8 @@ void reset_camera_position() {
 }
 
 void reset_settings() {
+    filter_points_mode = c_filter_points_mode::filter_nothing;
+
     translate_camera_speed = 0.03f;
     
     rotate_camera_speed = 0.01f;
@@ -189,15 +200,22 @@ void update_points_visibility() {
     }
 
     for (auto it = point_cloud.points.begin(); it != point_cloud.points.end(); ++it) {
-        if (!it->visible)
-            continue;
 
-        if (interactive_mode == c_interactive_mode::filter_points_by_color) {
-            if (it->Clr != Vector3f(255, 0, 0) && it->Clr != Vector3f(0, 255, 0)) {
-                it->visible = 0;
+        if (interactive_mode == c_interactive_mode::filter_points) {
+            if (filter_points_mode == c_filter_points_mode::filter_edges) {
+                if (it->Clr != Vector3f(255, 0, 0) && it->Clr != Vector3f(0, 255, 0)) {
+                    it->visible = 0;
+                }
             }
+            else 
+                if (filter_points_mode == c_filter_points_mode::filter_nothing) {
+                    it->visible = 1;
+                }
             continue;
         }
+
+        if (!it->visible)
+            continue;
 
         if (get_point_screen_coordinate(*it, model_view_matrix, projection_matrix, point_screen_coordinates)) {
             bool point_in_selected_box = true;
@@ -443,7 +461,8 @@ LONG WINAPI MainWndProc(
         case 0x46:
         case 0x66:
             // Process F, f
-            interactive_mode = c_interactive_mode::filter_points_by_color;
+            interactive_mode = c_interactive_mode::filter_points;
+            filter_points_mode = (filter_points_mode == c_filter_points_mode::filter_nothing) ? c_filter_points_mode::filter_edges : c_filter_points_mode::filter_nothing;
             break;
         case 0x48:
         case 0x68:
@@ -762,7 +781,7 @@ GLvoid drawScene(GLvoid)
 
     if (interactive_mode == c_interactive_mode::updating_points_to_hide ||
         interactive_mode == c_interactive_mode::updating_points_to_keep ||
-        interactive_mode == c_interactive_mode::filter_points_by_color
+        interactive_mode == c_interactive_mode::filter_points
         ) {
         update_points_visibility();
         interactive_mode = c_interactive_mode::idle;
