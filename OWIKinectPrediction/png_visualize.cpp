@@ -177,12 +177,13 @@ namespace ais {
         return result;
     }
 
-    bool png_visualize_point_cloud(const char* file_name, c_point_cloud& point_cloud)
+    bool png_visualize_point_cloud(const char* file_name, c_point_cloud& point_cloud, bool x_reflection)
     {
         int x, y, i;
         png_structp png_ptr;
         png_infop info_ptr;
         bool result = true;
+        png_byte* ptr;
 
         int width = point_cloud.points[0].size();
         int height = point_cloud.points.size();
@@ -208,8 +209,12 @@ namespace ais {
         for (y = 0; y < height; y++) {
             png_byte* row = row_pointers[y];
             for (x = 0; x < width; x++) {
-                png_byte* ptr = &(row[x * 4]);
-
+                if (x_reflection) {
+                    ptr = &(row[(width-x-1) * 4]);
+                }
+                else {
+                    ptr = &(row[x * 4]);
+                }
                 set_image_pixel(point_cloud.points[y][x], ptr);
             }
         }

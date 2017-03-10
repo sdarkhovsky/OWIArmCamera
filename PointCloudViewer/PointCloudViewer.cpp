@@ -193,7 +193,7 @@ void update_points_visibility() {
             continue;
 
         if (interactive_mode == c_interactive_mode::filter_points_by_color) {
-            if (it->Clr != Vector3f(255, 0, 0)) {
+            if (it->Clr != Vector3f(255, 0, 0) && it->Clr != Vector3f(0, 255, 0)) {
                 it->visible = 0;
             }
             continue;
