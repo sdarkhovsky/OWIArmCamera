@@ -144,12 +144,19 @@ namespace ais {
 
         list<list<Vector2i>> edge_segments;
 
-        const int min_chain_length = 20;
+        size_t max_chain_length = 0;
         get_edge_chains(point_cloud, edge_segments);
 
         auto segment = edge_segments.begin();
         while (segment != edge_segments.end()) {
-            if (segment->size() < min_chain_length) {
+            if (segment->size() > max_chain_length)
+                max_chain_length = segment->size();
+            segment++;
+        }
+
+        segment = edge_segments.begin();
+        while (segment != edge_segments.end()) {
+            if (segment->size() < (float)max_chain_length*0.4) {
                 segment = edge_segments.erase(segment);
             }
             else {
@@ -171,7 +178,7 @@ namespace ais {
         for (segment = edge_segments.begin(); segment != edge_segments.end(); segment++) {
             for (auto pnt = segment->begin(); pnt != segment->end(); pnt++) {
                 Vector2i& uv = *pnt;
-                point_cloud.points[uv(0)][uv(1)].Clr_edge = 0;
+                point_cloud.points[uv(0)][uv(1)].Clr_edge = 1;
             }
         }
 
