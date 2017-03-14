@@ -161,7 +161,10 @@
   <ItemGroup>
     <ClCompile Include="..\..\joint_commands.cpp" />
     <ClCompile Include="..\ais.cpp" />
+    <ClCompile Include="..\edge_corner.cpp" />
+    <ClCompile Include="..\edge_detection.cpp" />
     <ClCompile Include="..\edge_feature.cpp" />
+    <ClCompile Include="..\edge_misc.cpp" />
     <ClCompile Include="..\pcl_octree.cpp" />
     <ClCompile Include="..\plane_feature.cpp" />
     <ClCompile Include="..\kinect_image.cpp" />

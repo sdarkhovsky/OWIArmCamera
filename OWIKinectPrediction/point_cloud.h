@@ -28,6 +28,7 @@ namespace ais {
             edge_corner_angle_cos = -1.0;
             uv = Vector2i::Zero();
             object_assigned = 0;
+            clr_boundary = 0;
         }
         Vector3f X;
         Vector3f Clr;
@@ -38,6 +39,8 @@ namespace ais {
         float gradient_mag_temp;
         float gradient_dir;
         float Clr_edge;
+        int Clr_edge_processed;
+        float clr_boundary;
         float edge_corner_angle_cos;
         Vector3f edge_corner_dir1;
         Vector3f edge_corner_dir2;

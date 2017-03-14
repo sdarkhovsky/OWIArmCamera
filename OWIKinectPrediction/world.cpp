@@ -22,8 +22,10 @@ c_observed_scene::c_observed_scene(c_point_cloud& _point_cloud, c_world_time& wo
 
 //  detect_color_edge_features_LOG(point_cloud);
     detect_color_edge_features_Canny(point_cloud);
-    remove_edges_between_objects(point_cloud);
-    find_edge_corners(point_cloud);
+//    remove_edges_between_objects(point_cloud);
+//    find_edge_corners(point_cloud);
+//    calculate_boundaries(point_cloud);
+    get_edge_segments(point_cloud);
     calculate_scene_relations();
 
     pcl_octree.add_points(point_cloud, octree_ind_to_uv);
