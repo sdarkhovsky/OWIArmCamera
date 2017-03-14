@@ -163,11 +163,13 @@ namespace ais {
     }
 
     void get_cloud_point_rendering_color(c_point_cloud_point& cloud_point, Vector3f& Clr) {
+        Clr = cloud_point.Clr;
+#if 0
         if (cloud_point.Clr_edge == 1)
             Clr = Vector3f(255, 0, 0);
         else
             Clr = cloud_point.Clr;
-
+#endif
 #if 0
         if (cloud_point.clr_boundary == 1) {
             Clr = Vector3f(0, 255, 0);

@@ -7,7 +7,7 @@
 
 namespace ais {
 
-enum class c_image_format { kinect, xyz, xyze };
+enum class c_image_format { kinect, xyz };
 
 class c_kinect_image
 {

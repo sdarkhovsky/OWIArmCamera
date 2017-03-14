@@ -108,7 +108,7 @@ c_interactive_mode interactive_mode = c_interactive_mode::idle;
 enum class c_filter_points_mode : int
 {
     filter_nothing,
-    filter_edges
+    filter_labels
 };
 c_filter_points_mode filter_points_mode = c_filter_points_mode::filter_nothing;
 
@@ -202,8 +202,8 @@ void update_points_visibility() {
     for (auto it = point_cloud.points.begin(); it != point_cloud.points.end(); ++it) {
 
         if (interactive_mode == c_interactive_mode::filter_points) {
-            if (filter_points_mode == c_filter_points_mode::filter_edges) {
-                if (it->Clr != Vector3f(255, 0, 0) && it->Clr != Vector3f(0, 255, 0)) {
+            if (filter_points_mode == c_filter_points_mode::filter_labels) {
+                if (it->Label == Vector3i::Zero()) {
                     it->visible = 0;
                 }
             }
@@ -462,7 +462,7 @@ LONG WINAPI MainWndProc(
         case 0x66:
             // Process F, f
             interactive_mode = c_interactive_mode::filter_points;
-            filter_points_mode = (filter_points_mode == c_filter_points_mode::filter_nothing) ? c_filter_points_mode::filter_edges : c_filter_points_mode::filter_nothing;
+            filter_points_mode = (filter_points_mode == c_filter_points_mode::filter_nothing) ? c_filter_points_mode::filter_labels : c_filter_points_mode::filter_nothing;
             break;
         case 0x48:
         case 0x68:

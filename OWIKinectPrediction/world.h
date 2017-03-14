@@ -104,6 +104,8 @@ public:
     c_pcl_octree pcl_octree;
     std::vector<Vector2i> octree_ind_to_uv;
 
+    list<list<Vector2i>> edge_chains;
+
     string img_path;
 };
 

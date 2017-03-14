@@ -68,13 +68,19 @@ namespace pcv {
                 linestream >> point.Clr(i);
             }
 
+            point.Vector = Vector3f::Zero();
+            point.Label = Vector3i::Zero();
+
             if (linestream.good()) {
                 for (int i = 0; i < 3; i++) {
-                    linestream >> point.Vector(i);
+                    linestream >> point.Label(i);
                 }
-            }
-            else {
-                point.Vector = Vector3f::Zero();
+
+                if (linestream.good()) {
+                    for (int i = 0; i < 3; i++) {
+                        linestream >> point.Vector(i);
+                    }
+                }
             }
 
             for (int i = 0; i < 3; i++) {
@@ -146,16 +152,20 @@ namespace pcv {
             outfile << it->X(2) << " ";
             outfile << it->Clr(0) << " ";
             outfile << it->Clr(1) << " ";
+            outfile << it->Clr(2); 
 
-            if (it->Vector != Vector3f::Zero()) {
-                outfile << it->Clr(2) << " ";
-                outfile << it->Vector(0) << " ";
-                outfile << it->Vector(1) << " ";
-                outfile << it->Vector(2) << std::endl;
+            if (b_kinect_file) {
+                outfile << " " << it->Label(0) << " ";
+                outfile << it->Label(1) << " ";
+                outfile << it->Label(2);
+
+                if (it->Vector != Vector3f::Zero()) {
+                    outfile << " " << it->Vector(0) << " ";
+                    outfile << it->Vector(1) << " ";
+                    outfile << it->Vector(2); 
+                }
             }
-            else {
-                outfile << it->Clr(2) << std::endl;
-            }
+            outfile << std::endl;
         }
 
         outfile.close();

@@ -89,15 +89,20 @@ namespace ais {
                 outfile << point_cloud.points[u][v].X(2) << " ";
                 outfile << Clr(0) << " ";
                 outfile << Clr(1) << " ";
-                if (image_format == c_image_format::xyze && point_cloud.points[u][v].Vector != Vector3f::Zero()) {
-                    outfile << Clr(2) << " ";
-                    outfile << point_cloud.points[u][v].Vector(0) << " ";
-                    outfile << point_cloud.points[u][v].Vector(1) << " ";
-                    outfile << point_cloud.points[u][v].Vector(2) << std::endl;
+                outfile << Clr(2);
+                if (image_format == c_image_format::kinect) {
+                    outfile << " " << point_cloud.points[u][v].Label(0) << " ";
+                    outfile << point_cloud.points[u][v].Label(1) << " ";
+                    outfile << point_cloud.points[u][v].Label(2);
+
+                    if (point_cloud.points[u][v].Vector != Vector3f::Zero()) {
+                        outfile << " " << point_cloud.points[u][v].Vector(0) << " ";
+                        outfile << point_cloud.points[u][v].Vector(1) << " ";
+                        outfile << point_cloud.points[u][v].Vector(2);
+                    }
                 }
-                else {
-                    outfile << Clr(2) << std::endl;
-                }
+
+                outfile << std::endl;
             }
         }
 

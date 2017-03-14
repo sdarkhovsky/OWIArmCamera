@@ -17,6 +17,7 @@ namespace pcv {
         Vector3f X;
         Vector3f Clr;
         Vector3f Vector;
+        Vector3i Label;
         int visible;
         int u;
         int v;

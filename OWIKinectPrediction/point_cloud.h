@@ -19,6 +19,7 @@ namespace ais {
             X = Vector3f::Zero();
             Clr = Vector3f::Zero();
             Vector = Vector3f::Zero();
+            Label = Vector3i::Zero();
             Conv_X = Vector3f::Zero();
             Conv_Clr = Vector3f::Zero();
             gradient_mag = 0;
@@ -33,6 +34,7 @@ namespace ais {
         Vector3f X;
         Vector3f Clr;
         Vector3f Vector;
+        Vector3i Label;
         Vector3f Conv_X;
         Vector3f Conv_Clr;
         float gradient_mag;

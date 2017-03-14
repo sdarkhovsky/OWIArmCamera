@@ -5,7 +5,8 @@
 
 #include <memory>
 
-
+#include <stdlib.h>     /* srand, rand */
+#include <time.h>       /* time */
 
 using namespace Eigen;
 
@@ -70,14 +71,14 @@ namespace ais {
         return true;
     }
 
-    bool get_edge_chains(c_point_cloud& point_cloud, list<list<Vector2i>>& edge_segments) {
+    bool get_edge_chains(c_point_cloud& point_cloud, list<list<Vector2i>>& edge_chains) {
         size_t u, v, j;
         int i1, i2, i3;
         int u1, v1;
         int u2, v2;
         Vector3f dir1, dir2, X, X1, X2;
 
-        edge_segments.clear();
+        edge_chains.clear();
 
         size_t num_point_cloud_rows = point_cloud.points.size();
         if (num_point_cloud_rows <= 0)
@@ -131,7 +132,7 @@ namespace ais {
                     edge_dir = -init_edge_dir;
                     advance_along_edge(point_cloud, edge_dir, false, edge_list);
 
-                    edge_segments.push_back(edge_list);
+                    edge_chains.push_back(edge_list);
                 }
             }
         }
@@ -139,46 +140,51 @@ namespace ais {
         return true;
     }
 
-    bool get_edge_segments(c_point_cloud& point_cloud) {
+    bool get_edge_segments(c_point_cloud& point_cloud, list<list<Vector2i>>& edge_chains) {
         size_t u, v;
 
-        list<list<Vector2i>> edge_segments;
-
         size_t max_chain_length = 0;
-        get_edge_chains(point_cloud, edge_segments);
+        get_edge_chains(point_cloud, edge_chains);
 
-        auto segment = edge_segments.begin();
-        while (segment != edge_segments.end()) {
+        auto segment = edge_chains.begin();
+        while (segment != edge_chains.end()) {
             if (segment->size() > max_chain_length)
                 max_chain_length = segment->size();
             segment++;
         }
 
-        segment = edge_segments.begin();
-        while (segment != edge_segments.end()) {
+        segment = edge_chains.begin();
+        while (segment != edge_chains.end()) {
             if (segment->size() < (float)max_chain_length*0.4) {
-                segment = edge_segments.erase(segment);
+                segment = edge_chains.erase(segment);
             }
             else {
                 segment++;
             }
         }
 
+        mark_edge_chains(point_cloud, edge_chains);
+        return true;
+    }
+
+    bool mark_edge_chains(c_point_cloud& point_cloud, list<list<Vector2i>>& edge_chains) {
+        size_t u, v;
+
         size_t num_point_cloud_rows = point_cloud.points.size();
         if (num_point_cloud_rows <= 0)
             return false;
         size_t num_point_cloud_cols = point_cloud.points[0].size();
 
-        for (u = 1; u < num_point_cloud_rows - 1; u++) {
-            for (v = 1; v < num_point_cloud_cols - 1; v++) {
-                point_cloud.points[u][v].Clr_edge = 0;
-            }
-        }
+        srand(time(NULL)); // initialize random seed
+        for (auto segment = edge_chains.begin(); segment != edge_chains.end(); segment++) {
+            float red = rand() % 255 + 1; // generate secret number between 1 and 255
+            float green = rand() % 255 + 1;
+            float blue = rand() % 255 + 1;
 
-        for (segment = edge_segments.begin(); segment != edge_segments.end(); segment++) {
             for (auto pnt = segment->begin(); pnt != segment->end(); pnt++) {
                 Vector2i& uv = *pnt;
-                point_cloud.points[uv(0)][uv(1)].Clr_edge = 1;
+                point_cloud.points[uv(0)][uv(1)].Label = Vector3i(1, 0, 0);
+                point_cloud.points[uv(0)][uv(1)].Clr = Vector3f(red,green,blue);
             }
         }
 

@@ -12,7 +12,10 @@ namespace ais {
     bool remove_edges_between_objects(c_point_cloud& point_cloud);
     bool calculate_boundaries(c_point_cloud& point_cloud);
     bool calculate_gaussian_mask(vector<vector<float>>& mask, float sigma, int mask_radius);
-    bool get_edge_segments(c_point_cloud& point_cloud);
+    bool get_edge_chains(c_point_cloud& point_cloud, list<list<Vector2i>>& edge_chains);
+    bool mark_edge_chains(c_point_cloud& point_cloud, list<list<Vector2i>>& edge_chains);
+    bool get_edge_segments(c_point_cloud& point_cloud, list<list<Vector2i>>& edge_chains);
+
 
     class c_edge_feature {
     public:
