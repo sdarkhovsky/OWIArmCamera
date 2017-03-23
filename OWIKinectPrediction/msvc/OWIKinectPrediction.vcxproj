@@ -165,6 +165,7 @@
     <ClCompile Include="..\edge_detection.cpp" />
     <ClCompile Include="..\edge_feature.cpp" />
     <ClCompile Include="..\edge_misc.cpp" />
+    <ClCompile Include="..\observed_scene.cpp" />
     <ClCompile Include="..\pcl_octree.cpp" />
     <ClCompile Include="..\plane_feature.cpp" />
     <ClCompile Include="..\kinect_image.cpp" />

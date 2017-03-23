@@ -77,6 +77,22 @@ namespace ais {
         std::list <c_point_cloud_point> elements;
     };
 
+    class c_edge_node {
+    public:
+        c_edge_node() {
+            curvature = 0;
+            normal = Vector3f::Zero();
+        }
+        c_edge_node(Vector2i& uv) {
+            this->uv = uv;
+            curvature = 0;
+            normal = Vector3f::Zero();
+        }
+        Vector2i uv;
+        Vector3f normal;
+        float curvature;
+    };
+
     void generate_point_cloud_plane(c_point_cloud& point_cloud);
     void generate_point_cloud_prism(c_point_cloud& point_cloud);
 
