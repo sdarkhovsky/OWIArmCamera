@@ -194,23 +194,30 @@ namespace ais {
         return true;
     }
 
-    bool calculate_gaussian_masks(float sigma_in_steps, int mask_radius_in_steps, float step, vector<float>& mask, vector<float>& dmask, vector<float>& ddmask) {
+    bool calculate_gaussian_masks(float sigma, float step, float taper_error, vector<float>& mask, vector<float>& dmask, vector<float>& ddmask) {
         int i;
         float i2;
-        int mask_size = 2 * mask_radius_in_steps + 1;
+        float log_arg = sigma*sqrt(2 * pi)*taper_error;
+        if (log_arg < 0 || log_arg > 1.0)
+            return false;
+
+        float taper_x = sigma*sqrt(-2.0*log(log_arg));
+        int mask_radius = taper_x / step;
+        if (mask_radius < 1)
+            mask_radius = 1;
+        int mask_size = 2 * mask_radius + 1;
         mask.resize(mask_size);
         float step2 = step*step;
-        float sigma1 = sigma_in_steps*step;
-        float sigma2 = sigma1*sigma1;
+        float sigma2 = sigma*sigma;
         float sigma4 = sigma2*sigma2;
         float sum = 0;
-        for (i = -mask_radius_in_steps; i <= mask_radius_in_steps; i++) {
+        for (i = -mask_radius; i <= mask_radius; i++) {
             i2 = i*i*step2;
-            mask[i + mask_radius_in_steps] = exp(-i2 / (2.0*sigma2));
-            dmask[i + mask_radius_in_steps] = exp(-i2 / (2.0*sigma2))* i*step/ sigma2;
-            ddmask[i + mask_radius_in_steps] = exp(-i2 / (2.0*sigma2))* (i2 - sigma2)/ sigma4;
+            mask[i + mask_radius] = exp(-i2 / (2.0*sigma2));
+            dmask[i + mask_radius] = exp(-i2 / (2.0*sigma2))* i*step/ sigma2;
+            ddmask[i + mask_radius] = exp(-i2 / (2.0*sigma2))* (i2 - sigma2)/ sigma4;
 
-            sum += mask[i + mask_radius_in_steps];
+            sum += mask[i + mask_radius];
         }
         for (i = 0; i < mask_size; i++) {
             mask[i] /= sum;
@@ -221,33 +228,49 @@ namespace ais {
     }
 
     bool calculate_edge_chain_curvature(c_point_cloud& point_cloud, vector<c_edge_node>& edge_chain) {
-        float t_max = edge_chain.size() - 1;
+        Vector3f X_i, X_ip, X_t;
         float t_step = 0.5;
         float curvature;
         vector<float> mask, dmask, ddmask;
         Vector3f X, dX_dt, d2X_dt2;
 
-        // (2.0, 6), (1.0, 2), (1.4, 4)
-        float sigma = 2.0;
-        int mask_radius = 6;
-        calculate_gaussian_masks(sigma, mask_radius, t_step, mask, dmask, ddmask);
+        int chain_size = edge_chain.size();
 
-        float t_margin = t_step*mask_radius;
-        for (float tau = t_margin; tau < t_max- t_margin; tau += t_step) {
+        // (2.0, 6), (1.0, 2), (1.4, 4)
+        float sigma = 2.0;  // in units of measure of the parameter t of the curve X(t), which is 1 between adjacent edge chain nodes
+        if (!calculate_gaussian_masks(sigma, t_step, gaussian_mask_taper_error, mask, dmask, ddmask))
+            return false;
+        int mask_radius = (mask.size()-1)/2;
+
+        for (int node_i = 0; node_i < chain_size; node_i++) {
             dX_dt = Vector3f::Zero();
             d2X_dt2 = Vector3f::Zero();
+            float tau = node_i;
             for (int k = -mask_radius; k <= mask_radius; k++) {
-                float t = tau + k*t_step;
+                // before smoothing with the gaussian, the X(t) function is piecewise linear.
+                float t = tau + k*t_step; 
                 float t_i = floor(t);
-                Vector3f X_i = point_cloud.points[edge_chain[t_i].uv(0)][edge_chain[t_i].uv(1)].X;
-                Vector3f X_ip = point_cloud.points[edge_chain[t_i+1].uv(0)][edge_chain[t_i+1].uv(1)].X;
-                Vector3f X = X_i + (X_ip - X_i)*(t - t_i);
-                dX_dt += X * dmask[k + mask_radius];
-                d2X_dt2 += X * ddmask[k + mask_radius];
+                float t_ip = t_i+1;
+
+                if (t_i < 0) {
+                    X_t = point_cloud.points[edge_chain[0].uv(0)][edge_chain[0].uv(1)].X;
+                }
+                else
+                    if (t_ip >= chain_size) {
+                        X_t = point_cloud.points[edge_chain[chain_size-1].uv(0)][edge_chain[chain_size-1].uv(1)].X;
+                    }
+                    else {
+                        X_i = point_cloud.points[edge_chain[t_i].uv(0)][edge_chain[t_i].uv(1)].X;
+                        X_ip = point_cloud.points[edge_chain[t_ip].uv(0)][edge_chain[t_ip].uv(1)].X;
+                        X_t = X_i + (X_ip - X_i)*(t - t_i);
+                    }
+
+                dX_dt += X_t * dmask[k + mask_radius];
+                d2X_dt2 += X_t * ddmask[k + mask_radius];
             }
-            float curvature = dX_dt.cross(d2X_dt2).norm()/ dX_dt.norm();
-            11111111111111111111111111111111111  review: edge_chain_curvatures corresponds to edge_chain   calculate also normal of the edge_node
-            edge_chain_curvatures.push_back(curvature);
+            edge_chain[node_i].curvature = dX_dt.cross(d2X_dt2).norm() / pow(dX_dt.norm(),3.0);
+            edge_chain[node_i].normal = dX_dt.cross(d2X_dt2);
+            edge_chain[node_i].normal.normalize();
         }
 
         return true;
