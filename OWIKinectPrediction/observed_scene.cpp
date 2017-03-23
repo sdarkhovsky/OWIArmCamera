@@ -110,7 +110,7 @@ namespace ais {
                     //11111111111111111
 #endif
 
-                    c_object_relation relation(c_object_point(point_cloud.points[u][v]),
+                    c_corner_object_relation* relation = new c_corner_object_relation(c_object_point(point_cloud.points[u][v]),
                         point_cloud.points[u][v].edge_corner_angle_cos, point_cloud.points[u][v].edge_corner_dir1, point_cloud.points[u][v].edge_corner_dir2);
 
                     relations.push_back(relation);
@@ -141,7 +141,7 @@ namespace ais {
                     min_curvature_i = node_i;
                 }
                 if (abs(edge_chain[node_i].curvature - edge_chain[start_node].curvature) > curvature_tolerance) {
-                    c_curvature_object_relation relation(point_cloud.points[edge_chain[start_node].uv(0)][edge_chain[start_node].uv(1].X,
+                    c_curvature_object_relation* relation = new c_curvature_object_relation(point_cloud.points[edge_chain[start_node].uv(0)][edge_chain[start_node].uv(1)].X,
                         point_cloud.points[edge_chain[node_i].uv(0)][edge_chain[node_i].uv(1)].X,
                         edge_chain[node_i].normal, edge_chain[node_i].curvature);
                     relations.push_back(relation);
@@ -149,7 +149,7 @@ namespace ais {
                 }
             }
 
-            c_curvature_object_relation relation(point_cloud.points[edge_chain[start_node].uv(0)][edge_chain[start_node].uv(1].X,
+            c_curvature_object_relation* relation = new c_curvature_object_relation(point_cloud.points[edge_chain[start_node].uv(0)][edge_chain[start_node].uv(1)].X,
                 point_cloud.points[edge_chain[node_i].uv(0)][edge_chain[node_i].uv(1)].X,
                 edge_chain[node_i].normal, edge_chain[node_i].curvature);
             relations.push_back(relation);

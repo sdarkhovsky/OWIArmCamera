@@ -47,15 +47,16 @@ public:
 
 class c_object_relation {
 public:
+    c_object_relation() {};
     //    c_object_relation(c_object_relation& object_relation) = default;
     c_object_relation(const c_object_relation& object_relation) = default;
     //   c_object_relation& operator=(c_object_relation& object_relation) = default;
 
-    virtual bool compatible(c_object_relation& relation) = 0;
-    virtual bool calculate_transformation(c_object_relation& tgt_relation, c_object_transformation& transformation, bool switch_dir_mapping) = 0;
+    virtual bool compatible(c_object_relation* relation) { return false; }
+    virtual bool calculate_transformation(c_object_relation* tgt_relation, c_object_transformation& transformation, bool switch_dir_mapping) { return false; }
 };
 
-class c_corner_object_relation : c_object_relation {
+class c_corner_object_relation : public c_object_relation {
 public:
     c_corner_object_relation(c_object_point& _pnt, float _angle_cos_value, Vector3f& _dir1, Vector3f& _dir2) {
         pnt = _pnt;
@@ -64,14 +65,14 @@ public:
         dir2 = _dir2;
     }
 
-    bool compatible(c_object_relation& relation) {
-        c_corner_object_relation* relation_ptr = static_cast<c_corner_object_relation*>(&relation);
+    bool compatible(c_object_relation* relation) {
+        c_corner_object_relation* relation_ptr = static_cast<c_corner_object_relation*>(relation);
         return (abs(angle_cos_value - relation_ptr->angle_cos_value) < angle_cos_tolerance);
     }
 
-    bool calculate_transformation(c_object_relation& relation, c_object_transformation& transformation, bool switch_dir_mapping) {
+    bool calculate_transformation(c_object_relation* relation, c_object_transformation& transformation, bool switch_dir_mapping) {
 
-        c_corner_object_relation* relation_ptr = static_cast<c_corner_object_relation*>(&relation);
+        c_corner_object_relation* relation_ptr = static_cast<c_corner_object_relation*>(relation);
        
         transformation.translation_before_rotation = -pnt.X;
         transformation.translation_after_rotation = relation_ptr->pnt.X;
@@ -101,7 +102,7 @@ public:
     Vector3f dir2;
 };
 
-class c_curvature_object_relation : c_object_relation {
+class c_curvature_object_relation : public c_object_relation {
 public:
     c_curvature_object_relation(Vector3f& start_pnt, Vector3f& end_pnt, Vector3f& normal, float curvature) {
         this->start_pnt = start_pnt;
@@ -110,15 +111,15 @@ public:
         this->curvature = curvature;
     }
 
-    bool compatible(c_object_relation& relation) {
-        c_curvature_object_relation* relation_ptr = static_cast<c_curvature_object_relation*>(&relation);
+    bool compatible(c_object_relation* relation) {
+        c_curvature_object_relation* relation_ptr = static_cast<c_curvature_object_relation*>(relation);
 
         return (abs(curvature - relation_ptr->curvature) < curvature_tolerance);
     }
 
-    bool calculate_transformation(c_object_relation& relation, c_object_transformation& transformation, bool switch_dir_mapping) {
+    bool calculate_transformation(c_object_relation* relation, c_object_transformation& transformation, bool switch_dir_mapping) {
 
-        c_curvature_object_relation* relation_ptr = static_cast<c_curvature_object_relation*>(&relation);
+        c_curvature_object_relation* relation_ptr = static_cast<c_curvature_object_relation*>(relation);
 
         return false;
     }
@@ -132,10 +133,16 @@ public:
 
 class c_world_object {
 public:
-    c_world_object(c_object_relation& _relation, c_object_transformation& _transformation) : relation(_relation), transformation(_transformation) {
+    c_world_object(list <c_object_relation*> _relations, c_object_transformation& _transformation) : relations(_relations), transformation(_transformation) {
     }
 
-    list <c_object_relation> relations;
+    ~c_world_object() {
+        for (auto relation_it = relations.begin(); relation_it != relations.end(); relation_it++) {
+            delete *relation_it;
+        }
+    }
+
+    list <c_object_relation*> relations;
 
     list <c_object_point> points;
     c_object_transformation transformation;
@@ -156,6 +163,12 @@ public:
         pcl_octree.add_points(point_cloud, octree_ind_to_uv);
     }
 
+    ~c_observed_scene() {
+        for (auto relation_it = relations.begin(); relation_it != relations.end(); relation_it++) {
+            delete *relation_it;
+        }
+    }
+
     bool compatible(c_object_point& pnt, bool mark_compatible_point=true);
     void get_near_pnts(c_object_point& pnt, std::vector<int>& pointIdxNKNSearch, std::vector<float>& pointNKNSquaredDistance);
 
@@ -165,7 +178,7 @@ public:
 
     c_world_time time;
     c_point_cloud point_cloud;
-    list <c_object_relation> relations;
+    list <c_object_relation*> relations;
 
     c_pcl_octree pcl_octree;
     std::vector<Vector2i> octree_ind_to_uv;
@@ -180,8 +193,8 @@ public:
     
     void add_observation( c_point_cloud& point_cloud, double time, string& img_path);
     void match_observed_scene(c_observed_scene& scene);
-    void match_observed_scene_relation_to_existing_objects(c_observed_scene& scene, c_object_relation& relation);
-    void match_observed_scene_relation_to_previous_scenes(c_observed_scene& scene, c_object_relation& relation);
+    void match_observed_scene_relation_to_existing_objects(c_observed_scene& scene, c_object_relation* relation);
+    void match_observed_scene_relation_to_previous_scenes(c_observed_scene& scene, c_object_relation* relation);
     void detect_object_in_scenes_from_transformation(c_observed_scene& scene, c_observed_scene& prev_scene, c_world_object& detected_object);
 
     void predict();

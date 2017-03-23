@@ -13,32 +13,34 @@ c_world_time::c_world_time(double _time) {
     time = _time;
 }
     
-void c_world::match_observed_scene_relation_to_existing_objects(c_observed_scene& scene, c_object_relation& relation) {
+void c_world::match_observed_scene_relation_to_existing_objects(c_observed_scene& scene, c_object_relation* relation) {
     for (auto wo = world_objects.begin(); wo != world_objects.end(); wo++) {
-        if (!wo->relation.compatible(relation))
-            continue;
+        for (auto obj_rel = wo->relations.begin(); obj_rel != wo->relations.end(); obj_rel++) {
+            if (!(*obj_rel)->compatible(relation))
+                continue;
 
-        c_object_transformation transformation[2];
-        for (int i = 0; i < 2; i++) {
-            wo->relation.calculate_transformation(relation, transformation[i], i);
-        }
-
-        c_object_point transformed_obj_point;
-        auto pt = wo->points.begin();
-        while (pt != wo->points.end()) {
-            bool point_compatible_with_scene = false;
+            c_object_transformation transformation[2];
             for (int i = 0; i < 2; i++) {
-                transformation[i].transform_object_point(*pt, transformed_obj_point);
-                point_compatible_with_scene = point_compatible_with_scene || scene.compatible(transformed_obj_point);
+                (*obj_rel)->calculate_transformation(relation, transformation[i], i);
             }
 
-            if (point_compatible_with_scene) {
-                pt++;
-                continue;
-            }
-            else {
-                pt = wo->points.erase(pt);
-                continue;
+            c_object_point transformed_obj_point;
+            auto pt = wo->points.begin();
+            while (pt != wo->points.end()) {
+                bool point_compatible_with_scene = false;
+                for (int i = 0; i < 2; i++) {
+                    transformation[i].transform_object_point(*pt, transformed_obj_point);
+                    point_compatible_with_scene = point_compatible_with_scene || scene.compatible(transformed_obj_point);
+                }
+
+                if (point_compatible_with_scene) {
+                    pt++;
+                    continue;
+                }
+                else {
+                    pt = wo->points.erase(pt);
+                    continue;
+                }
             }
         }
     }
@@ -70,7 +72,7 @@ void c_world::detect_object_in_scenes_from_transformation(c_observed_scene& scen
     }
 }
 
-void c_world::match_observed_scene_relation_to_previous_scenes(c_observed_scene& scene, c_object_relation& relation) {
+void c_world::match_observed_scene_relation_to_previous_scenes(c_observed_scene& scene, c_object_relation* relation) {
     size_t u, v, prev_u, prev_v;
     int i, j;
 
@@ -85,17 +87,19 @@ void c_world::match_observed_scene_relation_to_previous_scenes(c_observed_scene&
 
     for (auto it = prev_scene.relations.begin(); it != prev_scene.relations.end(); it++) {
 
-        if (!(*it).compatible(relation))
+        if (!(*it)->compatible(relation))
             continue;
 
         c_object_transformation transformation;
         for (int i = 0; i < 2; i++) {
-            (*it).calculate_transformation(relation, transformation, i);
+            (*it)->calculate_transformation(relation, transformation, i);
 
             if (transformation.is_identity)
                 continue;
 
-            c_world_object detected_object(*it, transformation);
+            list <c_object_relation*> object_relations;
+            object_relations.push_back(*it);
+            c_world_object detected_object(object_relations, transformation);
             detect_object_in_scenes_from_transformation(scene, prev_scene, detected_object);
             if (detected_object.points.size() > 0) {
                 world_objects.push_back(detected_object);
