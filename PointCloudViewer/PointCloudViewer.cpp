@@ -100,18 +100,11 @@ enum class c_interactive_mode: int
     updating_points_to_hide,
     selecting_points_to_keep,
     updating_points_to_keep,
-    filter_points
+    filter_label
 };
 c_interactive_mode interactive_mode = c_interactive_mode::idle;
 
-
-enum class c_filter_points_mode : int
-{
-    filter_nothing,
-    filter_labels
-};
-c_filter_points_mode filter_points_mode = c_filter_points_mode::filter_nothing;
-
+Vector3i filtered_label = Vector3i(1, 0, 0);
 
 Vector2i min_visible;
 Vector2i max_visible;
@@ -150,7 +143,7 @@ void reset_camera_position() {
 }
 
 void reset_settings() {
-    filter_points_mode = c_filter_points_mode::filter_nothing;
+    filtered_label = Vector3i(1,0,0);
 
     translate_camera_speed = 0.03f;
     
@@ -199,47 +192,55 @@ void update_points_visibility() {
         projection_matrix.col(i) << projection_matrix_raw[i * 4], projection_matrix_raw[i * 4 + 1], projection_matrix_raw[i * 4 + 2], projection_matrix_raw[i * 4 + 3];
     }
 
-    for (auto it = point_cloud.points.begin(); it != point_cloud.points.end(); ++it) {
-
-        if (interactive_mode == c_interactive_mode::filter_points) {
-            if (filter_points_mode == c_filter_points_mode::filter_labels) {
-                if (it->Label == Vector3i::Zero()) {
-                    it->visible = 0;
-                }
+    if (interactive_mode == c_interactive_mode::filter_label) {
+        bool found_label = false;
+        for (auto it = point_cloud.points.begin(); it != point_cloud.points.end(); ++it) {
+            if (it->Label == filtered_label) {
+                found_label = true;
+                it->visible = 1;
             }
-            else 
-                if (filter_points_mode == c_filter_points_mode::filter_nothing) {
-                    it->visible = 1;
-                }
-            continue;
+            else {
+                it->visible = 0;
+            }
         }
-
-        if (!it->visible)
-            continue;
-
-        if (get_point_screen_coordinate(*it, model_view_matrix, projection_matrix, point_screen_coordinates)) {
-            bool point_in_selected_box = true;
-            for (int i = 0; i < 2; i++) {
-                if (point_screen_coordinates(i) < min_visible(i) || point_screen_coordinates(i) > max_visible(i)) {
-                    point_in_selected_box = false;
-                    break;
-                }
+        if (found_label) {
+            filtered_label += Vector3i(1, 0, 0);
+        }
+        else {
+            for (auto it = point_cloud.points.begin(); it != point_cloud.points.end(); ++it) {
+                it->visible = 1;
             }
+            filtered_label = Vector3i(1, 0, 0);
+        }
+    }
+    else {
+        for (auto it = point_cloud.points.begin(); it != point_cloud.points.end(); ++it) {
+            if (!it->visible)
+                continue;
 
-            if (interactive_mode == c_interactive_mode::updating_points_to_keep) {
-                if (!point_in_selected_box) {
-                    it->visible = 0;
+            if (get_point_screen_coordinate(*it, model_view_matrix, projection_matrix, point_screen_coordinates)) {
+                bool point_in_selected_box = true;
+                for (int i = 0; i < 2; i++) {
+                    if (point_screen_coordinates(i) < min_visible(i) || point_screen_coordinates(i) > max_visible(i)) {
+                        point_in_selected_box = false;
+                        break;
+                    }
                 }
-            } 
-            else
-            if (interactive_mode == c_interactive_mode::updating_points_to_hide) {
-                if (point_in_selected_box) {
-                    it->visible = 0;
+
+                if (interactive_mode == c_interactive_mode::updating_points_to_keep) {
+                    if (!point_in_selected_box) {
+                        it->visible = 0;
+                    }
                 }
+                else
+                    if (interactive_mode == c_interactive_mode::updating_points_to_hide) {
+                        if (point_in_selected_box) {
+                            it->visible = 0;
+                        }
+                    }
             }
         }
     }
-
     refresh_display_lists();
 }
 
@@ -461,8 +462,7 @@ LONG WINAPI MainWndProc(
         case 0x46:
         case 0x66:
             // Process F, f
-            interactive_mode = c_interactive_mode::filter_points;
-            filter_points_mode = (filter_points_mode == c_filter_points_mode::filter_nothing) ? c_filter_points_mode::filter_labels : c_filter_points_mode::filter_nothing;
+            interactive_mode = c_interactive_mode::filter_label;
             break;
         case 0x48:
         case 0x68:
@@ -781,7 +781,7 @@ GLvoid drawScene(GLvoid)
 
     if (interactive_mode == c_interactive_mode::updating_points_to_hide ||
         interactive_mode == c_interactive_mode::updating_points_to_keep ||
-        interactive_mode == c_interactive_mode::filter_points
+        interactive_mode == c_interactive_mode::filter_label
         ) {
         update_points_visibility();
         interactive_mode = c_interactive_mode::idle;
