@@ -143,17 +143,16 @@ namespace ais {
                 if (abs(edge_chain[node_i].curvature - edge_chain[start_node].curvature) > curvature_tolerance) {
                     c_curvature_object_relation* relation = new c_curvature_object_relation(point_cloud.points[edge_chain[start_node].uv(0)][edge_chain[start_node].uv(1)].X,
                         point_cloud.points[edge_chain[node_i].uv(0)][edge_chain[node_i].uv(1)].X,
-                        edge_chain[node_i].normal, edge_chain[node_i].curvature);
+                        edge_chain[start_node].normal, edge_chain[start_node].curvature);
                     relations.push_back(relation);
                     start_node = node_i;
                 }
             }
 
             c_curvature_object_relation* relation = new c_curvature_object_relation(point_cloud.points[edge_chain[start_node].uv(0)][edge_chain[start_node].uv(1)].X,
-                point_cloud.points[edge_chain[node_i].uv(0)][edge_chain[node_i].uv(1)].X,
-                edge_chain[node_i].normal, edge_chain[node_i].curvature);
+                point_cloud.points[edge_chain[node_i-1].uv(0)][edge_chain[node_i-1].uv(1)].X,
+                edge_chain[start_node].normal, edge_chain[start_node].curvature);
             relations.push_back(relation);
-            start_node = node_i;
         }
 
         return true;

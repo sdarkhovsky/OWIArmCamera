@@ -3,8 +3,8 @@
 
 namespace ais {
     const float pi = 3.14159265358;
-    const float gaussian_mask_taper_error = 0.0001;
-    const float curvature_tolerance = 0.001;
+    const float gaussian_mask_taper_error = 0.005;
+    const float curvature_tolerance = 0.01;
     const float angle_cos_tolerance = 3.0* 2.0 / 180.0;
     const float normal_deviation_tolerance = 1.0f - 0.1f;
     const float compatible_point_color_difference_tolerance = 25.0;

@@ -152,6 +152,7 @@ class c_observed_scene {
 public:
     c_observed_scene(c_point_cloud& point_cloud, c_world_time& world_time, string& img_path);
 
+/*
     // move constructors
     c_observed_scene(c_observed_scene&& scene) {
         time = scene.time;
@@ -162,7 +163,7 @@ public:
 
         pcl_octree.add_points(point_cloud, octree_ind_to_uv);
     }
-
+    */
     ~c_observed_scene() {
         for (auto relation_it = relations.begin(); relation_it != relations.end(); relation_it++) {
             delete *relation_it;
@@ -190,17 +191,21 @@ public:
 
 class c_world {
 public:
-    
+    ~c_world() {
+        for (auto observed_scene_it = observed_scenes.begin(); observed_scene_it != observed_scenes.end(); observed_scene_it++) {
+            delete *observed_scene_it;
+        }
+    }
     void add_observation( c_point_cloud& point_cloud, double time, string& img_path);
-    void match_observed_scene(c_observed_scene& scene);
-    void match_observed_scene_relation_to_existing_objects(c_observed_scene& scene, c_object_relation* relation);
-    void match_observed_scene_relation_to_previous_scenes(c_observed_scene& scene, c_object_relation* relation);
-    void detect_object_in_scenes_from_transformation(c_observed_scene& scene, c_observed_scene& prev_scene, c_world_object& detected_object);
+    void match_observed_scene(c_observed_scene* scene);
+    void match_observed_scene_relation_to_existing_objects(c_observed_scene* scene, c_object_relation* relation);
+    void match_observed_scene_relation_to_previous_scenes(c_observed_scene* scene, c_object_relation* relation);
+    void detect_object_in_scenes_from_transformation(c_observed_scene* scene, c_observed_scene* prev_scene, c_world_object& detected_object);
 
     void predict();
 
     std::vector < c_world_object > world_objects;
-    std::vector < c_observed_scene > observed_scenes;
+    std::vector < c_observed_scene* > observed_scenes;
 };
 
 }

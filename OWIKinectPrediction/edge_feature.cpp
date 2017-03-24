@@ -207,6 +207,8 @@ namespace ais {
             mask_radius = 1;
         int mask_size = 2 * mask_radius + 1;
         mask.resize(mask_size);
+        dmask.resize(mask_size);
+        ddmask.resize(mask_size);
         float step2 = step*step;
         float sigma2 = sigma*sigma;
         float sigma4 = sigma2*sigma2;
