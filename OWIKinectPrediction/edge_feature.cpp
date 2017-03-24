@@ -175,9 +175,10 @@ namespace ais {
             chain++;
         }
 
+        float max_chain_length_filter_value = 0.99;
         chain = edge_chains.begin();
         while (chain != edge_chains.end()) {
-            if (chain->size() < (float)max_chain_length*0.4) {
+            if (chain->size() < (float)max_chain_length*max_chain_length_filter_value) {
                 chain = edge_chains.erase(chain);
             }
             else {
@@ -234,7 +235,12 @@ namespace ais {
         float t_step = 0.5;
         float curvature;
         vector<float> mask, dmask, ddmask;
-        Vector3f X, dX_dt, d2X_dt2;
+
+#define TEST_EDGE_SMOOTHING
+#ifdef TEST_EDGE_SMOOTHING
+        Vector3f X_s;
+#endif
+        Vector3f dX_dt, d2X_dt2;
 
         int chain_size = edge_chain.size();
 
@@ -245,6 +251,9 @@ namespace ais {
         int mask_radius = (mask.size()-1)/2;
 
         for (int node_i = 0; node_i < chain_size; node_i++) {
+#ifdef TEST_EDGE_SMOOTHING
+            X_s = Vector3f::Zero();
+#endif
             dX_dt = Vector3f::Zero();
             d2X_dt2 = Vector3f::Zero();
             float tau = node_i;
@@ -267,12 +276,22 @@ namespace ais {
                         X_t = X_i + (X_ip - X_i)*(t - t_i);
                     }
 
+#ifdef TEST_EDGE_SMOOTHING
+                X_s += X_t * mask[k + mask_radius];
+#endif
                 dX_dt += X_t * dmask[k + mask_radius];
                 d2X_dt2 += X_t * ddmask[k + mask_radius];
             }
             edge_chain[node_i].curvature = dX_dt.cross(d2X_dt2).norm() / pow(dX_dt.norm(),3.0);
             edge_chain[node_i].normal = dX_dt.cross(d2X_dt2);
             edge_chain[node_i].normal.normalize();
+
+#ifdef TEST_EDGE_SMOOTHING
+            Vector2i uv = edge_chain[node_i].uv + Vector2i(-1, -1);
+            point_cloud.points[uv(0)][uv(1)].X = X_s;
+            point_cloud.points[uv(0)][uv(1)].Clr = Vector3f(255,0,0);
+            point_cloud.points[uv(0)][uv(1)].Label = Vector3i(2, 0, 0);
+#endif
         }
 
         return true;

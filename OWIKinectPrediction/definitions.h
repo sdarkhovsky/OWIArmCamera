@@ -2,6 +2,7 @@
 #define DEFINITIONS_H
 
 namespace ais {
+    // the constants used in the projects have name endings _value, _error, _tolerance
     const float pi = 3.14159265358;
     const float gaussian_mask_taper_error = 0.005;
     const float curvature_tolerance = 0.01;
