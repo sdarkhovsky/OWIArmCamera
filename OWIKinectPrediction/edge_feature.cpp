@@ -208,69 +208,58 @@ namespace ais {
         float step2 = step*step;
         float sigma2 = sigma*sigma;
         float sigma4 = sigma2*sigma2;
-
+        float normalizer = sigma*sqrt(2 * pi);
         // gaussian
         mask_radius = steps_per_sigma+1;
         // find mask sizes
         while (true) {
             float psi = mask_radius*step;
-            float val = exp(-psi*psi / (2 * sigma2));
+            float val = exp(-psi*psi / (2 * sigma2))/normalizer;
             if (val < taper_error)
                 break;
             mask_radius++;
         }
+        // derivative of gaussian
+        int dmask_radius = steps_per_sigma + 1;
+        while (true) {
+            float psi = dmask_radius*step;
+            float val = exp(-psi*psi / (2 * sigma2))*psi / sigma2 / normalizer;
+            if (val < taper_error)
+                break;
+            dmask_radius++;
+        }
+        // second derivative of gaussian
+        const float SQRT_3 = 1.7320508075688772935274463415059;
+        int ddmask_radius = steps_per_sigma*SQRT_3 + 1;
+        // find mask sizes
+        while (true) {
+            float psi = ddmask_radius*step;
+            float val = exp(-psi*psi / (2 * sigma2))*(psi*psi - sigma2) / sigma4 / normalizer;
+            if (val < taper_error)
+                break;
+            ddmask_radius++;
+        }
+
+        if (mask_radius < dmask_radius) mask_radius = dmask_radius;
+        if (mask_radius < ddmask_radius) mask_radius = ddmask_radius;
+
+
         mask.resize(2 * mask_radius + 1);
+        dmask.resize(2 * mask_radius + 1);
+        ddmask.resize(2 * mask_radius + 1);
 
         sum = 0;
         for (i = -mask_radius; i <= mask_radius; i++) {
             i2 = i*i*step2;
             mask[i + mask_radius] = exp(-i2 / (2.0*sigma2));
+            dmask[i + mask_radius] = exp(-i2 / (2.0*sigma2))*i*step / sigma2;
+            ddmask[i + mask_radius] = exp(-i2 / (2.0*sigma2))*(i2 - sigma2) / sigma4;
+
             sum += mask[i + mask_radius];
         }
         for (i = 0; i < mask.size(); i++) {
             mask[i] /= sum;
-        }
-
-
-        // derivative of gaussian
-        mask_radius = steps_per_sigma+1;
-        // find mask sizes
-        while (true) {
-            float psi = mask_radius*step;
-            float val = exp(-psi*psi / (2 * sigma2))*psi / sigma2;
-            if ( val < taper_error)
-                break;
-            mask_radius++;
-        }
-        dmask.resize(2 * mask_radius + 1);
-
-        for (i = -mask_radius; i <= mask_radius; i++) {
-            i2 = i*i*step2;
-            dmask[i + mask_radius] = exp(-i2 / (2.0*sigma2))*i*step/sigma2;
-        }
-        for (i = 0; i < dmask.size(); i++) {
             dmask[i] /= sum;
-        }
-
-
-        // second derivative of gaussian
-        const float SQRT_3 = 1.7320508075688772935274463415059;
-        mask_radius = steps_per_sigma*SQRT_3 + 1;
-        // find mask sizes
-        while (true) {
-            float psi = mask_radius*step;
-            float val = exp(-psi*psi / (2 * sigma2))*(psi*psi - sigma2) / sigma4;
-            if (val < taper_error)
-                break;
-            mask_radius++;
-        }
-        ddmask.resize(2 * mask_radius + 1);
-
-        for (i = -mask_radius; i <= mask_radius; i++) {
-            i2 = i*i*step2;
-            ddmask[i + mask_radius] = exp(-i2 / (2.0*sigma2))*(i2 - sigma2)/ sigma4;
-        }
-        for (i = 0; i < ddmask.size(); i++) {
             ddmask[i] /= sum;
         }
 
@@ -292,8 +281,10 @@ namespace ais {
 
         // (2,4), (2,6),  (3,9)
         float sigma = 2.0;  // in units of measure of the parameter t of the curve X(t), which is 1 between adjacent edge chain nodes
-        float steps_per_sigma = 6;
+        float steps_per_sigma = 4;
         float t_step = sigma/steps_per_sigma;
+
+        const float gaussian_mask_taper_error = 0.000001; // should be small enough for ddmask as values are small there; 0.00001 should do too.
         if (!calculate_gaussian_masks(sigma, steps_per_sigma, gaussian_mask_taper_error, mask, dmask, ddmask))
             return false;
         int mask_radius = (mask.size()-1)/2;
@@ -324,17 +315,17 @@ namespace ais {
                         X_t = X_i + (X_ip - X_i)*(t - t_i);
                     }
 
-#define TEST_SHAPES
+//#define TEST_SHAPES
 #ifdef TEST_SHAPES
                     //X_t = t*Vector3f(1.0, 2.0, 1.5);
-                    float angle_step = pi / 10.0; 
+                    float angle_step = pi / 500.0;
                     /* 1 in the tau unit of measure means here the angle step. For example current node_i is 4, and t_step is 0.5
                        Then t changes as   ...,1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5, ...
                        This will correspond to the angles ...1.5*angle_step,... 5.5*angle_step,...
                        at which X_t is evaluated and multiplied by the mask, dmask,ddmask
                        X_t corrsponds to 
                     */
-                    float radius = 2.5;
+                    float radius = 0.02;
                     X_t = radius* Vector3f(cos(angle_step*t), sin(angle_step*t), 0);
 #endif
 #ifdef TEST_EDGE_SMOOTHING
@@ -348,8 +339,8 @@ namespace ais {
             float nom = dX_dt.cross(d2X_dt2).norm();
             float denom = pow(dX_dt.norm(), 3.0);
 
-            std::cout << " node_i= " << node_i << " nom= " << nom << " dX_dt.norm()= " << dX_dt.norm() << " d2X_dt2.norm()= " << d2X_dt2.norm() << std::endl;
-            //std::cout << " node_i= " << node_i << " nom= " << nom << " denom=" << denom << " curvature=" << edge_chain[node_i].curvature << " radius=" << 1.0/edge_chain[node_i].curvature << std::endl;
+            //std::cout << " node_i= " << node_i << " nom= " << nom << " denom=" << denom << " curvature=" << edge_chain[node_i].curvature << " dX_dt.norm()= " << dX_dt.norm() << " d2X_dt2.norm()= " << d2X_dt2.norm() << std::endl;
+            std::cout << " node_i= " << node_i << " nom= " << nom << " denom=" << denom << " curvature=" << edge_chain[node_i].curvature << " radius=" << 1.0/edge_chain[node_i].curvature << std::endl;
 #endif
             edge_chain[node_i].normal = dX_dt.cross(d2X_dt2);
             edge_chain[node_i].normal.normalize();
