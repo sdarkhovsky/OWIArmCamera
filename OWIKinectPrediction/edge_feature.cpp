@@ -54,16 +54,69 @@ namespace ais {
     }
 
     bool advance_along_edge(c_point_cloud& point_cloud, Vector2i& edge_dir, bool push_back, list<Vector2i>& edge_list) {
-        Vector2i edge_pnt;
+        Vector2i edge_pnt, uv;
+        Vector3f cur_X, prev_X, prev_prev_X;
+        float cur_dist;
 
         if (push_back)
             edge_pnt = edge_list.back();
         else
             edge_pnt = edge_list.front();
 
+        //11111111111111111111111111
+        if (edge_pnt == Vector2i(17, 60)) {
+            int ii = 0;
+        }
+        //11111111111111111111111111
+
+
         while(true) {
             if (!step_along_edge(point_cloud, edge_dir, edge_pnt))
                 break;
+
+            // interrupt the edge if the distance between previous points on the edge differs significantly from the one between the newly discovered point and the previous point
+            float aver_dist = 0;
+            if (push_back) {
+                auto rit = edge_list.rbegin();
+                uv = *rit;
+                prev_X = point_cloud.points[uv(0)][uv(1)].X;
+                rit++;
+                if (rit != edge_list.rend()) {
+                    uv = *rit;
+                    prev_prev_X = point_cloud.points[uv(0)][uv(1)].X;
+                    aver_dist = (prev_X - prev_prev_X).norm();
+                }
+            }
+            else {
+                auto it = edge_list.begin();
+                uv = *it;
+                prev_X = point_cloud.points[uv(0)][uv(1)].X;
+                it++;
+                if (it != edge_list.end()) {
+                    uv = *it;
+                    prev_prev_X = point_cloud.points[uv(0)][uv(1)].X;
+                    aver_dist = (prev_X - prev_prev_X).norm();
+                }
+            }
+
+            cur_X = point_cloud.points[edge_pnt(0)][edge_pnt(1)].X;
+            cur_dist = (prev_X - cur_X).norm();
+
+            if (aver_dist > 0 && cur_dist > 0) {
+                float coeff = cur_dist / aver_dist;
+
+                const float max_coeff = 3.0;
+                if (coeff > max_coeff || 1.0 / coeff > max_coeff) {
+                    break;
+                }
+            }
+
+//11111111111111111111111111
+            if (edge_pnt == Vector2i(17, 60)) {
+//                111111111111111111111111111111111111111111 prev and current points have the same X
+                int ii = 0;
+            }
+//11111111111111111111111111
 
             if (push_back)
                 edge_list.push_back(edge_pnt);
@@ -179,7 +232,7 @@ namespace ais {
             chain++;
         }
 
-        float max_chain_length_filter_value = 0.99;
+        float max_chain_length_filter_value = 0.95;
         chain = edge_chains.begin();
         while (chain != edge_chains.end()) {
             if (chain->size() < (float)max_chain_length*max_chain_length_filter_value) {

@@ -112,6 +112,9 @@ Vector2i max_visible;
 Vector3f eye_pnt;
 Vector3f lookat_pnt;
 
+string text_info;
+bool display_text_info = false;
+
 bool get_command_line_options(vector< string >& arg_list) {
     int i;
     // requests parameters to be passed in pairs
@@ -143,11 +146,12 @@ void reset_camera_position() {
 }
 
 void reset_settings() {
+    display_text_info = false;
     filtered_label = Vector3i(1,0,0);
 
     translate_camera_speed = 0.03f;
     
-    rotate_camera_speed = 0.01f;
+    rotate_camera_speed = 0.002f;
 
     edge_length = 0.01f;
 
@@ -174,6 +178,39 @@ bool get_point_screen_coordinate(const c_point_cloud_point& point, const Matrix4
     point_screen_coordinates(1) = (int)((float)viewport.height*(-normalized_device_coordinates(1) + 1.0) / 2.0) + viewport.y;
     return true;
 }
+
+void printtext() {
+    if (display_text_info) {
+        Vector2i point_screen_coordinates;
+
+        GLfloat model_view_matrix_raw[16];
+        glGetFloatv(GL_MODELVIEW_MATRIX, (GLfloat*)&model_view_matrix_raw);
+        Matrix4f model_view_matrix;
+        for (int i = 0; i < 4; i++) {
+            model_view_matrix.col(i) << model_view_matrix_raw[i * 4], model_view_matrix_raw[i * 4 + 1], model_view_matrix_raw[i * 4 + 2], model_view_matrix_raw[i * 4 + 3];
+        }
+
+        GLfloat projection_matrix_raw[16];
+        glGetFloatv(GL_PROJECTION_MATRIX, (GLfloat*)&projection_matrix_raw);
+        Matrix4f projection_matrix;
+        for (int i = 0; i < 4; i++) {
+            projection_matrix.col(i) << projection_matrix_raw[i * 4], projection_matrix_raw[i * 4 + 1], projection_matrix_raw[i * 4 + 2], projection_matrix_raw[i * 4 + 3];
+        }
+
+        for (auto it = point_cloud.points.begin(); it != point_cloud.points.end(); ++it) {
+            if (!it->visible)
+                continue;
+
+            if (get_point_screen_coordinate(*it, model_view_matrix, projection_matrix, point_screen_coordinates)) {
+                if (abs(point_screen_coordinates(0) - last_mouse_pos_x) < 2 && abs(point_screen_coordinates(1) - last_mouse_pos_y) < 2) {
+                    text_info = "u= " + std::to_string(it->u) + " v= " + std::to_string(it->v) + " X= (" + std::to_string(it->X(0)) + ", " + std::to_string(it->X(1)) + ", " + std::to_string(it->X(2)) + ")";
+                    TextOut(ghDC, 0, 0, text_info.c_str(), text_info.size());
+                }
+            }
+        }
+    }
+}
+
 
 void update_points_visibility() {
     Vector2i point_screen_coordinates;
@@ -470,6 +507,11 @@ LONG WINAPI MainWndProc(
             interactive_mode = c_interactive_mode::selecting_points_to_hide;
             min_visible = Vector2i(INT_MAX, INT_MAX);
             max_visible = Vector2i(INT_MIN, INT_MIN);
+            break;
+        case 0x49:
+        case 0x69:
+            // Process I, i
+            display_text_info = !display_text_info;
             break;
         case 0x4B:
         case 0x6B:
@@ -790,4 +832,6 @@ GLvoid drawScene(GLvoid)
     glCallList(POINT_CLOUD);
      
     SWAPBUFFERS;
+
+    printtext();
 }
