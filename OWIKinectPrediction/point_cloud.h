@@ -77,18 +77,34 @@ namespace ais {
         std::list <c_point_cloud_point> elements;
     };
 
+
+    class c_color_edge_node {
+    public:
+        c_color_edge_node() {
+            uv = Vector2i::Zero();
+        }
+        c_color_edge_node(Vector2i& uv) {
+            this->uv = uv;
+        }
+        Vector2i uv;
+    };
+
     class c_edge_node {
     public:
         c_edge_node() {
+            uv = Vector2i::Zero();
             curvature = 0;
             normal = Vector3f::Zero();
+            X = Vector3f::Zero();
         }
-        c_edge_node(Vector2i& uv) {
+        c_edge_node(Vector2i& uv, Vector3f& X) {
             this->uv = uv;
+            this->X = X;
             curvature = 0;
             normal = Vector3f::Zero();
         }
         Vector2i uv;
+        Vector3f X; // filtered (smoothed) value
         Vector3f normal;
         float curvature;
     };

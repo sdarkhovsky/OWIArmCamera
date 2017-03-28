@@ -63,61 +63,9 @@ namespace ais {
         else
             edge_pnt = edge_list.front();
 
-        //11111111111111111111111111
-        if (edge_pnt == Vector2i(17, 60)) {
-            int ii = 0;
-        }
-        //11111111111111111111111111
-
-
         while(true) {
             if (!step_along_edge(point_cloud, edge_dir, edge_pnt))
                 break;
-
-            // interrupt the edge if the distance between previous points on the edge differs significantly from the one between the newly discovered point and the previous point
-            float aver_dist = 0;
-            if (push_back) {
-                auto rit = edge_list.rbegin();
-                uv = *rit;
-                prev_X = point_cloud.points[uv(0)][uv(1)].X;
-                rit++;
-                if (rit != edge_list.rend()) {
-                    uv = *rit;
-                    prev_prev_X = point_cloud.points[uv(0)][uv(1)].X;
-                    aver_dist = (prev_X - prev_prev_X).norm();
-                }
-            }
-            else {
-                auto it = edge_list.begin();
-                uv = *it;
-                prev_X = point_cloud.points[uv(0)][uv(1)].X;
-                it++;
-                if (it != edge_list.end()) {
-                    uv = *it;
-                    prev_prev_X = point_cloud.points[uv(0)][uv(1)].X;
-                    aver_dist = (prev_X - prev_prev_X).norm();
-                }
-            }
-
-            cur_X = point_cloud.points[edge_pnt(0)][edge_pnt(1)].X;
-            cur_dist = (prev_X - cur_X).norm();
-
-            if (aver_dist > 0 && cur_dist > 0) {
-                float coeff = cur_dist / aver_dist;
-
-                const float max_coeff = 3.0;
-                if (coeff > max_coeff || 1.0 / coeff > max_coeff) {
-                    break;
-                }
-            }
-
-//11111111111111111111111111
-            if (edge_pnt == Vector2i(17, 60)) {
-//                111111111111111111111111111111111111111111 prev and current points have the same X
-                int ii = 0;
-            }
-//11111111111111111111111111
-
             if (push_back)
                 edge_list.push_back(edge_pnt);
             else
@@ -129,7 +77,7 @@ namespace ais {
         return true;
     }
 
-    bool get_edge_chains_internal(c_point_cloud& point_cloud, vector<vector<c_edge_node>>& edge_chains) {
+    bool get_color_edge_chains(c_point_cloud& point_cloud, list<list<c_color_edge_node>>& edge_chains) {
         size_t u, v, j;
         int i1, i2, i3;
         int u1, v1;
@@ -191,8 +139,9 @@ namespace ais {
                     advance_along_edge(point_cloud, edge_dir, false, edge_list);
 
                     // see http://stackoverflow.com/questions/5218713/one-liner-to-convert-from-listt-to-vectort
-                    std::vector<c_edge_node> edge_chain{ std::make_move_iterator(std::begin(edge_list)),
+                    std::list<c_color_edge_node> edge_chain{ std::make_move_iterator(std::begin(edge_list)),
                         std::make_move_iterator(std::end(edge_list)) };
+
                     edge_chains.push_back(edge_chain);
                 }
             }
@@ -201,7 +150,7 @@ namespace ais {
         return true;
     }
 
-    bool mark_edge_chains(c_point_cloud& point_cloud, vector<vector<c_edge_node>>& edge_chains) {
+    bool mark_edge_chains(c_point_cloud& point_cloud, list<list<c_color_edge_node>>& edge_chains) {
 
         srand(time(NULL)); // initialize random seed
         for (auto chain = edge_chains.begin(); chain != edge_chains.end(); chain++) {
@@ -219,35 +168,82 @@ namespace ais {
         return true;
     }
 
-    bool get_edge_chains(c_point_cloud& point_cloud, vector<vector<c_edge_node>>& edge_chains) {
-        size_t u, v;
 
+    template <class chains_type>
+    void filter_chain_by_length(chains_type& chains) {
         size_t max_chain_length = 0;
-        get_edge_chains_internal(point_cloud, edge_chains);
 
-        auto chain = edge_chains.begin();
-        while (chain != edge_chains.end()) {
+        for (auto chain = chains.begin(); chain != chains.end(); chain++) {
             if (chain->size() > max_chain_length)
                 max_chain_length = chain->size();
-            chain++;
         }
 
-        float max_chain_length_filter_value = 0.95;
-        chain = edge_chains.begin();
-        while (chain != edge_chains.end()) {
+        float max_chain_length_filter_value = 0.99;
+        auto chain = chains.begin();
+        while (chain != chains.end()) {
             if (chain->size() < (float)max_chain_length*max_chain_length_filter_value) {
-                chain = edge_chains.erase(chain);
+                chain = chains.erase(chain);
             }
             else {
                 chain++;
             }
         }
+    }
 
-        for (chain = edge_chains.begin(); chain != edge_chains.end(); chain++) {
-            calculate_edge_chain_curvature(point_cloud, *chain);
+    bool get_edge_chains(c_point_cloud& point_cloud, vector<vector<c_edge_node>>& edge_chains) {
+        Vector2i uv;
+        Vector3f X_prev, X;
+        float distance_prev, distance_next;
+        list<list<c_color_edge_node>> color_edge_chains;
+
+        get_color_edge_chains(point_cloud, color_edge_chains);
+
+        filter_chain_by_length(color_edge_chains);
+        mark_edge_chains(point_cloud, color_edge_chains);
+
+        edge_chains.clear();
+        for (auto color_chain_it = color_edge_chains.begin(); color_chain_it != color_edge_chains.end(); color_chain_it++) {
+            vector<c_edge_node> chain;
+            // remove nodes with repeating X, which is specific of Kinect sensor, repeating same X for a nbhd of pixels, because the color resolution is greater than the depth one
+            auto color_node_it = color_chain_it->begin();
+            uv = color_node_it->uv;
+            X_prev = point_cloud.points[uv(0)][uv(1)].X;
+            c_edge_node node(uv, X_prev);
+            chain.push_back(node);
+            color_node_it++;
+            while (color_node_it != color_chain_it->end()) {
+                uv = color_node_it->uv;
+                X = point_cloud.points[uv(0)][uv(1)].X;
+                if (X != X_prev) {
+                    c_edge_node node(uv, X);
+                    chain.push_back(node);
+                }
+                color_node_it++;
+            }
+
+            // break edge into subedges where the adjacent nodes distance varies significantly
+            vector<c_edge_node> uniform_chain;
+            uniform_chain.push_back(chain[0]);
+            for (int node_i = 1; node_i < chain.size()-1; node_i++) {
+                distance_prev = (chain[node_i].X - chain[node_i - 1].X).norm();
+                distance_next = (chain[node_i].X - chain[node_i + 1].X).norm();
+                const float distance_variation_tolerance = 10;
+                float variation = distance_prev / distance_next;
+                if (variation > distance_variation_tolerance || 1.0 / variation > distance_variation_tolerance) {
+                    edge_chains.push_back(uniform_chain);
+                    uniform_chain.clear();
+                }
+                uniform_chain.push_back(chain[node_i]);
+            }
+            edge_chains.push_back(uniform_chain);
         }
 
-        mark_edge_chains(point_cloud, edge_chains);
+
+        filter_chain_by_length(edge_chains);
+
+        for (auto chain = edge_chains.begin(); chain != edge_chains.end(); chain++) {
+            calculate_edge_chain_curvature(point_cloud, *chain);
+        }
 
         return true;
     }
@@ -331,6 +327,22 @@ namespace ais {
         Vector3f dX_dt, d2X_dt2;
 
         int chain_size = edge_chain.size();
+
+#if 1
+        for (int node_i = 0; node_i < chain_size; node_i++) {
+            Vector2i uv = edge_chain[node_i].uv;
+            Vector3f X = point_cloud.points[uv(0)][uv(1)].X;
+            Vector3f X_prev = Vector3f::Zero();
+            Vector2i uv_prev;
+            if (node_i > 0) {
+                uv_prev = edge_chain[node_i-1].uv;
+                X_prev = point_cloud.points[uv_prev(0)][uv_prev(1)].X;
+            }
+
+            std::cout << " node_i= " << node_i << " uv= (" << uv(0) << ", " << uv(1) << ")" << " X= (" << X(0) << ", " << X(1) << ", " << X(2) << ")" << " dist= " << (X-X_prev).norm() << std::endl;
+        }
+        std::cout << std::endl;
+#endif
 
         // (2,4), (2,6),  (3,9)
         float sigma = 2.0;  // in units of measure of the parameter t of the curve X(t), which is 1 between adjacent edge chain nodes
