@@ -193,7 +193,6 @@ namespace ais {
     bool get_edge_chains(c_point_cloud& point_cloud, vector<vector<c_edge_node>>& edge_chains) {
         Vector2i uv;
         Vector3f X_prev, X;
-        float distance_prev, distance_next;
         list<list<c_color_edge_node>> color_edge_chains;
 
         get_color_edge_chains(point_cloud, color_edge_chains);
@@ -202,16 +201,16 @@ namespace ais {
         mark_edge_chains(point_cloud, color_edge_chains);
 
         edge_chains.clear();
-        for (auto color_chain_it = color_edge_chains.begin(); color_chain_it != color_edge_chains.end(); color_chain_it++) {
+        for (auto color_chain = color_edge_chains.begin(); color_chain != color_edge_chains.end(); color_chain++) {
             vector<c_edge_node> chain;
             // remove nodes with repeating X, which is specific of Kinect sensor, repeating same X for a nbhd of pixels, because the color resolution is greater than the depth one
-            auto color_node_it = color_chain_it->begin();
+            auto color_node_it = color_chain->begin();
             uv = color_node_it->uv;
             X_prev = point_cloud.points[uv(0)][uv(1)].X;
             c_edge_node node(uv, X_prev);
             chain.push_back(node);
             color_node_it++;
-            while (color_node_it != color_chain_it->end()) {
+            while (color_node_it != color_chain->end()) {
                 uv = color_node_it->uv;
                 X = point_cloud.points[uv(0)][uv(1)].X;
                 if (X != X_prev) {
@@ -225,11 +224,9 @@ namespace ais {
             vector<c_edge_node> uniform_chain;
             uniform_chain.push_back(chain[0]);
             for (int node_i = 1; node_i < chain.size()-1; node_i++) {
-                distance_prev = (chain[node_i].X - chain[node_i - 1].X).norm();
-                distance_next = (chain[node_i].X - chain[node_i + 1].X).norm();
-                const float distance_variation_tolerance = 10;
-                float variation = distance_prev / distance_next;
-                if (variation > distance_variation_tolerance || 1.0 / variation > distance_variation_tolerance) {
+                float distance = (chain[node_i].X - chain[node_i - 1].X).norm();
+                const float distance_sensor_resolution_tolerance = 0.01;
+                if (distance > distance_sensor_resolution_tolerance) {
                     edge_chains.push_back(uniform_chain);
                     uniform_chain.clear();
                 }
