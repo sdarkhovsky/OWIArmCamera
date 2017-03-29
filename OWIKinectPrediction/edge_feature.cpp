@@ -336,16 +336,15 @@ namespace ais {
                 X_prev = point_cloud.points[uv_prev(0)][uv_prev(1)].X;
             }
 
-            std::cout << " node_i= " << node_i << " uv= (" << uv(0) << ", " << uv(1) << ")" << " X= (" << X(0) << ", " << X(1) << ", " << X(2) << ")" << " dist= " << (X-X_prev).norm() << std::endl;
+//            std::cout << " node_i= " << node_i << " uv= (" << uv(0) << ", " << uv(1) << ")" << " X= (" << X(0) << ", " << X(1) << ", " << X(2) << ")" << " dist= " << (X-X_prev).norm() << std::endl;
         }
         std::cout << std::endl;
 #endif
 
-        // (2,4), (2,6),  (3,9)
-        float sigma = 2.0;  // in units of measure of the parameter t of the curve X(t), which is 1 between adjacent edge chain nodes
-        float steps_per_sigma = 4;
-        float t_step = sigma/steps_per_sigma;
-
+        // Tried configurations (sigma, steps_per_sigma, mask_radius): (1,2, 12), (2,2, 11), (1,1,6), (3,6, 31), (2,4,22), (3,3,16), (4,4,20)
+        float sigma = 3;  // in number of nodes as that's the parameter used in piecewise-linear representation X(t)
+        float steps_per_sigma = 3;
+        float t_step = sigma/ steps_per_sigma;
         const float gaussian_mask_taper_error = 0.000001; // should be small enough for ddmask as values are small there; 0.00001 should do too.
         if (!calculate_gaussian_masks(sigma, steps_per_sigma, gaussian_mask_taper_error, mask, dmask, ddmask))
             return false;
@@ -380,7 +379,7 @@ namespace ais {
 //#define TEST_SHAPES
 #ifdef TEST_SHAPES
                     //X_t = t*Vector3f(1.0, 2.0, 1.5);
-                    float angle_step = pi / 500.0;
+                    float angle_step = pi / 180.0;
                     /* 1 in the tau unit of measure means here the angle step. For example current node_i is 4, and t_step is 0.5
                        Then t changes as   ...,1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5, ...
                        This will correspond to the angles ...1.5*angle_step,... 5.5*angle_step,...
@@ -389,6 +388,15 @@ namespace ais {
                     */
                     float radius = 0.02;
                     X_t = radius* Vector3f(cos(angle_step*t), sin(angle_step*t), 0);
+                    // dX/dt is is radius*angle_step*Vector3f(-sin(angle_step*t), cos(angle_step*t), 0);  
+                    // the norm of dX/dt is radius*angle_step (= 0.02* pi / 180.0 = 3.4906585039886591538473815369772e-4)
+                    // d2X/dt2 is is radius*angle_step*angle_step*Vector3f(-cos(angle_step*t), -sin(angle_step*t), 0); 
+                    // the norm of d2X/dt2 is radius*angle_step*angle_step (= 0.02* pi / 180.0 * pi / 180.0 = 6.0923483957341719869348709875779e-6) 
+                    //
+                    // for the circle the change of the parameter t by 1 corresponds to the change angle_step in terms of angle (1 degree for pi/180). Then curvature is calculated correctly for the radius 0.02.
+                    // for a general curve the change of the parameter by 1 corresponds to moving from a node to a node along the edge. The less than half circle on the OWI image contains about 56 samples, not exactly uniformely distributed along the edge
+                    // for the angle_step pi/50 the curvature and radius are still calculated correctly
+                    // Changing the value of sigma changes the shape of the curve (by smoothing) and thus changes the calculated curvatures (because the curve changed).
 #endif
 #ifdef TEST_EDGE_SMOOTHING
                 X_s += X_t * mask[k + mask_radius];
@@ -401,8 +409,16 @@ namespace ais {
             float nom = dX_dt.cross(d2X_dt2).norm();
             float denom = pow(dX_dt.norm(), 3.0);
 
-            //std::cout << " node_i= " << node_i << " nom= " << nom << " denom=" << denom << " curvature=" << edge_chain[node_i].curvature << " dX_dt.norm()= " << dX_dt.norm() << " d2X_dt2.norm()= " << d2X_dt2.norm() << std::endl;
-            std::cout << " node_i= " << node_i << " nom= " << nom << " denom=" << denom << " curvature=" << edge_chain[node_i].curvature << " radius=" << 1.0/edge_chain[node_i].curvature << std::endl;
+            //std::cout << " node_i= " << node_i << " nom= " << nom << " denom=" << denom << " curvature=" << edge_chain[node_i].curvature << " radius=" << 1.0 / edge_chain[node_i].curvature << " dX_dt.norm()= " << dX_dt.norm() << " d2X_dt2.norm()= " << d2X_dt2.norm() << std::endl;
+            std::cout << " node_i= " << node_i << " uv= (" << edge_chain[node_i].uv(0) << ", " << edge_chain[node_i].uv(1) << ")" << " curvature=" << edge_chain[node_i].curvature << " radius=" << 1.0/edge_chain[node_i].curvature;
+            if (node_i > 0) {
+                float c0 = edge_chain[node_i-1].curvature;
+                float c1 = edge_chain[node_i].curvature;
+                std::cout << " curv.diff=" << abs(c1 - c0) / c0 << " radius.diff=" << abs(c0 - c1)/c1 << std::endl;
+            }
+            else {
+                std::cout << std::endl;
+            }
 #endif
             edge_chain[node_i].normal = dX_dt.cross(d2X_dt2);
             edge_chain[node_i].normal.normalize();
