@@ -1,0 +1,212 @@
+
+Notes
+
+Instead of calculating curvatures locally as in Differential Geometry we should calculate non-local statistic, describing 
+the curvature of the global curve shape. Maybe by inscribing a circle to a largest nbhd, which still has error per circle length ratio within a tolerance.
+
+
+Reviews of related work.
+An online algorithm for matching noisy space curves with statistical error analysis, by Hyuntae Na
+
+Algorithm 1 [1,2]
+- smooth the curves with FFT
+- run Douglas-Peucker algorithm to partition the curves as sequence of segments.
+  The general idea is to detect contour regions having high a curvature toward the overall shape trend.
+  Q:Not clear how references points are found by FMM and how they are used?
+- describe each segment using Point Context descriptor and Contour Segment Shape Descriptor.
+- use Hangarian method to find segment pairing of the minimal distance between segment descriptors
+
+There must be a statistic generalizing the curvature for the corner points, so that how sharply the curve turns is expressed in the statistic.
+
+FMM - Fast Marching Method
+LPF - Low Pass Filter
+FFT - Fast Fourier Transform
+
+
+
+1. Object Representation and Matching Based on Skeletons and Curves, Christian Feinen
+2. Shape Matching Using Point Context and Contour Segments, Christian Feinen, Cong Yang, Oliver Tiebe and Marcin Grzegorzek
+3. Shape-based Object Matching Using Point Context, Cong Yang, Christian Feinen, Oliver Tiebe, Kimiaki Shirahama and Marcin Grzegorzek 
+
+
+
+Algorithm 2 [1], p.2
+Step A: represent every curve by a sequence of its approximate local curvatures at given sample points
+    Smoothing procedure: expand the noisy curve to a narrow strip defined by a certain threshold value eps and then finds the shortest path lying in
+    this 2*eps-wide strip. This gives a polygonal approximation of each observed curve.
+    Curvature k(s) is the derivative of the tangent angle teta(s) to the curve, which is parametrized as a function of its arclength.
+    
+Step B: Find the longest common substring of the two characteristic strings
+  Find the longest matching substring between these two strings using Weiner's algorithm[1, p.7],[2]
+  For a given K use the algorithm of Karp, Miller and Rosenberg (see [3]) to find the K longest matching substrings between the two characteristic
+  strings. [1,p.8]
+  Or sorting string of curvatures by value and matching the substring starting with similar curvature values maintaing an accumulator of hits proportional 
+  to the length of the matching substrings.
+Step C: find rotation/translation for the matched subcurves.
+
+1. On Curve Matching, Haim Wolfson, 1986
+2. Linear Pattern Matching ALgorithms by Peter Weiner
+3. Rapid Identification of Repeated Patterns in Strings, Trees and Arrays by Karp, Miller and Rosenberg
+
+
+Algorithm 3
+See C:\Users\Sam\Downloads\CurveMatching\Curvature Scale Space
+
+- Convolve each of curve coordinates with a Gaussian function, while increasing the width of the Gaussian kernel, 
+  to build the curvature scale space (CSS) k(u, sigma), where u is curve parameter, sigma is the Gaussian parameter, 
+- find zero crossings of the curvature at different scales, which are (u,sigma) such that the curvature k(u,sigma)=0,
+  thus constructing "CSS image"
+- Following the "CSS image" maxima extraction ((u,sigma) where sigma is maximal), the CSS matching algorithm compares 
+  two sets of maxima and assigns a matching value to them.
+
+Comment: curves with straight line parts have a lot of curvature zero-crossing, which makes the zero-crossing statistic doubtful
+
+1. AFFINE INVARIANT CURVE MATCHING USING NORMALIZATION AND CURVATURE SCALE-SPACE V. Giannekou, P. Tzouveli, Y. Avrithis and S.Kollias
+2. Curvature scale space image in shape similarity retrieval, Sadegh Abbasi, Farzin Mokhtarian, Josef Kittler
+
+
+Algorithm 4
+
+- present the sequence of point curves as a parametric non-rational B-spline
+- compute geometric invariants: 
+  angles between three consecutive spline coefficient vectors;
+  product of two distances computed between three consecutive spline coefficient vectors
+  dot product of two vectors formed by three consecutive spline coefficient vectors
+- match the invariants along the curves
+
+1. Curve Shape Matching and Difference Detection, Jarmo Pirhonen, 1996
+
+
+Algorithm 5
+
+The osculating plane of a curve varies from point to point and induces a homography between the views of the same curve.
+
+In the short baseline case:
+- for an edge point (edgel)x  of the contour chain c1 find the epipolar line on the second image l2=F*x;
+- find the point x2 on the epipolar line l2 which is on the matched edge and which neighbourhood best correlates with the neighbourhood of x;
+
+In the wide (large) baseline case:
+- calculate curvatures of the corresponding curves;
+- calculate osculating planes (using previously calculated curvatures to remove ambiguities) and homographies for each point of the curves;
+- calculate the neighbourhood cross-correlation of corresponding points;
+
+1. The geometry and matching of curves in multiple views, Schmid Zisserman, 1998
+
+
+
+Algorithm 6
+
+The algorithm looks for vector fields u(x,t) and reparametrization eta(s) which define deformations of the curve A  at t=0 to match the curbe B at t=1.
+t is the parameter of morphing, s is the parameter of the curve.
+The solution is found as a minimum of a functional defined on the vector fields u(x,t)
+
+1. The variational particle-mesh method for matching curves, C J Cotter, 2009
+
+
+
+Algorithm 7
+
+Frechet distance D(f,g) between curves f and g is defined as 
+D(f,g)=inf (by alpha, beta) max(by t) Dp(f(alpha(t)),g(beta(t))), where alpha, beta are reprametrization of the curves, 0<=t<=1, 
+Dp is distance under Lp norm
+The algorithm does not consider matching when one curve is a rotation and/or translation of another curve.
+
+1. Exact Algorithms for Partial Curve Matching via the Frechet Distance, Kevin Buchin, Maike Buchiny, Yusu Wang, 2008+
+
+
+Algorithm 8
+
+A shape descriptor is calculated for each point of a shape. It describes a coarse distribution of the rest of the shape with respect to a given point.
+Example of a possible shape descriptor is the ordered set of vectors originating at a shape point to all other points on a shape.
+Rather than using a set of vectors, the algorithm calculates a histogram describing the distribution of the vectors.
+Hi(k) = # {Q != Pi: Q-Pi is at the bin(k) }
+The histogram is defined to be the shape context of Pi. The vectors are considered in the log-polar space.
+Chi-square statistic is used to compare the histograms: C(Pi,Qj) = 1/2*sum(k=1,K,(Hi(k)-Hj(k))^2/(Hi(k)+Hj(k)))
+In addition to the shape context the cost C(Pi,Qi) can include the local appearance similarity statistics, such as 
+correlation score between patches surrounding Pi and Qj.
+The assignment (bipartite matching) problem to find a permutation {Pi}=>{Qj} can be solved by the Hungarian or other methods.
+The authors use the deterministic annealing for the bipartite matching.
+Annealing is a process of first heating then cooling a system with attempt to bring it to the lower energy state [2]
+Simulated annealing simulates the annealing process of an interconnected system of nodes, each of which can have states +1, -1.
+Deterministic annealing [2] allows a node state to take an analog value -1 <= s <=1 rather than just -1 and +1.
+After finding the correspondences (Pi,Qj), they are used to calculate Thin Plate Spline model, extending the transformation of 
+the shape points to arbitrary points.
+A set of prototype objects is used to classify a shape object using the nearest neighbour classifier.
+
+1. Shape Matching and Object Recognition Using Shape Contexts, Belongie, Malik, Puzicha, 2002
+2. Pattern classification, Duda, Hart, Stork, 2nd ed, 2001
+
+
+Algorithm
+
+- Contours of objects are extracted and extracted from the image and syntactic representation is contructed whose primitives 
+are line segments and whose attribites are length and absolute orientation.
+
+String comparison algorithms [45,28,17].
+Constructing for each curve a cascade of representations at different scales [3][30],[43]
+
+1. Flexible Syntactic Matching of Curves and its Application to Automatic Hierarchical Classification of Silhouettes, Gdalyahu, Weinshall, 1999
+3. Asada H., Brady M. The curvature primal sketch, PAMI, 1986
+17. Gregor J, Thomason M. Dynamic programming alignment of sequences representing cyclic Patterns, PAMI, 1993
+28. Marzal A, Vidal, E. Computation of normalized edit distance and applications, PAMI, 1993
+30. Mokhtarian, F, Makworth A. Scale-based description and recognition of planar curves and two-dimensional shapes. PAMI, 1986
+43. Ueda N, Suzuki S. Learning visual modesl from shape contours using multiscale convex/concave structure matching. PAMI, 1993
+45. Wang Y, Pavlidis T. Optimal correspondence of string subsequences, PAMI, 1990
+
+
+
+Algorithm
+
+The algorithm approximates the optimal relative matching between two curves based on differential properties of the curves.
+Freeform surface means not having rigid radial dimensions, unlike regular surfaces such as planes, cylinders and conic surfaces [2].
+Freeform curves and surfaces are those whose shapes are more complicated and not describable using common terms like "circular" or "parabolic" [3].
+
+1. Matching of Freeform Curves, Cohen, Elber, Bar-Yehuda, 1995(?)
+2. https://en.wikipedia.org/wiki/Freeform_surface_modelling
+3. https://people.eecs.ku.edu/~miller/Courses/IntroToCurvesAndSurfaces/page2.html
+
+
+Algorithm
+
+The algorithm prefers to work with an edge map, which only consists of closed contours to begin with.
+A shape descriptor used by the algorithm is the sequence of tangent angles.
+Each of matched shapes is represented as N arclength parameters (ui <--> vj)
+The probability that two points match can be decomposed into two components,
+one for their similarity, and one for the local stretch of the curve:
+
+Elsewhere an object class is represented by a collection of smaller visual stimuli, either linked by a
+confiuration model ("part-based models") [8,36], or without using the relative position information ("bag-of-features models") [25,40].
+
+1. Object Detection by Global Contour Shape, Konrad Schindler, David Suter , 2008
+8. M. C. Burl, M. Weber, and P. Perona. A probabilistic approach to object recognition using local photometry and global geometry.In Proc. 5th European
+Conference on Computer Vision, Freiburg, Germany, 1998.
+25 D. Lowe. Object recognition from local scale-invariant features. In Proc. 7th International Conference on Computer Vision, Kerkyra, Greece, 1999.
+36. E. Sali and S. Ullman. Combining class-specic fragments for object classification. In Proc. 10th British Machine Vision Conference, Nottingham,
+UK, 1999.
+40 J. Sivic and A. Zisserman. Video Google: A text retrieval approach to object matching in videos.In Proc. 9th International Conference on Computer Vision,
+Nice, France, 2003.
+
+
+
+Algorithm
+
+Other approaches convert the curves to strings of points and use the dynamic programming for string-to-string correction algorithm to find 
+a match with the shortest edit distance.
+To find a true continuous solution of a discretized problem of matching two curves, the FMM assigns an underlying differential equation 
+to the problem. (There are other ways to extend the problem to the continuous domain, for example, the curve reconstruction by 
+convolution with the Gaussian or the sinc kernels).
+
+
+1. Curve Matching Using the Fast Marching Method, Max Frenkel and Ronen Basri, 2003
+
+
+
+
+1111111111111111111111111111111111111111111111111111111111111111
+Curves Matching Using Geodesic Paths
+Curve Matching for Open 2D Curves 2009.PRL.Ming.CurveMatching2d.Preprint
+
+
+STEREO MATCHING OF CURVES
+Shape Band A Deformable Object Detection Approach
+Shape-based Object Detection via Boundary Structure Segmentation
