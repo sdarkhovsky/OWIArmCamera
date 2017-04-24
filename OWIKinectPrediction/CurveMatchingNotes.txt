@@ -137,10 +137,15 @@ A set of prototype objects is used to classify a shape object using the nearest 
 2. Pattern classification, Duda, Hart, Stork, 2nd ed, 2001
 
 
-Algorithm
+Algorithm 9
 
 - Contours of objects are extracted and extracted from the image and syntactic representation is contructed whose primitives 
-are line segments and whose attribites are length and absolute orientation.
+  are line segments and whose attribites are length and absolute orientation.
+- Let A = {a1,..an}, A' = {a1',...an'} be two sintactic representations of two contours, cyclically ordered lists of line segments.
+- select candidates {ai, a'j} for a starting point of matching sequence (algorithm).
+- use edit operations to extend the correspondence between the remaining unmatched segments, preserving their cyclic order. 
+  The total cost is minimized using dynamic programming.
+The algorithm searches for the starting match {ai,a'j}, which correspondence list has minimal edit cost.
 
 String comparison algorithms [45,28,17].
 Constructing for each curve a cascade of representations at different scales [3][30],[43]
@@ -153,6 +158,88 @@ Constructing for each curve a cascade of representations at different scales [3]
 43. Ueda N, Suzuki S. Learning visual modesl from shape contours using multiscale convex/concave structure matching. PAMI, 1993
 45. Wang Y, Pavlidis T. Optimal correspondence of string subsequences, PAMI, 1990
 
+
+Algorithm 10
+
+Structural theories for object perception: an object can be decomposed and described as a configuration of atomic parts:
+generalized cylinders[3],[4], Recognition by Components Theory [2], superquadrics [5]
+
+Suggested primitives: edgels [6], contour segments [7],[9], or statistical descriptors of local or semi-local contours 
+such as Shape Context [8].
+
+A pair of boundary edges p and q from the boundary C will be referred to as a chord. 
+We can think of a chord as a way to express a dependency between edges p and q.
+We define features describing the geometry of the chord:
+- Length l_pq and orientation  psi_pq of the vector p->q.
+- Normalized normals teta_p and teta_q to the boundary at p and q with respect to the chord orientation  psi_pq
+Thus, the chord features can be written as a four-tuple: f_pq = (l_pq;  psi_pq; teta_p; teta_q)'
+
+The chordiogram ch_bs_ij is created from only one chord f_ij, calculated between points/edges i, j of the shape s, 
+using binning scheme b.
+
+The chordiogram (denoted by ch) is defined as a K-dimensional histogram of all chords, where chord features are quan-
+tized into bins and the mth chordiogram element is given by: chm(C) = #{(p; q) | p; q are in C; f_pq is in bin(m)}
+A holistic representation is when each object part is captured in the context of the whole object.
+Nested binning schemes are used (instead of scale pyramid?) [10] 
+The real linear programming problem is solved by ...?
+The linear integer programming problem can be solved exactly using Max-Flow estimation algorithms.
+
+Every object is representable as a set of segments. Every object boundary is representable as a set of segment boundaries.
+A superpixel is an image patch which is better aligned with intensity edges than a rectangular patch [11]
+
+To obtain superpixels we oversegment the image using NCuts with n = 45 segments [12].
+
+1. Shape-based Object Detection via Boundary Structure Segmentation, Alexander Toshev, Ben Taskar, Kostas Daniilidis, 2011
+2. Biederman I (1987) Recognition-by-components: A theory of human image understanding. Psychological Review. 94(2), 115{147.
+3. Marr D (2010) Vision: A computational investigation into the human representation and processing of visual information. Henry Holt and Co., Inc.
+4. Binford TO (1971) Visual perception by computer. In: IEEE Conference on Systems and Control
+5. Pentland A (1986) Perceptual organization and the representation of natural form. Artificial Intelligence, 28(3),293{331.
+6. Huttenlocher D, Klanderman D, Rucklige A (1993) Comparing images using the hausdorff distance. PAMI
+7. Ferrari V, Fevrier L, Jurie F, Schmid C (2008) Groups of adjacent contour segments for object detection. PAMI
+8. Belongie S, Malik J, Puzicha J (2002) Shape matching and object recognition using shape contexts. PAMI
+9. Ferrari V, Jurie F, Schmid C (2010) From images to shape models for object detection. IJCV
+10. Indyk P, Thaper N (2003) Fast image retrieval via embeddings. 3rd International Workshop on Statistical and Computational Theories of Vision.
+11. http://www.csd.uwo.ca/~olga/Projects/superpixels.html
+12. Cour T, Benezit F, Shi J (2005) Spectral segmentation with multiscale graph decomposition. In: IEEE Computer Society Conference on Computer Vision and Pattern Recognition.
+
+
+Algorithm
+
+The proposed curve signature is the integral of (absolute) curvature. The signature is invariant to the similarity transformations.
+
+1. Curve Matching for Open 2D Curves, M. Cui, J. Femiani, J.Hu, P. Wonka, A. Razdan, June 4, 2009
+
+
+Algorithm
+
+Paths of minimal Euclidian distance between two points on a surface are usually referred to as minimal geodesics [2]
+Geodesics are locally shortest paths in the sense that any perturbation of a geodesic curve will increase its length.
+The minimal length paths between two points are the minimal geodesics connecting thos points [2].
+
+Our approach is based on the computation of the set of paths connecting the two curves to be matched. It minimizes
+a cost function which measures the local similarity of the two curves. These matching paths are obtained as
+geodesic curves on this cost surface [3].
+
+In this paper, we develop a new method for pointwise tracking of structures by matching their contours. Hence, the deformation 
+between two temporal occurrences will be obtained through a set of trajectories provided by the matching process. 
+Our method is based on the computation of a set of paths connecting the two curves to be matched.
+Each path minimize a cost function which measures the local similarity between the starting and ending points of the path. [3]  
+
+The cost function is defined through a graph surface and measures, as we previously explained, the similarity between
+the source and destination areas. This surface is the graph surface on which the connecting paths are computed [3]
+
+The source and destination areas are defined as level sets of two bivariate functions phi0(x,y)=0 and psi0(x,y)=0 [3].
+
+The problem of a source 3d curve's propagation to superimpose on a destination 3d curve is replaced by propagation of the curve's 
+projection on (x,y) plane. The (x,y) plane curves are then considered as zero-level sets of a function phi(x,y) = 0.
+If the curve is alpha(s)=(x(s),y(s)), then alpha(s)=phi^(-1)(0) (see [3],(4)), phi: R2->R1 or (x,y)->z.
+phi(alpha(s))
+ 
+1. Curves Matching Using Geodesic Paths, Isaac COHEN, Isabelle HERLIN, 1998+
+2. Finding shortest paths on surfaces using levelset propagation, R. Kimmel, A. Amir, and A.F. Bruckstein, PAMI, 1995
+3. Tracking meteorological structures through curves matching using geodesic paths, Isaac COHEN, Isabelle HERLIN, 1998
+4. Tracking meteorological structures through curves matching using geodesic paths. Technical Report 3191, I. Cohen and I. Herlin. INRIA, UR Rocquencourt, Juin 1997.
+5. Distance Transformations in Arbitrary Dimensions, GUNILLA BORGEFORS, 1984
 
 
 Algorithm
@@ -199,14 +286,66 @@ convolution with the Gaussian or the sinc kernels).
 
 1. Curve Matching Using the Fast Marching Method, Max Frenkel and Ronen Basri, 2003
 
+Algorithm
+
+Detection [1,ch.4]: 
+1. the edges are detected
+2. the boundary fragments of the weak detectors are matched to this edge image;
+3. a weak detector h fires if [1,ch.3.1]:
+   - the k boundary fragments match image edge chains 
+   - the centroid estimates concur
+   - D(h,I) < threshold
+4. the strong detector 
+  the firing weak detector votes with the weight w_h on the centroid location in a Hough voting space
+
+A scaled codebook representation is used. [1,ch.6]
+The Mean-Shift modes are then aggregated over the set of scales, and the maxima explored as in the single scale case.  
+To achieve in-plane rotation invariance we use rotated versions of the codebook.
+  
+
+Q: Are the locations of the boundary fragment detectors forming a weak detector fixed with respect to an image or to each other? [1, ch.3.1]
+A: The locations of the boundary fragment detectors forming a weak detector are not fixed with respect to each other and to an image[1, fig.6b]
+
+Distance between a weak detector and an image sums up distances from each component boundary fragment detector [1,(3)], which in turn sums up 
+distanced between a boundary fragment and a best matching image chain [1,(2)]
+
+Fragment detectors forming a weak detector fire only if they both vote for the same centroid. [1, fig.6 and ch.3.1]
+Distance of a fragment gamma to an image is calculated in [1,(2)] using the chamfer distance [6]. An alternative to the chamfer distance could be Hausdorff distance)
+Each boundary fragment gamma of a weak detector is matched separately and only those for which distance(gamma, image) < threshold are used.[1,p.7]
+Boundary fragments centroids of a weak detector are close.
+Weak detectors sharing a centroid  vote for the centroid with a weight, and generate the vote of a strong detector.
+When the strong detector detected an object , its weak detectors vote for the centroid [1,p.9, Probabilistic scoring]
+The votes are considered as values of a probability distribution.
+The mean-shift is used to find modes (maximums) of the distributions.
+
+Mean shift is a non-parametric feature-space analysis technique for locating the maxima of a density function, a so-called mode-seeking algorithm[7].
+The mean shift mode is used to find objects' centroids.[1,ch.4,p.8]
+All parts vote on the object centroid as in a Generalized Hough transform[1].
+
+1. A boundary-fragment-model for object detection. A Opelt, A Pinz, A Zisserman - Computer Vision–ECCV 2006
+2. E. Sali and S. Ullman. Combining class-specic fragments for object classification. In Proc. 10th British Machine Vision Conference, Nottingham, UK, 1999.
+3. Object recognition and segmentation by a fragment-based hierarchy, S Ullman - Trends in cognitive sciences, 2007
+4. Learning an Alphabet of Shape and Appearance for Multi-Class Object Detection Andreas Opelt·Axel Pinz·Andrew Zisserman, 2008
+5. Vision: are models of object recognition catching up with the brain, T Poggio, S Ullman - Annals of the New York Academy of …, 2013
+6. G. Borgefors. Hierarchical chamfer matching: A parametric edge matching algorithm. IEEE PAMI, 10(6):849{865, 1988.
+7. https://en.wikipedia.org/wiki/Mean_shift
 
 
+Algorithm
 
-1111111111111111111111111111111111111111111111111111111111111111
-Curves Matching Using Geodesic Paths
-Curve Matching for Open 2D Curves 2009.PRL.Ming.CurveMatching2d.Preprint
+1. Multi-Scale Categorical Object Recognition Using Contour Fragments, Jamie Shotton, Andrew Blake, Roberto Cipolla, 2008
 
+
+Algorithm
+
+1. Recognition using regions C Gu, JJ Lim, P Arbeláez, J Malik, 2009, 2012
+
+
+Algorithm
+1. From images to shape models for object detection, Vittorio Ferrari, Frederic Jurie, Cordelia Schmid, 2008
+
+11111111111111111111111111111111111111111111111111111111111
 
 STEREO MATCHING OF CURVES
 Shape Band A Deformable Object Detection Approach
-Shape-based Object Detection via Boundary Structure Segmentation
+

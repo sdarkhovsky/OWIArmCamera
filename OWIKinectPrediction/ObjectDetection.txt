@@ -1,0 +1,144 @@
+Object representation:
+
+Rel1 (pose)
+...
+RelN (pose)
+
+Pnts (Clr,X)
+
+Poses and X are in the obj RF.
+
+
+
+predict_objs (time t)
+    for each object
+        object.state(t) = object.predict_model(t)
+    
+    
+class object_type
+{
+    map(time_type, state_type) state;
+    predict_model(time t);
+}
+
+class state_type
+{
+    location;
+    velocity;
+    acceleration;
+}
+
+object_type::predict_model(time t)
+{
+    acceleration(t) = force/mass;
+    velocity(t) = object.velocity(t_prev)+object.acceleration(t)*(t-t_prev);
+    X(t) = X(t_prev) + velocity(t)*(t-t_prev);
+}
+
+class action_type
+{
+    cause_type cause;
+    effect_type effect;
+    actuator_signal;
+    
+    execute()
+    {
+        send(actuator_signal);
+    }
+}
+
+class plan_type
+{
+    list<action_type> actions;
+    add_action_to_plan(action_type action)
+    {
+        actions.push_back(action);
+    }
+    execute()
+    {
+        for (action in actions)
+        {
+            action.execute();
+        }
+    }
+}
+
+class ai_system
+{
+    list<goal_type> goals;
+    list <action_type> possible_actions;
+    list <plan_type> plans;
+    
+    lifecycle()
+    {
+        predict_world();
+        calculate_goals();
+        plan_actions_to_achieve_goals();
+        execute_plans();
+        observe_world();
+    }
+    
+    predict_world();
+    calculate_goals();
+    
+    
+    plan_actions_to_achieve_goals()
+    {
+        for (goal in goals) 
+        {
+            plan_type plan;
+            subgoal = goal;
+            while (!achieved(subgoal))
+            {
+                get_action_by_effect(subgoal, possible_action);
+                plan.add_action_to_plan(possible_action);
+            }
+            plans.push_back(plan);
+        }
+    }
+    
+
+    execute_plans();
+    {
+        for (plan in plans) 
+        {
+            plan.execute();
+        }
+    }
+    
+    observe_world();
+    
+    get_action_by_effect(effect_type effect, action_type possible_action)
+    {
+        for (possible_action in possible_actions) 
+        {
+            if (possible_action.effect == effect)
+                return;
+        }
+        possible_action = null;
+    }
+}
+
+
+Detection algorithm:
+
+
+input sensor data frame (scene);
+match_observed_scene_relation_to_existing_objects
+match_observed_scene_relation_to_previous_scenes
+
+
+match_observed_scene_relation_to_existing_objects
+
+for each obj having a detected rel
+    for each subset of rels which satisfy the obj rel poses
+        find transform between obj and scene
+        if the scene data and obj after transform are color compatible
+            the object is identified
+        else if the scene data and obj after transform are partially color compatible
+        
+        exceptions:
+            break;
+        
+        
+        
