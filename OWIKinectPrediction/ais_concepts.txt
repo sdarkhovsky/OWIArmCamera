@@ -21,7 +21,11 @@ class state_type
     velocity;
     acceleration;
 }
-    
+
+class object_move_type
+{
+}
+
 class object_type
 {
     map(time_type, state_type) state;
@@ -31,6 +35,17 @@ class object_type
         acceleration(t) = force/mass;
         velocity(t) = object.velocity(t_prev)+object.acceleration(t)*(t-t_prev);
         X(t) = X(t_prev) + velocity(t)*(t-t_prev);
+    }
+}
+
+class event_type
+{
+    object_type object;
+    object_move_type move;
+    
+    execute()
+    {
+        object.move();
     }
 }
 
@@ -48,17 +63,23 @@ class action_type
 
 class plan_type
 {
-    list<action_type> actions;
-    add_action_to_plan(action_type action)
+    list<plan_type> plan_steps;
+    
+    event_type cause;
+    event_type effect;
+    
+    add_step_to_plan(plan_type plan_step)
     {
-        actions.push_back(action);
+        plan_steps.push_back(plan_step);
     }
+    
     execute()
     {
-        for (action in actions)
+        for (plan_step in plan_steps)
         {
-            action.execute();
+            plan_step.execute();
         }
+        cause.execute();
     }
 }
 
@@ -70,16 +91,16 @@ class observed_scene_type
 class ai_system
 {
     list<goal_type> goals;
-    list <action_type> possible_actions;
-    list <plan_type> plans;
+    list <plan_type> possible_plans;
+    list <plan_type> executed_plans;
     list<observed_scene_type> observed_scenes;    
     
     lifecycle()
     {
         observe_world();
-        learn_possible_actions();
+        learn_possible_plans();
         calculate_goals();
-        plan_actions_to_achieve_goals();
+        assemble_plans_to_achieve_goals();
         execute_plans();
     }
 
@@ -90,7 +111,7 @@ class ai_system
         observed_scenes.push_back();
     }    
     
-    learn_possible_actions() 
+    learn_possible_plans() 
     {
     
         observed_scene.calculate_relations();
@@ -102,7 +123,7 @@ class ai_system
         match_observed_scene_relation_to_previous_scenes();    
     }
     
-    plan_actions_to_achieve_goals()
+    assemble_plans_to_achieve_goals()
     {
         for (goal in goals) 
         {
@@ -110,30 +131,30 @@ class ai_system
             subgoal = goal;
             while (!achieved(subgoal))
             {
-                get_action_by_effect(subgoal, possible_action);
-                plan.add_action_to_plan(possible_action);
+                plan_step = get_plan_by_effect(subgoal);
+                plan.add_step_to_plan(plan_step);
+                subgoal = plan_step.cause;
             }
             plans.push_back(plan);
         }
     }
-    
 
     execute_plans();
     {
-        for (plan in plans) 
+        for (plan in executed_plans) 
         {
             plan.execute();
         }
     }
 
-    get_action_by_effect(effect_type effect, action_type possible_action)
+    plan_type get_plan_by_effect(event_type effect)
     {
-        for (possible_action in possible_actions) 
+        for (plan in possible_plans) 
         {
-            if (possible_action.effect == effect)
-                return;
+            if (plan.effect == effect)
+                return plan_step;
         }
-        possible_action = null;
+        return null;
     }
     
     predict_world();
