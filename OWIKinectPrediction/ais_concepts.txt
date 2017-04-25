@@ -14,12 +14,6 @@ predict_objs (time t)
     for each object
         object.state(t) = object.predict_model(t)
     
-    
-class object_type
-{
-    map(time_type, state_type) state;
-    predict_model(time t);
-}
 
 class state_type
 {
@@ -27,12 +21,17 @@ class state_type
     velocity;
     acceleration;
 }
-
-object_type::predict_model(time t)
+    
+class object_type
 {
-    acceleration(t) = force/mass;
-    velocity(t) = object.velocity(t_prev)+object.acceleration(t)*(t-t_prev);
-    X(t) = X(t_prev) + velocity(t)*(t-t_prev);
+    map(time_type, state_type) state;
+    
+    predict_model(time t)
+    {
+        acceleration(t) = force/mass;
+        velocity(t) = object.velocity(t_prev)+object.acceleration(t)*(t-t_prev);
+        X(t) = X(t_prev) + velocity(t)*(t-t_prev);
+    }
 }
 
 class action_type
@@ -63,24 +62,45 @@ class plan_type
     }
 }
 
+class observed_scene_type
+{
+    sensor_data;
+}
+
 class ai_system
 {
     list<goal_type> goals;
     list <action_type> possible_actions;
     list <plan_type> plans;
+    list<observed_scene_type> observed_scenes;    
     
     lifecycle()
     {
-        predict_world();
+        observe_world();
+        learn_possible_actions();
         calculate_goals();
         plan_actions_to_achieve_goals();
         execute_plans();
-        observe_world();
     }
+
+    observe_world()
+    {
+        observed_scene_type observed_scene;
+        input_sensor_data(observed_scene);
+        observed_scenes.push_back();
+    }    
     
-    predict_world();
-    calculate_goals();
+    learn_possible_actions() 
+    {
     
+        observed_scene.calculate_relations();
+        11111111111111111111111111111111111111
+        learn_possible_actions(observed_scene);    
+    111111111111111111111
+        identify_objects(observed_scene);
+        match_observed_scene_relation_to_existing_objects();
+        match_observed_scene_relation_to_previous_scenes();    
+    }
     
     plan_actions_to_achieve_goals()
     {
@@ -105,9 +125,7 @@ class ai_system
             plan.execute();
         }
     }
-    
-    observe_world();
-    
+
     get_action_by_effect(effect_type effect, action_type possible_action)
     {
         for (possible_action in possible_actions) 
@@ -117,6 +135,9 @@ class ai_system
         }
         possible_action = null;
     }
+    
+    predict_world();
+    calculate_goals();
 }
 
 
