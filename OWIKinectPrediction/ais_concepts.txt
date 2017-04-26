@@ -22,8 +22,21 @@ class state_type
     acceleration;
 }
 
+class object_point_type
+{
+    location_type X;
+    color_type Clr;
+}
+
 class object_move_type
 {
+}
+
+class relation_type
+{
+    object_move_type calculate_object_move(relation_type)
+    {
+    }
 }
 
 class object_type
@@ -43,21 +56,15 @@ class event_type
     object_type object;
     object_move_type move;
     
+    event_type(object_type object, object_move_type move)
+    {
+        this->object = object;
+        this->move = move;
+    }
+
     execute()
     {
         object.move();
-    }
-}
-
-class action_type
-{
-    cause_type cause;
-    effect_type effect;
-    actuator_signal;
-    
-    execute()
-    {
-        send(actuator_signal);
     }
 }
 
@@ -85,8 +92,28 @@ class plan_type
 
 class observed_scene_type
 {
-    sensor_data;
+    list <object_point_type> points;
+    list<relation_type> relations;
+    
+    calculate_relations()
+    {
+    }
+    
+    relation_type find_matching_relation(relation_type relation)
+    {
+    }
+    
+    object_type calculate_object_from_move(object_move_type move)
+    {
+
+        for (auto scene_point in points) 
+        {
+            111111111111111111111111111111111111111111
+            object_type object;
+        }
+    }
 }
+
 
 class ai_system
 {
@@ -107,20 +134,33 @@ class ai_system
     observe_world()
     {
         observed_scene_type observed_scene;
-        input_sensor_data(observed_scene);
+        input_scene_points(observed_scene);
+        observed_scene.calculate_relations();
         observed_scenes.push_back();
     }    
     
     learn_possible_plans() 
     {
-    
-        observed_scene.calculate_relations();
-        11111111111111111111111111111111111111
-        learn_possible_actions(observed_scene);    
-    111111111111111111111
-        identify_objects(observed_scene);
+        observed_scene_type observed_scene = observed_scenes.back();
         match_observed_scene_relation_to_existing_objects();
         match_observed_scene_relation_to_previous_scenes();    
+    }
+    
+    match_observed_scene_relation_to_previous_scenes()
+    {
+        auto it = observed_scenes.rbegin();
+        observed_scene_type observed_scene = *it++;
+        observed_scene_type prev_observed_scene = *it;
+        
+        for (relation in observed_scene.relations)
+        {
+            relation_type prev_matching_relation = prev_observed_scene.find_matching_relation(relation);
+            object_move = prev_matching_relation.calculate_object_move(relation);
+            object_type object = calculate_object_from_move(object_move);
+            event_type event = new event_type(object_type object, object_move_type move);
+            
+            11111111111111111111111111111111
+        }
     }
     
     assemble_plans_to_achieve_goals()
