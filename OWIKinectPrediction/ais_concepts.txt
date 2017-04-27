@@ -71,11 +71,20 @@ class object_type
     }    
 }
 
+class control_signal_type
+{
+    joint_type joint;
+    signal_value_type value;
+}
+
 class event_type
 {
+    control_signal_type control_signal;
     object_type object;
     object_move_type move;
     time_type time;
+    
+    bool control_signal_event = false;
     
     event_type(object_type object, object_move_type move, time_type time)
     {
@@ -83,10 +92,22 @@ class event_type
         this->move = move;
         this->time = time;
     }
+    
+    event_type(control_signal_type control_signal, time_type time)
+    {
+        this->control_signal = control_signal;
+        this->time = time;
+        control_signal_event = true;
+    }
 
     execute()
     {
-    111111111111111111111111111  todo: add such events as sending a signal to the ais limb
+        if (control_signal_event)
+        {
+            send(control_signal.joint, control_signal.value);
+            return;
+        }
+        
         object.move();
     }
 }
@@ -97,12 +118,17 @@ class plan_type
     
     event_type cause;
     event_type effect;
+    
+    bool terminal_node = false;
+    
+    
     //todo: add preconditions on cause and effect, necessary for the plan execution to succeed, f.e. cause and event objects have to be in contact for the move of one to cause the move of the other
     
     plan_type(event_type cause, event_type effect)
     {
         this->cause = cause;
         this->effect = effect;
+        terminal_node = true;
     }
     
     add_step_to_plan(plan_type plan_step)
@@ -112,19 +138,30 @@ class plan_type
     
     execute()
     {
+        if (terminal_node)
+        {
+            cause.execute();
+            return;
+        }
         for (plan_step in plan_steps)
         {
             plan_step.execute();
         }
-        cause.execute();
     }
 }
 
 class observed_scene_type
 {
     list <object_point_type> points;
+    list <control_signal_type> control_signals;    
+    
     list<relation_type> relations;
     time_type time;
+    
+    capture()
+    {
+        
+    }
     
     calculate_relations()
     {
@@ -155,7 +192,6 @@ class observed_scene_type
     }
 }
 
-
 class ai_system
 {
     list <goal_type> goals;
@@ -177,7 +213,7 @@ class ai_system
     observe_world()
     {
         observed_scene_type observed_scene;
-        input_scene_points(observed_scene);
+        observed_scene.capture();
         observed_scene.calculate_relations();
         observed_scenes.push_back();
     }    
@@ -187,6 +223,8 @@ class ai_system
         observed_scene_type observed_scene = observed_scenes.back();
         get_events_from_matching_observed_scene_relation_to_existing_objects();
         get_events_from_matching_observed_scene_relation_to_previous_scenes();  
+        
+        get_control_signal_events();
         
         get_possible_plans_from_events();
     }
@@ -203,6 +241,17 @@ class ai_system
                     possible_plans.push_back(possible_plan);
                 }
             }
+        }
+    }
+
+    get_control_signal_events()
+    {
+        observed_scene_type observed_scene = observed_scenes.back();
+        
+        for (control_signal in observed_scene.control_signals)
+        {
+            event_type event(observed_scene.control_signal, observed_scene.time);
+            events.push_back(event);                
         }
     }
     
