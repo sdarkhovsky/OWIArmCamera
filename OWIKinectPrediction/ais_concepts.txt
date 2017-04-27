@@ -1,42 +1,22 @@
-Object representation:
-
-Rel1 (pose)
-...
-RelN (pose)
-
-Pnts (Clr,X)
-
-Poses and X are in the obj RF.
-
-
-
 predict_objs (time t)
     for each object
         object.state(t) = object.predict_model(t)
     
 
-class state_type
-{
-    location;
-    velocity;
-    acceleration;
-}
-
 class object_point_type
 {
-    location_type X;
-    color_type Clr;
-    
-    move(object_move_type);
+    location_type location;
+    color_type color;
 }
 
 class object_move_type
 {
+    vector3 acceleration;
 }
 
 class relation_type
 {
-    location_type anchor;
+    location_type location;
     vector3 orientation;
     object_move_type calculate_object_move(relation_type)
     {
@@ -45,16 +25,15 @@ class relation_type
 
 class object_type
 {
-    map(time_type, state_type) state;
-    
     list<object_point_type> points;
     list<relation_type> relations;
     
     predict_model(time t)
     {
+    11111111111111111111111111111111
         acceleration(t) = force/mass;
         velocity(t) = object.velocity(t_prev)+object.acceleration(t)*(t-t_prev);
-        X(t) = X(t_prev) + velocity(t)*(t-t_prev);
+        location(t) = location(t_prev) + velocity(t)*(t-t_prev);
     }
     
     add_relation(relation_type relation )
@@ -87,7 +66,7 @@ class object_type
                 return null;
         }
         
-        event_type event(object, object_move);
+        event_type event(object, object_move, observed_scene.time);
         return event;
     }    
 }
@@ -96,15 +75,18 @@ class event_type
 {
     object_type object;
     object_move_type move;
+    time_type time;
     
-    event_type(object_type object, object_move_type move)
+    event_type(object_type object, object_move_type move, time_type time)
     {
         this->object = object;
         this->move = move;
+        this->time = time;
     }
 
     execute()
     {
+    111111111111111111111111111  todo: add such events as sending a signal to the ais limb
         object.move();
     }
 }
@@ -115,6 +97,7 @@ class plan_type
     
     event_type cause;
     event_type effect;
+    //todo: add preconditions on cause and effect, necessary for the plan execution to succeed, f.e. cause and event objects have to be in contact for the move of one to cause the move of the other
     
     plan_type(event_type cause, event_type effect)
     {
@@ -141,6 +124,7 @@ class observed_scene_type
 {
     list <object_point_type> points;
     list<relation_type> relations;
+    time_type time;
     
     calculate_relations()
     {
@@ -166,7 +150,7 @@ class observed_scene_type
                 object.add_point(scene_point);
         }
         
-        event_type event(object, object_move);
+        event_type event(object, object_move, observed_scene.time);
         return event;
     }
 }
@@ -209,11 +193,17 @@ class ai_system
     
     get_possible_plans_from_events()
     {
-        event_type cause;
-        event_type effect;
-111111111111111111111111111    
-        plan_type possible_plan(cause, effect);
-        possible_plans.push_back(possible_plan);
+        for (event_type cause in events)
+        {
+            for (event_type effect in events)
+            {
+                if (cause.time < effect.time)
+                {
+                    plan_type possible_plan(cause, effect);
+                    possible_plans.push_back(possible_plan);
+                }
+            }
+        }
     }
     
     get_events_from_matching_observed_scene_relation_to_existing_objects()
