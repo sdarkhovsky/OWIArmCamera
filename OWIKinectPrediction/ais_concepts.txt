@@ -108,7 +108,7 @@ class event_type
             return;
         }
         
-        object.move();
+        //object.move();
     }
 }
 
