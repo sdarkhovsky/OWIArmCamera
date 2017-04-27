@@ -26,6 +26,8 @@ class object_point_type
 {
     location_type X;
     color_type Clr;
+    
+    move(object_move_type);
 }
 
 class object_move_type
@@ -34,6 +36,8 @@ class object_move_type
 
 class relation_type
 {
+    location_type anchor;
+    vector3 orientation;
     object_move_type calculate_object_move(relation_type)
     {
     }
@@ -43,12 +47,49 @@ class object_type
 {
     map(time_type, state_type) state;
     
+    list<object_point_type> points;
+    list<relation_type> relations;
+    
     predict_model(time t)
     {
         acceleration(t) = force/mass;
         velocity(t) = object.velocity(t_prev)+object.acceleration(t)*(t-t_prev);
         X(t) = X(t_prev) + velocity(t)*(t-t_prev);
     }
+    
+    add_relation(relation_type relation )
+    {
+        relations.push_back(relation);
+    }
+    
+    add_point(object_point_type point)
+    {
+        points.add_point(point);
+    }
+    
+    bool valid()
+    {
+        return (points.size()>threshold);
+    }
+
+    relation_type find_matching_relation(relation_type relation)
+    {
+    }
+    
+    event_type calculate_event_from_relation_move(observed_scene_type observed_scene, relation_type relation)
+    {
+        relation_type matching_relation = find_matching_relation(relation);
+        object_move_type object_move = matching_relation.calculate_object_move(relation);
+
+        for (auto object_point in points) 
+        {
+            if (!observed_scene.contains_point(object_point.move(object_move))
+                return null;
+        }
+        
+        event_type event(object, object_move);
+        return event;
+    }    
 }
 
 class event_type
@@ -74,6 +115,12 @@ class plan_type
     
     event_type cause;
     event_type effect;
+    
+    plan_type(event_type cause, event_type effect)
+    {
+        this->cause = cause;
+        this->effect = effect;
+    }
     
     add_step_to_plan(plan_type plan_step)
     {
@@ -103,24 +150,36 @@ class observed_scene_type
     {
     }
     
-    object_type calculate_object_from_move(object_move_type move)
+    bool contains_point(object_point_type point)
     {
-
+    }
+    
+    event_type calculate_object_from_relation_move(observed_scene_type observed_scene, relation_type relation)
+    {
+        relation_type matching_relation = find_matching_relation(relation);
+        object_move_type object_move = matching_relation.calculate_object_move(relation);
+        object_type object;
+        object.add_relation(relation);
         for (auto scene_point in points) 
         {
-            111111111111111111111111111111111111111111
-            object_type object;
+            if (observed_scene.contains_point(scene_point.move(object_move))
+                object.add_point(scene_point);
         }
+        
+        event_type event(object, object_move);
+        return event;
     }
 }
 
 
 class ai_system
 {
-    list<goal_type> goals;
+    list <goal_type> goals;
     list <plan_type> possible_plans;
     list <plan_type> executed_plans;
-    list<observed_scene_type> observed_scenes;    
+    list <observed_scene_type> observed_scenes;    
+    list <object_type> objects;
+    list <event_type> events;
     
     lifecycle()
     {
@@ -142,11 +201,35 @@ class ai_system
     learn_possible_plans() 
     {
         observed_scene_type observed_scene = observed_scenes.back();
-        match_observed_scene_relation_to_existing_objects();
-        match_observed_scene_relation_to_previous_scenes();    
+        get_events_from_matching_observed_scene_relation_to_existing_objects();
+        get_events_from_matching_observed_scene_relation_to_previous_scenes();  
+        
+        get_possible_plans_from_events();
     }
     
-    match_observed_scene_relation_to_previous_scenes()
+    get_possible_plans_from_events()
+    {
+        event_type cause;
+        event_type effect;
+111111111111111111111111111    
+        plan_type possible_plan(cause, effect);
+        possible_plans.push_back(possible_plan);
+    }
+    
+    get_events_from_matching_observed_scene_relation_to_existing_objects()
+    {
+        observed_scene_type observed_scene = observed_scenes.back();
+        for (relation in observed_scene.relations)
+        {
+            for (object in objects)
+            {
+              event_type event = object.calculate_event_from_relation_move(observed_scene, relation);
+              events.push_back(event);                
+            }
+        }    
+    }
+    
+    get_events_from_matching_observed_scene_relation_to_previous_scenes()
     {
         auto it = observed_scenes.rbegin();
         observed_scene_type observed_scene = *it++;
@@ -154,12 +237,10 @@ class ai_system
         
         for (relation in observed_scene.relations)
         {
-            relation_type prev_matching_relation = prev_observed_scene.find_matching_relation(relation);
-            object_move = prev_matching_relation.calculate_object_move(relation);
-            object_type object = calculate_object_from_move(object_move);
-            event_type event = new event_type(object_type object, object_move_type move);
-            
-            11111111111111111111111111111111
+            event_type event = prev_observed_scene.calculate_object_from_relation_move(observed_scene, relation);
+            events.push_back(event);
+            objects.push_back(object);
+            // todo: environment as an object, an object is a part of another object, event, causality between events
         }
     }
     
