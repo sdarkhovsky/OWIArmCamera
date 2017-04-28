@@ -11,6 +11,15 @@ class object_point_type
 
 class object_move_type
 {
+    /*
+        location change,
+        send control signal to its joints
+        communicating message
+    */
+    
+    object_start_state;
+    object_end_state;
+        
     vector3 acceleration;
 }
 
@@ -30,7 +39,7 @@ class object_type
     
     predict_model(time t)
     {
-    11111111111111111111111111111111
+       // todo: this prediction model is going to be used somewhere, but where?
         acceleration(t) = force/mass;
         velocity(t) = object.velocity(t_prev)+object.acceleration(t)*(t-t_prev);
         location(t) = location(t_prev) + velocity(t)*(t-t_prev);
@@ -55,6 +64,10 @@ class object_type
     {
     }
     
+    update_state(object_move_type object_move)
+    {
+    }
+    
     event_type calculate_event_from_relation_move(observed_scene_type observed_scene, relation_type relation)
     {
         relation_type matching_relation = find_matching_relation(relation);
@@ -65,6 +78,8 @@ class object_type
             if (!observed_scene.contains_point(object_point.move(object_move))
                 return null;
         }
+
+        object.update_state(object_move);
         
         event_type event(object, object_move, observed_scene.time);
         return event;
@@ -99,16 +114,22 @@ class event_type
         this->time = time;
         control_signal_event = true;
     }
-
-    execute()
+    
+    bool occurred()
+    {
+        if (object.state == move.object_end_state)
+            return true;
+            
+        return false;
+    }
+    
+    execute_and_monitor()
     {
         if (control_signal_event)
         {
             send(control_signal.joint, control_signal.value);
             return;
         }
-        
-        //object.move();
     }
 }
 
@@ -118,11 +139,14 @@ class plan_type
     
     event_type cause;
     event_type effect;
-    
+    //todo: need to add precondition? plan/prediction_model: object precondition and cause, object_move, object's end state (effect)
+
     bool terminal_node = false;
     
+    certainty_counter = 0;
     
-    //todo: add preconditions on cause and effect, necessary for the plan execution to succeed, f.e. cause and event objects have to be in contact for the move of one to cause the move of the other
+    
+    //todo: add preconditions on cause and effect, necessary for the plan execution to start, f.e. cause and event objects have to be in contact for the move of one to cause the move of the other
     
     plan_type(event_type cause, event_type effect)
     {
@@ -136,16 +160,26 @@ class plan_type
         plan_steps.push_back(plan_step);
     }
     
-    execute()
+    execute_and_monitor()
     {
         if (terminal_node)
         {
-            cause.execute();
+            cause.execute_and_monitor();
+            if (effect.occurred())
+                return;
+            
+            // todo: modify plan and possible plans to account for the unexpected plan outcome
+            
             return;
         }
         for (plan_step in plan_steps)
         {
-            plan_step.execute();
+            plan_step.execute_and_monitor();
+            
+            if (effect.occurred())
+                continue;
+            
+            // todo: modify plan and possible plans to account for the unexpected plan outcome
         }
     }
 }
@@ -207,7 +241,23 @@ class ai_system
         learn_possible_plans();
         calculate_goals();
         assemble_plans_to_achieve_goals();
-        execute_plans();
+        execute_and_monitor_plans();
+        /*  todo:
+            cause_effect_sequences (aka plan) are executed no matter if ais wants it or not unless ais is physically participating in it by sending signal to its body or messaging a command to another ais.
+            ais monitors if the world changes according to its predictions (through cause_effect_sequences) and modifies them as necessary
+            ais can form complex signals into symbols or messages to communicate with other aises and interpret the symbols and messages received from other aises.
+            sensors: visual (location, color; objects, moving in space, changing color), 
+                        characters, words, sentences, symbols
+                     tactile (location, temperature; objects moving in space, changing temperature), 
+                     auditory (location, sound pitch and level; objects moving in space, generate sound of various pitch and level)
+                        characters, words, sentences are coded relations; 
+                        the relations can encode events, including objects and object moves
+            control signals:
+                muscle signal to move a body part;
+                characters, words, sentences to send visual, tactile, auditory messages
+            tracking changes of objects of interest
+            analyzing objects of inteterest (curiosity)
+         */
     }
 
     observe_world()
@@ -226,10 +276,10 @@ class ai_system
         
         get_control_signal_events();
         
-        get_possible_plans_from_events();
+        get_new_and_correct_existing_possible_plans_from_events();
     }
     
-    get_possible_plans_from_events()
+    get_new_and_correct_existing_possible_plans_from_events()
     {
         for (event_type cause in events)
         {
@@ -237,8 +287,18 @@ class ai_system
             {
                 if (cause.time < effect.time)
                 {
-                    plan_type possible_plan(cause, effect);
-                    possible_plans.push_back(possible_plan);
+                    if (possible_plans[cause].effect != effect)
+                    {
+                        possible_plans[cause].certainty_counter--;
+                        
+                        plan_type possible_plan(cause, effect);
+                        possible_plans.push_back(possible_plan);
+                    } 
+                    else
+                    {
+                        possible_plans[cause].certainty_counter++;                    
+                    }
+                  
                 }
             }
         }
@@ -299,11 +359,11 @@ class ai_system
         }
     }
 
-    execute_plans();
+    execute_and_monitor_plans();
     {
         for (plan in executed_plans) 
         {
-            plan.execute();
+            plan.execute_and_monitor();
         }
     }
 
