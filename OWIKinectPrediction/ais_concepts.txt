@@ -255,8 +255,8 @@ class ai_system
             control signals:
                 muscle signal to move a body part;
                 characters, words, sentences to send visual, tactile, auditory messages
-            tracking changes of objects of interest
-            analyzing objects of inteterest (curiosity)
+            tracking the changes of the objects of interest (maybe adding goals to track the objects?)
+            analyzing the objects of inteterest (curiosity, maybe by adding "curiosity" goals?)
          */
     }
 
