@@ -149,7 +149,12 @@ class plan_type
                     cause ---|                           |--- side_effect
                              |-- side_effect
        Some nodes (causes and effects) of the graph can be hidden. In such cases, they need to be estimated. For example, a human may be corrupted, evil, hungry, etc.
-       The hidden events (or states) in intelligent systems maybe made explicit using messages.
+       The hidden events (or states) in intelligent systems may be made explicit using messages.
+       
+        events:
+        visual observations measure points locations and color. Corresponding events are changes in point locations and color.
+        tactile observations measure points location and temperature. Corresponding events are changes in point locations and temperature.
+        auditory observations measure points location, sound volume and frequency. Corresponding events are changes in point locations, volume and frequency.       
     */           
 
     bool terminal_node = false;
