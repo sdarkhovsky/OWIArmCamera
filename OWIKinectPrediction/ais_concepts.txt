@@ -37,6 +37,8 @@ class object_type
     list<object_point_type> points;
     list<relation_type> relations;
     
+    // todo: object may contain other objects (subobjects), which move together with the parent object.
+    
     predict_model(time t)
     {
        // todo: this prediction model is going to be used somewhere, but where?
@@ -140,6 +142,15 @@ class plan_type
     event_type cause;
     event_type effect;
     //todo: need to add precondition? plan/prediction_model: object precondition and cause, object_move, object's end state (effect)
+    // todo: messaging (voice, gesture, ...) is a type of a cause of an intelligent object move
+    /* todo: an expected effect may not always follow a cause. In such cases, an additional hidden cause can be presumed. Such hidden cause may be an effect of another observable or hidden cause.
+             A plan to achieve an effect may be a graph with multiple causes and side effects:
+             cause - node - node - node - node - node - node - effect
+                    cause ---|                           |--- side_effect
+                             |-- side_effect
+       Some nodes (causes and effects) of the graph can be hidden. In such cases, they need to be estimated. For example, a human may be corrupted, evil, hungry, etc.
+       The hidden events (or states) in intelligent systems maybe made explicit using messages.
+    */           
 
     bool terminal_node = false;
     

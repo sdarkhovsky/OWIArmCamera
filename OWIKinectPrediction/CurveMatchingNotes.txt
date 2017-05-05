@@ -1,6 +1,3 @@
-
-Notes
-
 Instead of calculating curvatures locally as in Differential Geometry we should calculate non-local statistic, describing 
 the curvature of the global curve shape. Maybe by inscribing a circle to a largest nbhd, which still has error per circle length ratio within a tolerance.
 
@@ -342,10 +339,38 @@ Algorithm
 
 
 Algorithm
+
 1. From images to shape models for object detection, Vittorio Ferrari, Frederic Jurie, Cordelia Schmid, 2008
 
-11111111111111111111111111111111111111111111111111111111111
 
-STEREO MATCHING OF CURVES
-Shape Band A Deformable Object Detection Approach
 
+
+Notes
+
+A curve should be recognized if a characteristic (containing enough information for the purpose) part of it is visible.
+The part doesn't have to be a (continuous) connected set, i.e. itself be formed from multiple parts.
+Each part constitute a relation. Then compound relation is described by location and orientation of the component 
+relations in a reference frame of the compound relation.
+Suppose during detection each component is detected separately at certain location and orientation.
+Q: How the location, orientation, scale of the components can be effectively used to detect the compound?
+
+Consider first the case when only locations of the components are analyzed.
+Definition 1: The compound relation (or just compound) is defined by {(relation_i,rel_certainty_i,location_i), i=1,N}.  
+
+Q1.: How to detect a compound in another compound?
+Q2.: How to select compounds useful for object detection.
+   Assumptions:
+    - the description of an object includes one or more compound relations;
+    - the scene is a compound;
+    - an object's compound may be present partially (not all component relations) in the scene, but the present part satisfies 
+      the compound's constraints.
+    - locations of component relations within compound may change in the scene if an object consists of component objects, 
+      which can move with respect to each other.
+
+Consider Q1 and Q2 in case of 3d edges, when the location from R3 and the components can be parametrized by 1d arc length parameter
+or even simpler in case of 2d edges of handwritten English alphabet characters.
+Dynamic programming kind of algorithm detecting an ordered compound {(x0i,x1i), i=0,N-1} in a compound {(y0i,y1i),i=0,M-1}
+- match each segment ((x0i, x1i), (x(0,i+1), x(1,i+1))) to set of segments of about the same length of the scene {((y0i, y1i), (y(0,i+1), y(1,i+1))}
+- grow each segment ((x0i, x1i), (x(0,i+1), x(1,i+1)) to 3-length segment ((x0i, x1i), (x(0,i+1), x(1,i+1)), (x(0,i+2), x(1,i+2))), looking for
+  matching candidates among the set of 2-length scene cadidates;
+- repeat the growing step by growing k-length segment of the compound and looking for matching candidates among the set of k-length scene cadidates; k = k+1
