@@ -149,12 +149,61 @@ class plan_type
                     cause ---|                           |--- side_effect
                              |-- side_effect
        Some nodes (causes and effects) of the graph can be hidden. In such cases, they need to be estimated. For example, a human may be corrupted, evil, hungry, etc.
-       The hidden events (or states) in intelligent systems may be made explicit using messages.
+       The hidden events (or states) in intelligent systems may be made explicit using verbal messages.
        
         events:
-        visual observations measure points locations and color. Corresponding events are changes in point locations and color.
+        visual observations measure points locations and color. Corresponding events are changes in point locations and color: 
+            (point_location(curr_time)=>point_location(future_time)), (point_color(curr_time)=>point_color(future_time))
+            This assumes that a point is identified and its location is traced in time.
+            The observation describes a point by its properties (location, color)(time) and by the properties (location, color)(time) of surrounding points.
+            A decision needs to be made: given the  location and color of a point and its neighbourhood at tau < t and unidentified point and its neighbourhood at time t, 
+            find a point in the past (tau < t), which has the same identity.
+            It's possible that some set of points at curr_time can be mapped to a set of points in the future_time even though not all individual points of the set can be precisely mapped:
+            some points are mapped exactly, some approximately.
+            Decision-making is a process resulting in the selection of a belief or a course of action among several alternative possibilities (https://en.wikipedia.org/wiki/Decision-making)
+            Selection of the map's target point is made among the points of the scene observed at the future_time.
+            Finding the mapping function can be looked upon as an optimization problem: find f(x):X->Y, such that f = min (by g) J(g), here f is a function, which minimizes the criteria J by g, 
+            where g is from some class of functions. The calculation performed by the optimal function f could be multi-step. For example, given the f's domain D and range R, and a point x from D, 
+            step 1: find points in R, which are close by location to x; step 2: find a point in R among those selected at step 1, which is closest by color to the point x. Instead of finding 
+            an optimal choice, the decision can be to find just a good choice. 
+            
+            The identification of a point (in the current scene with a point in the previous scene) and finding causes of its location and color change and how they change may be solved 
+            simultaneously. Or it could be solved in a loop:
+            
+            identify a point in the current scene, which matches a given point in the previous scene;
+            find the prediction law of the point in the future scenes: prediction(cause)=effect;
+            loop
+            {
+                predict the scene;
+                observe the prediction;
+                if error in prediction
+                {
+                    identify a point in the current scene, which matches a given point in the previous scene;
+                    find the prediction law of the point in the future scenes: prediction(cause)=effect;
+                }
+            }
+            If the identification and prediction laws in the loop are selected by uniform random sampling, then the chances of finding the right ones are very slim.
+            The recurrent identification and prediction should be a converging process, not necessarily stricktly monotonically.
+            
+            A cost can be associated with an option. When the option's cost is lowest or/and below a threshold, the option is selected.
+            Selection of a point at future_time, which is close by color and location from a point at curr_time is motivated by a belief (hypothesis) 
+            that a material point is not likely to change its properties very fast. This hypothesis is confirmed later by ability to predict a point behaviour in most of the cases.
+            
+            How this hypothesis is represented in ais? How is it applied?
+            
+            
+            This shows that ais has to have a set of hypotheses even before it starts learning them from observations. (111111111111111111111)
+            
+            
+            Intuitively, cont here 111111111111111111111111111: continuous location and color change, preserves some statistic(s) evaluated on a nbhd,...
+            
+            
+            
+            
         tactile observations measure points location and temperature. Corresponding events are changes in point locations and temperature.
-        auditory observations measure points location, sound volume and frequency. Corresponding events are changes in point locations, volume and frequency.       
+        auditory observations measure points location, sound volume and frequency. Corresponding events are changes in point locations, volume and frequency. 
+        
+        
     */           
 
     bool terminal_node = false;
@@ -273,6 +322,11 @@ class ai_system
                 characters, words, sentences to send visual, tactile, auditory messages
             tracking the changes of the objects of interest (maybe adding goals to track the objects?)
             analyzing the objects of inteterest (curiosity, maybe by adding "curiosity" goals?)
+            looking for goals ("what shall i do next?")
+            monitoring one's thoughts in humans is maybe an ability to monitor and participate in forming high-level plans to reach one's goals:
+            - subconscious plan forming: low-level plan forming, like which muscle tissue to contract;
+            - conscious plan forming: high-level plan forming, like which store to go;
+            - automatic plan forming (and execution): which leg steps next, how to lock the door.
          */
     }
 
