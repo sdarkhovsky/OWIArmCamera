@@ -170,21 +170,29 @@ class plan_type
             The identification of a point (in the current scene with a point in the previous scene) and finding causes of its location and color change and how they change may be solved 
             simultaneously. Or it could be solved in a loop:
             
+            observe the scene;  
             identify a point in the current scene, which matches a given point in the previous scene;
             find the prediction law of the point in the future scenes: prediction(cause)=effect;
             loop
             {
-                predict the scene;
-                observe the prediction;
-                if error in prediction
+                predict the scene;  // to make the prediction needs to identify (i.e. match with previously observed) the scene points first
+                observe the scene;  
+                identify the point in the current scene;
+                if error in point prediction   // may also need to identify the observed points points to evaluate the prediction
                 {
-                    identify a point in the current scene, which matches a given point in the previous scene;
-                    find the prediction law of the point in the future scenes: prediction(cause)=effect;
+                    update the prediction law of the point in the future scenes;
                 }
             }
             If the identification and prediction laws in the loop are selected by uniform random sampling, then the chances of finding the right ones are very slim.
-            The recurrent identification and prediction should be a converging process, not necessarily stricktly monotonically.
-            
+            The recurrent identification and prediction should be a converging process, not necessarily strictly monotonicallly.
+            Intuitively, the identification of a point in the curr_time scene, depends on:
+            - proximity of the location and color of the point to the predicted values;
+            - the similarity of color distribution in the point nbhd in the curr_time and prev_time scenes.
+            - the similarity in distance in location space to other identified points;
+            - the time continuity of the point location and color.
+            The prediction of a point location comes from Newton laws, i.e. position and velocity of the point at prev_time and acceleration from the forces acting 
+            on the point, including from nbhd points, e.g. X(t)=X0+V0*t+a0*t^2/2;
+                        
             A cost can be associated with an option. When the option's cost is lowest or/and below a threshold, the option is selected.
             Selection of a point at future_time, which is close by color and location from a point at curr_time is motivated by a belief (hypothesis) 
             that a material point is not likely to change its properties very fast. This hypothesis is confirmed later by ability to predict a point behaviour in most of the cases.
