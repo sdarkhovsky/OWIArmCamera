@@ -278,7 +278,11 @@ class plan_type
                         point_identity.prediction = 
                         { [](time} 
                           { 
-                            // the new calculation includes hidden variables, polynomial time dependency, products and sums using archived point_identities data
+                            // the new calculation includes hidden variables, polynomial time dependency, products and sums of point_identities data
+                            // to make the location and color better fit the data
+                            // the acceleration may change independently of the point_identities data under action of external forces
+                            // if the change of the acceleration is tied to external forces, then an external planner would be able to modify 
+                            // the location trajectory of the point according to a goal trajectory
                             acceleration = a_constant; 
                             delta_t = 1;
                             velocity = velocity(t-1) + delta_t*acceleration;
@@ -291,6 +295,113 @@ class plan_type
                 }
             }
 
+            Example: Identification and prediction in the scene with N points (location, color).
+            //observe the scene;  
+            time=0; 
+            capturing scene(time)=(time,{(location_i, color_i), i=1,K(time)}); K(time) <= N 
+
+            //observe the scene;              
+            time=time+1; 
+            capturing scene(time)=(time,{(location_i, color_i), i=1,K(time)}); K(time) <= N 
+11111111111111111111 continue here
+            //find point identification models for point identities;
+            identification_with_previous_scene_points = 
+            { [](time} 
+              { 
+                for each point in scene[time]
+                {
+                    if (norm(point.location- scene(time-1).point.location) < tolerance_location && norm(point.color- scene(time-1).point.color) < tolerance_color)
+                    {
+                        point_identity.add_points(scene(time-1).point, scene(time).point);
+                        point_identities.add(point_identity);
+                        return point_identity;                            
+                    }
+                }
+              }
+            }
+        
+            identification_with_point_identities = 
+            { [](time} 
+              { 
+                for each point in scene[time]
+                {
+                    for each point_identity in point_identities
+                    {
+                        predicted_point = point_identity.prediction(time);
+                        point_identity.prediction_error.location = norm(point.location- predicted_point.location);
+                        point_identity.prediction_error.color = norm(point.color- predicted_point.color);
+                        if (point_identity.prediction_error.location < tolerance_location && point_identity.prediction_error.color < tolerance_color)
+                        {
+                            point_identity.add_point(scene(time).point);
+                            return point_identity, prediction_error.location, prediction_error.color;
+                        }
+                    }
+                }
+              }
+            }
+
+            //identify points in the scene, matching them to the points in the previous scene, thus creating point identities, containing point time traces
+            call identification_with_previous_scene_points(time);
+
+            //find the prediction models of the point identities in the future scenes: prediction(cause)=effect;
+            /*
+                prediction model calculates values of point_identity properties. 
+                So finding the prediction model means finding the function or procedure, 
+                which performs the calculation of location(time) and color(time). 
+                The process of finidng the prediction model for a point_identity maps point_identity to a procedure (program), 
+                which input is the point_identities data and output the point_identity data at a future time.
+            */
+            for each point_identity in point_identities
+            {
+                point_identity.prediction = 
+                { [](time} 
+                  { 
+                    location = location(time-1) + 1*(location(time-1)-location(time-2);
+                    color = color(time-1)
+                    return location, color
+                  }
+                }
+            }
+
+            loop
+            {
+                //observe the scene;  
+                time=time+1; 
+                capturing scene(time)={{time, location(time), color(time))}
+                
+                //predict points in the scene from the point identities;  
+                //identify points in the scene, matching points to the predictions from point identities;
+                call identification_with_point_identities(time);
+
+                //identify remaining unidentified points in the scene, matching them to the points in the previous scenes, thus creating point identities, containing point time traces
+                call identification_with_previous_scene_points(time);                
+
+                //if error in point prediction   
+                for each point_identity in point_identities
+                {
+                    if (point_identity.prediction_error.location > tolerance_location || point_identity.prediction_error.color > tolerance_color)
+                    {
+                        //update identification models and the prediction models of the point identities
+                        // identification_with_previous_scene_points and identification_with_point_identities are not improved here, because the example assumes only 1 point in the world
+                        point_identity.prediction = 
+                        { [](time} 
+                          { 
+                            // the new calculation includes hidden variables, polynomial time dependency, products and sums of point_identities data
+                            // to make the location and color better fit the data
+                            // the acceleration may change independently of the point_identities data under action of external forces
+                            // if the change of the acceleration is tied to external forces, then an external planner would be able to modify 
+                            // the location trajectory of the point according to a goal trajectory
+                            acceleration = a_constant; 
+                            delta_t = 1;
+                            velocity = velocity(t-1) + delta_t*acceleration;
+                            location = location(time-1) + delta_t*velocity(t-1) + acceleration(t-1)* delta_t^2/2;
+                            color = color(time-1)
+                            return location, color
+                          }
+                        }
+                    }
+                }
+            }
 
             
             A point identification may start with its comparison with the predicted identified points. The miscompare may occur because because the point 
