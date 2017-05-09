@@ -170,26 +170,129 @@ class plan_type
             The identification of a point (in the current scene with a point in the previous scene) and finding causes of its location and color change and how they change may be solved 
             simultaneously. Or it could be solved in a loop:
             
-            identify the points in the current scene
-            
-            point_identification_and_prediction()
+            observe the scene;  
+            observe the scene;              
+            find identification model for point identities;
+            identify points in the scene, matching them to the points in the previous scene, thus creating point identities, containing point time traces
+            find the prediction models of the point identities in the future scenes: prediction(cause)=effect;
+            loop
             {
                 observe the scene;  
-                observe the scene;              
-                identify points in the scene, matching them to the points in the previous scene, thus creating point identities, containing point time traces
-                find the prediction models of the point identities in the future scenes: prediction(cause)=effect;
-                loop
+                predict points in the scene from the point identities;  
+                identify points in the scene, matching points to the predictions from point identities;
+                identify remaining unidentified points in the scene, matching them to the points in the previous scenes, thus creating point identities, containing point time traces
+                if error in point prediction   
                 {
-                    observe the scene;  
-                    predict points in the scene from the point identities;  
-                    identify points in the scene, matching points to the predictions from point identities;
-                    identify remaining unidentified points in the scene, matching them to the points in the previous scenes, thus creating point identities, containing point time traces
-                    if error in point prediction   
+                    update identification models and the prediction models of the point identities
+                }
+            }
+            
+            Example: Identification and prediction in the scene with one point (location, color).
+            //observe the scene;  
+            time=0; 
+            capturing scene(time)={(time,location(time), color(time))}
+
+            //observe the scene;              
+            time=time+1; 
+            capturing scene(time)={(time,location(time), color(time))}
+
+            //find point identification models for point identities;
+            identification_with_previous_scene_points = 
+            { [](time} 
+              { 
+                for each point in scene[time]
+                {
+                    if (norm(point.location- scene(time-1).point.location) < tolerance_location && norm(point.color- scene(time-1).point.color) < tolerance_color)
                     {
-                        update the prediction models of the point identities
+                        point_identity.add_points(scene(time-1).point, scene(time).point);
+                        point_identities.add(point_identity);
+                        return point_identity;                            
+                    }
+                }
+              }
+            }
+        
+            identification_with_point_identities = 
+            { [](time} 
+              { 
+                for each point in scene[time]
+                {
+                    for each point_identity in point_identities
+                    {
+                        predicted_point = point_identity.prediction(time);
+                        point_identity.prediction_error.location = norm(point.location- predicted_point.location);
+                        point_identity.prediction_error.color = norm(point.color- predicted_point.color);
+                        if (point_identity.prediction_error.location < tolerance_location && point_identity.prediction_error.color < tolerance_color)
+                        {
+                            point_identity.add_point(scene(time).point);
+                            return point_identity, prediction_error.location, prediction_error.color;
+                        }
+                    }
+                }
+              }
+            }
+
+            //identify points in the scene, matching them to the points in the previous scene, thus creating point identities, containing point time traces
+            call identification_with_previous_scene_points(time);
+
+            //find the prediction models of the point identities in the future scenes: prediction(cause)=effect;
+            /*
+                prediction model calculates values of point_identity properties. 
+                So finding the prediction model means finding the function or procedure, 
+                which performs the calculation of location(time) and color(time). 
+                The process of finidng the prediction model for a point_identity maps point_identity to a procedure (program), 
+                which input is the point_identities data and output the point_identity data at a future time.
+            */
+            for each point_identity in point_identities
+            {
+                point_identity.prediction = 
+                { [](time} 
+                  { 
+                    location = location(time-1) + 1*(location(time-1)-location(time-2);
+                    color = color(time-1)
+                    return location, color
+                  }
+                }
+            }
+
+            loop
+            {
+                //observe the scene;  
+                time=time+1; 
+                capturing scene(time)={{time, location(time), color(time))}
+                
+                //predict points in the scene from the point identities;  
+                //identify points in the scene, matching points to the predictions from point identities;
+                call identification_with_point_identities(time);
+
+                //identify remaining unidentified points in the scene, matching them to the points in the previous scenes, thus creating point identities, containing point time traces
+                call identification_with_previous_scene_points(time);                
+
+                //if error in point prediction   
+                for each point_identity in point_identities
+                {
+                    if (point_identity.prediction_error.location > tolerance_location || point_identity.prediction_error.color > tolerance_color)
+                    {
+                        //update identification models and the prediction models of the point identities
+                        // identification_with_previous_scene_points and identification_with_point_identities are not improved here, because the example assumes only 1 point in the world
+                        point_identity.prediction = 
+                        { [](time} 
+                          { 
+                            // the new calculation includes hidden variables, polynomial time dependency, products and sums using archived point_identities data
+                            acceleration = a_constant; 
+                            delta_t = 1;
+                            velocity = velocity(t-1) + delta_t*acceleration;
+                            location = location(time-1) + delta_t*velocity(t-1) + acceleration(t-1)* delta_t^2/2;
+                            color = color(time-1)
+                            return location, color
+                          }
+                        }
                     }
                 }
             }
+
+
+            
             A point identification may start with its comparison with the predicted identified points. The miscompare may occur because because the point 
             has never been identified in the past or the prediction of a previously identified point failed.
             An identified point combines sighting of the point in past scenes {(location,color)(t), for some past t}
