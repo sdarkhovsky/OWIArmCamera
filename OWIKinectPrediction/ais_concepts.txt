@@ -345,8 +345,23 @@ class plan_type
                calc_identity(location(tau),color(tau), tau)!=true_identity(location(tau),color(tau), tau), so that calc_identity is wrong.   Q.E.D.
         
         However, if constraints are assumed on the transformation of points' properties between times t and tau, then the identity calculation procedure may exist for some points.
-        Example: the point set consists of points on the circle and the circle center. The transformation is constrained to the isometry, i.e. distance between points do not change.
+        Example 1: the point set consists of points on the circle and the circle center. The transformation is constrained to the isometry, i.e. distance between points do not change.
         Then the center of the circle can be identified at any time.
+        Example 2: each point of the set has a unique color. The transformation is constrained to preserving the color of each point. 
+                 Then there is 1-to-1 mapping between a point color and identity and the identity calculation procedure implements this map.
+        Example 3: the point set consists of points on two non-concentric circles of different radiuses and their centers. The transformation is constrained to the isometry. 
+                 Then the centers of the circles can be found as points at teh same distance from multiple points and teh other points can be narrowed to at most 2 by measuring distances 
+                 from the previously identified centers.
+               
+        Questions:
+        1. Given a constraint on the transformation of the properties of the points of a set, how to find a procedure, calculating identity of at least some of the points at time tau, given all point properies 
+           for t <= tau and identities for t < tau?
+        2. Same as question 1, but for multiple constraints, acting at the same time. Note that different constraints may possible the identification procedures for different subsets of the point set. 
+        3. Same as question 1, but the identification procedure is allowed to significantly narrow the identity of the points, not necessarily to one identity. See the example 3.
+        
+        
+        
+        
     */           
 
     bool terminal_node = false;
