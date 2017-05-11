@@ -344,7 +344,9 @@ class plan_type
                calc_identity(location(tau),color(tau), tau)=true_identity(location(tau),color(tau), tau), then after the swap 
                calc_identity(location(tau),color(tau), tau)!=true_identity(location(tau),color(tau), tau), so that calc_identity is wrong.   Q.E.D.
         
-        However, if constraints are assumed on the transformation of points' properties between times t and tau,
+        However, if constraints are assumed on the transformation of points' properties between times t and tau, then the identity calculation procedure may exist for some points.
+        Example: the point set consists of points on the circle and the circle center. The transformation is constrained to the isometry, i.e. distance between points do not change.
+        Then the center of the circle can be identified at any time.
     */           
 
     bool terminal_node = false;
