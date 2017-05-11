@@ -325,8 +325,26 @@ class plan_type
         To discover that movement of one point imposes constraints on movement of another point, these points need to be selected and their movement analyzed. In rigid body it means that 
         every body point has to compare with every other body point. This implies the ability to identify a point in time. But not all points are identifiable based on the color of their nbhd.
         
-11111111111111111111111111        
+        A point can be identified by location and color. But:
+        - ais observes may be observing only some of the points, or area samples of the points, due to finite resolution of its sensors.
+        - location of points may change in time.
+        - color of points may change in time.
         
+        Axiom: each point is assigned a unique identity, which is preserved through the point liftime. The point may change its properties (location, color), but it preserves the identity.
+        A set of points at time t is descibed as a collection {{identity, location, color}}(t).
+        Suppose, locations and color of points of the set are transformed as: {{identity, location, color}}(t) to {{identity, location, color}}(dt). Then a point with the identity id
+        changed from identity.location(t), identity.color(t) to identity.location(t+dt), identity.color(t+dt).
+        Statement: In general transformation, when any point can move anywhere and change to any color, it is impossible to identify points from location and color information.
+        Proof: Supposed identity of points are known at any time t < tau: identity(location,color, t)=id, where id is a unique value for given t, so that 
+               identity(location_i,color_i, t) != identity(location_j,color_j,t) for any location(t),color(t).
+               The possibility of identification from location and color without constraints on the "t to tau" transformation means that there is a calculation procedure, which takes 
+               the input location(t),color(t), identity(location(t),color(t),t), t < tau and location(tau),color(tau) and its output 
+               calc_identity(location(tau),color(tau), tau) equals identity(location(tau),color(tau), tau), which is true identity of the points. 
+               Suppose such calculation procedure exists. Suppose two points at the time tau swapped their location and color, preserving properties. Then if before the swap 
+               calc_identity(location(tau),color(tau), tau)=true_identity(location(tau),color(tau), tau), then after the swap 
+               calc_identity(location(tau),color(tau), tau)!=true_identity(location(tau),color(tau), tau), so that calc_identity is wrong.   Q.E.D.
+        
+        However, if constraints are assumed on the transformation of points' properties between times t and tau,
     */           
 
     bool terminal_node = false;
