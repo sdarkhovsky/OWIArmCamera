@@ -334,6 +334,7 @@ class plan_type
         A set of points at time t is descibed as a collection {{identity, location, color}}(t).
         Suppose, locations and color of points of the set are transformed as: {{identity, location, color}}(t) to {{identity, location, color}}(dt). Then a point with the identity id
         changed from identity.location(t), identity.color(t) to identity.location(t+dt), identity.color(t+dt).
+        
         Statement: In general transformation, when any point can move anywhere and change to any color, it is impossible to identify points from location and color information.
         Proof: Supposed identity of points are known at any time t < tau: identity(location,color, t)=id, where id is a unique value for given t, so that 
                identity(location_i,color_i, t) != identity(location_j,color_j,t) for any location(t),color(t).
@@ -350,8 +351,11 @@ class plan_type
         Example 2: each point of the set has a unique color. The transformation is constrained to preserving the color of each point. 
                  Then there is 1-to-1 mapping between a point color and identity and the identity calculation procedure implements this map.
         Example 3: the point set consists of points on two non-concentric circles of different radiuses and their centers. The transformation is constrained to the isometry. 
-                 Then the centers of the circles can be found as points at teh same distance from multiple points and teh other points can be narrowed to at most 2 by measuring distances 
+                 Then the centers of the circles can be found as points at the same distance from multiple points and the other points can be narrowed to at most 2 by measuring distances 
                  from the previously identified centers.
+        Example 4: some points of the set have a unique color. The transformation is constrained to preserving the color of each point and isometry.
+                 Then the points of unique color can be identified using the constraint preserving color of each point.
+                 The points with non-unique color can be identified using the isometry constraint as preserving distances to the earlier identified points of unique color.
                
         Questions:
         1. Given a constraint on the transformation of the properties of the points of a set, how to find a procedure, calculating identity of at least some of the points at time tau, given all point properies 
@@ -362,8 +366,24 @@ class plan_type
            sets. How to find these sets in the scene?
         5. Same as question 4, but scenes for different times may contain subsets of sets for which the transformation constraint and the identification procedure exist.
         6. Suppose the transformation constraints are selected and corresponding sets of points and identification procedures are found. How to predict the points for a future time?
-           For example, the constraints are isometry and preservation of color by each point, but different points may have the same color. Supposed a set of points (of which only part is visible in the scene)
-           is isometrically moved. How to find the moved point set?
+        
+        Statement: Suppose one of the transformation constraints of a set of points is the isometry. Then to predict the location of the set it's necessary and sufficient to predict the location 
+           of some 4 points in general position (noncollinear, nonplanar?) of the set.
+        Proof: If the locations of all set points are predicted, then the locations of any 4 points of the set are predicted.
+               If the locations of some 4 noncollinear points of the set are predicted, then coordinates of other points can be restored from equations |x-p_i|=d_i.
+               The visual proof is the following: x is at distance d_i from p_i. Then x is at the intersection of the spheres (p_1,d_1) and (p_2,d_2), which is a point or a curve C12.
+               x is also at the intersection of the curve C12 and the sphere (p_3,d_3), which is a point or 2 points. Finally x is selected as one of 2 points by selecting the one which 
+               distance to the p_4 is d_4.
+        
+        An isometry of a set is a combination of a rotation (orthogonal transformation) and translation. Bot rotation and translation are defined by 3 parameters, so the isometry is defined by 6 parameters.
+        Prediction of an isometry of a set can be done as follows:
+        - defining the isometry by 6 parameters means that a coordinate system with respect to which the rotation and translation vectors are defined and a point with respect to which the translation and rotation 
+          are performed and the transformation time interval is defined.
+        - translate the point by the translation vector;
+        - place rotation vector at the translated point and rotate around the rotation vector by its magnitude;
+        
+        
+               
         
     */           
 
