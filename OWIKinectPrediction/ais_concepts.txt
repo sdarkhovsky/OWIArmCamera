@@ -376,12 +376,13 @@ class plan_type
                distance to the p_4 is d_4.
         
         An isometry of a set is a combination of a rotation (orthogonal transformation) and translation. Bot rotation and translation are defined by 3 parameters, so the isometry is defined by 6 parameters.
-        Prediction of an isometry of a set can be done as follows:
-        - defining the isometry by 6 parameters means that a coordinate system with respect to which the rotation and translation vectors are defined and a point with respect to which the translation and rotation 
-          are performed and the transformation time interval is defined.
-        - translate the point by the translation vector;
-        - place rotation vector at the translated point and rotate around the rotation vector by its magnitude;
+        Isometry transformation is calcualted as X = R*(X-Xc)+Xc+T where C is the point, which is a center of rotation, Xc its coordinate in the world reference frame,  
+        X is a coordinate of a point of the set in the world reference frame , R is rotation matrix, T is translation. Note that after the transformation Xc=Xc+T. Note also that another point can be selected
+        as a center of the next rotation.
+        To predict the isometry its 6 parameters have to be predicted.
         
+        Besides prediction of the isometry parameters, ais needs to know which points are elements of the set, transformed by the isometry.
+        In case of transformation constraints isometry and color preservation, the seeds for the 
         
                
         
