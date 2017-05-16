@@ -407,6 +407,13 @@ class plan_type
         - isometry point set rotating around a fixed point P with angular velocity w between times t1+d,t2+d;
         ais should establish the causal link between the events and learn the map between parameters of the events.
        
+
+        Assume, that the color and isometry constraints were used to identify all the scene points and find the isometry subsets. Suppose ais discovered 2 isometry subsets,
+        and their transformations. One isometry point set underwent transformation described by selected point (3 parameters), rotating around the point (3 parameters) and
+        translating (3 parameters) within the time interval [t1,t2]. The second isometry set's transformation is described similarly. Suppose the sets came into contact.
+        ais should establish the causal link between the events and learn the map between the parameters of the events.
+        The outcome of the sets interaction should depend on the contact region between sets.The contact region becomes a subset of points, which are shared betweenthe two 
+        isometry sets.
                
         
     */           
