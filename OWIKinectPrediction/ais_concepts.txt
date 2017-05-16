@@ -358,32 +358,55 @@ class plan_type
                  The points with non-unique color can be identified using the isometry constraint as preserving distances to the earlier identified points of unique color.
                
         Questions:
-        1. Given a constraint on the transformation of the properties of the points of a set, how to find a procedure, calculating identity of at least some of the points at time tau, given all point properies 
-           for t <= tau and identities for t < tau?
-        2. Same as question 1, but for multiple constraints, acting at the same time. Note that different constraints may possible the identification procedures for different subsets of the point set. 
+        1. Given a constraint on the transformation of the properties of the points of a set, how to find a procedure, calculating identity of at least some of the points 
+           at time tau, given all point properies for t <= tau and identities for t < tau?
+        2. Same as question 1, but for multiple constraints, acting at the same time. Note that different constraints may possible the identification procedures for different 
+           subsets of the point set. 
         3. Same as question 1, but the identification procedure is allowed to significantly narrow the identity of the points, not necessarily to one identity. See the example 3.
-        4. The scene may contain multiple sets, for each of which a constraint and corresponding identification procedure exists, but different constraint and different identification procedure for different
-           sets. How to find these sets in the scene?
+        4. The scene may contain multiple sets, for each of which a constraint and corresponding identification procedure exists, but different constraint and different 
+           identification procedure for different sets. How to find these sets in the scene?
         5. Same as question 4, but scenes for different times may contain subsets of sets for which the transformation constraint and the identification procedure exist.
         6. Suppose the transformation constraints are selected and corresponding sets of points and identification procedures are found. How to predict the points for a future time?
         
-        Statement: Suppose one of the transformation constraints of a set of points is the isometry. Then to predict the location of the set it's necessary and sufficient to predict the location 
-           of some 4 points in general position (noncollinear, nonplanar?) of the set.
+        Statement: Suppose one of the transformation constraints of a set of points is the isometry. Then to predict the location of the set it's necessary and sufficient to predict 
+           the location of some 4 points in general position (noncollinear, nonplanar?) of the set.
         Proof: If the locations of all set points are predicted, then the locations of any 4 points of the set are predicted.
                If the locations of some 4 noncollinear points of the set are predicted, then coordinates of other points can be restored from equations |x-p_i|=d_i.
                The visual proof is the following: x is at distance d_i from p_i. Then x is at the intersection of the spheres (p_1,d_1) and (p_2,d_2), which is a point or a curve C12.
                x is also at the intersection of the curve C12 and the sphere (p_3,d_3), which is a point or 2 points. Finally x is selected as one of 2 points by selecting the one which 
                distance to the p_4 is d_4.
         
-        An isometry of a set is a combination of a rotation (orthogonal transformation) and translation. Bot rotation and translation are defined by 3 parameters, so the isometry is defined by 6 parameters.
+        An isometry of a set is a combination of a rotation (orthogonal transformation) and translation. Both rotation and translation are defined by 3 parameters, 
+        so the isometry is defined by 6 parameters.
         Isometry transformation is calcualted as X = R*(X-Xc)+Xc+T where C is the point, which is a center of rotation, Xc its coordinate in the world reference frame,  
-        X is a coordinate of a point of the set in the world reference frame , R is rotation matrix, T is translation. Note that after the transformation Xc=Xc+T. Note also that another point can be selected
-        as a center of the next rotation.
+        X is a coordinate of a point of the set in the world reference frame , R is rotation matrix, T is translation. Note that after the transformation Xc=Xc+T. 
+        Note also that another point can be selected as a center of the next rotation.
         To predict the isometry its 6 parameters have to be predicted.
         
-        Besides prediction of the isometry parameters, ais needs to know which points are elements of the set, transformed by the isometry.
-        In case of transformation constraints isometry and color preservation, the seeds for the 
+        The isometry assumes that the point set is defined. In reality a scene contains multiple rigid bodies, each having its own isometry. 
+        Assume all scene points satsify the unique color preservation constraint.
+        One way to discover the sets with independent isometries: 
+        - using unique color constraint, for each point of the scene at time t, find corresponding point candidates in the scene at time t+delta. 
+        - for a given point only those points are in the same isometry set as the point, which preserve distance to the point. 
+         Select a point P in the scene t. Denote its corresponding point in the scene t+delta as P'. For each point Q of the scene t, measure the distances
+         |Q-P| and |Q'-P'|. If the distances are the same, then such points Q are candidates on being in the same isometry set as P. To be in the same isometry set
+        for sure the point Q need to preserve distance to 2(or 3?) more points of the set, which are not collinear with P.
+        Each such candidate point Q forms 2-point isometry set with P. The isometry needs to be verified for the times tau > t+delta. The 2-point isometry may be 
+        extendable to more points. A point may belong to 2 isometry sets. For example, a hinge(pivot) point is a common point of both the still base and the rotating part.
         
+        Now assume all scene points satsify the color preservation (not necessarily unique) constraint. Also assume that all the scene points satisfy isometry constraint 
+        within some subsets. Then the points of non-unique color are identified only up to belonging to the set of the same color, if using only the color preservation 
+        constraint. The location isometry constraint can be used to identify such points by distance to the unique color points of the same isometry set.
+
+        Assume, that the color and isometry constraints were used to identify all the scene points and find the isometry subsets. Suppose an isometry subset is a subset 
+        of a robotic arm controlled with a rotational or linear joint. Such movements have one degree of freedom and require one real or integer variable for the control.
+        Suppose the robot sends a signal to such joint, and identifies the isometry subset, undergoing a non-trivial transformation. A linear transformation is described
+        by 3 parameters. A rotational transformation can be described by its fixed point (3 parameters), and angular velocity vector, which includes the direction of
+        rotation and signed velocity magnitude (3 parameters). The occurring events are (see event_type):
+        - control signal u (from R1) acting between times t1,t2;
+        - isometry point set rotating around a fixed point P with angular velocity w between times t1+d,t2+d;
+        ais should establish the causal link between the events and learn the map between parameters of the events.
+       
                
         
     */           
