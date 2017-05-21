@@ -407,14 +407,36 @@ class plan_type
         - isometry point set rotating around a fixed point P with angular velocity w between times t1+d,t2+d;
         ais should establish the causal link between the events and learn the map between parameters of the events.
        
-
-        Assume, that the color and isometry constraints were used to identify all the scene points and find the isometry subsets. Suppose ais discovered 2 isometry subsets,
+        Assume, that the color and isometry constraints were used to identify all the scene points and find the isometry subsets. Suppose ais discovered two isometry subsets,
         and their transformations. One isometry point set underwent transformation described by selected point (3 parameters), rotating around the point (3 parameters) and
         translating (3 parameters) within the time interval [t1,t2]. The second isometry set's transformation is described similarly. Suppose the sets came into contact.
         ais should establish the causal link between the events and learn the map between the parameters of the events.
-        The outcome of the sets interaction should depend on the contact region between sets.The contact region becomes a subset of points, which are shared betweenthe two 
-        isometry sets.
-               
+        ais observations will depend on the phase (before the contact, contact, after the contact), intelligence of sets (none,1,or both sets are intelligent),material
+        (elasticity, friction coefficient), shape, location of the contact area, magnitude and direction of the contact forces, external forces (gravity, air resistance)
+        Suppose, that the observed sets are electrically neutral and small enough to ignore the gravitional forces between them. Then the events of the set movements
+        are interdependent only when the sets contact each other. An isolated rigid body is described by Force-torque equations[1]:
+        F=m*a    T=[IR]*alpha+omega x [IR]*omega, where a is the acceleration of a reference point, omega is the angular velocity, alpha is the angular acceleration,
+        IR is the inertia matrix. From these equations, the parameters defining the movement of the rigid body are angular acceleration alpha (or angular velocity omega),
+        linear acceleration a, starting condition (at t=0) for the location and velocity.
+        
+
+        
+        
+        
+
+        Intuition:
+         The outcome of the sets interaction should depend on the contact region between sets.The contact region becomes a subset of points, which are shared between the two 
+         isometry sets. Suppose one set is a driver, that is its move drives the contact points of the other set. Using the rigid body mechanics, 
+         Humans can calculate the expected movement of the second set writing the force-torque equations [1], calculating transla-
+         tional and rotational movements. ais may have a number of levels at which the movements of the isometry sets (rigid bodies) is calculated:
+         - automatic, fast but less precise estimation possibly found (learned) within a class of functions from observing interactions of various bodies;
+         - elaborated, using analysis, which eventually comes to the rigid body mechanics;
+         - semiautomatic, which is the automatic method augmented with heuristics learned from analysis of the observations and made automatic;
+        ais would observe various results of collision depending on the velocities immediately before the contact between set. E.g., the grasping arm slows down to the 
+        speed of the grasped object, and then proceeds to push or carry the object. 
+
+        1. Rigid body dynamics:https://en.wikipedia.org/wiki/Rigid_body_dynamics      
+        2. Preservation of linear and angular momentums:(https://en.wikipedia.org/wiki/Angular_momentum,https://en.wikipedia.org/wiki/Momentum).
         
     */           
 
