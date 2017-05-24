@@ -378,7 +378,7 @@ class plan_type
         
         An isometry of a set is a combination of a rotation (orthogonal transformation) and translation. Both rotation and translation are defined by 3 parameters, 
         so the isometry is defined by 6 parameters.
-        Isometry transformation is calcualted as X = R*(X-Xc)+Xc+T where C is the point, which is a center of rotation, Xc its coordinate in the world reference frame,  
+L1:     Isometry transformation is calcualted as X = R*(X-Xc)+Xc+T where C is the point, which is a center of rotation, Xc its coordinate in the world reference frame,  
         X is a coordinate of a point of the set in the world reference frame , R is rotation matrix, T is translation. Note that after the transformation Xc=Xc+T. 
         Note also that another point can be selected as a center of the next rotation.
         To predict the isometry its 6 parameters have to be predicted.
@@ -409,21 +409,44 @@ class plan_type
        
         Assume, that the color and isometry constraints were used to identify all the scene points and find the isometry subsets. Suppose ais discovered two isometry subsets,
         and their transformations. One isometry point set underwent transformation described by selected point (3 parameters), rotating around the point (3 parameters) and
-        translating (3 parameters) within the time interval [t1,t2]. The second isometry set's transformation is described similarly. Suppose the sets came into contact.
-        ais should establish the causal link between the events and learn the map between the parameters of the events.
-        ais observations will depend on the phase (before the contact, contact, after the contact), intelligence of sets (none,1,or both sets are intelligent),material
-        (elasticity, friction coefficient), shape, location of the contact area, magnitude and direction of the contact forces, external forces (gravity, air resistance)
-        Suppose, that the observed sets are electrically neutral and small enough to ignore the gravitional forces between them. Then the events of the set movements
-        are interdependent only when the sets contact each other. An isolated rigid body is described by Force-torque equations[1]:
+        translating (3 parameters) within the time interval [t1,t2]. The second isometry set's transformation is described similarly. 
+        Suppose, that the observed sets are electrically neutral and small enough to ignore the gravitional forces between them. Then ais should be able to deduce from 
+        its observations that:
+        - there is no dependency between movement events of the sets, when there is no contact
+        - there is a change in movements of the sets, when the contact happens and quantify the change.
+        
+        The isometry constraint claimes that there is a set of points of which the point is a member, such that the transformations of the locations of set points is an isometry.
+        When the points are identified, ais should attempt to predict their transformation. ais can first try to predict the transformation of an individual point. 
+        Example: each point of a rigid body, rotating around an axis, moves in a circle; 
+                 each point of a rigid body, translating by a vector, translates by the same vector.
+        
+        Predicting individual points:
+        According to (L1) all points of an isometry set transform as X(t+dt) = R(t)*(X(t)-Xc(t))+Xc(t)+T(t+dt)-T(t); Xc(t+dt)=Xc(t)+T(t+dt)-T(t)
+        or  Xc(t+dt)=Xc(t)+T(t+dt)-T(t);   X(t+dt)-Xc(t+dt)=R(t)*(X(t)-Xc(t));   
+        Note Xc(t) does not depend on which rigid body point we want to track. The trace of a point is defined by X(t).
+        For all the rigid body points, to get the location of the point at (t+dt), rotate by the same R(t) the vector X(t)-Xc(t) and add Xc(t+dt), 
+        i.e. X(t+dt)= Xc(t+dt) + R(t)*(X(t)-Xc(t))
+        To predict X(t+dt), need to predict Xc(t+dt) and R(t). The prediction of a value at time t can be made using any information from the time tau < t 
+        or from the same time t, but which can be predicted independently from the value.
+        The isometry constraint can be used not just for identification, but also for prediction of point locations. After 4 non-coplanar points of a rigid body 
+        are predicted, the location of any other point of the rigid body can be predicted. The location trajectories of the 4 non-coplanar points must also 
+        satisfy the isometry. So if a first point is selected without the constraint, the second point must preserve the distance to the first, the third point 
+        must preserve the distances to the previous 2 and the fourth point must preserve distances to the previous 3. So the first of the 4 points have 3 degrees 
+        of freedom (DOF), the second is 2 DOFs, the third is 1 DOFs, the fourth is 0 (?).
+        
+        Predicting in carrying the grasped objects:
+        The task routinely performed by humans is to move a connected set of points from one location to another. ais should be able to learn how to accomplish the task.
+        
+                 
+                 
+
+        
+        An isolated rigid body is described by Force-torque equations[1]:
         F=m*a    T=[IR]*alpha+omega x [IR]*omega, where a is the acceleration of a reference point, omega is the angular velocity, alpha is the angular acceleration,
         IR is the inertia matrix. From these equations, the parameters defining the movement of the rigid body are angular acceleration alpha (or angular velocity omega),
         linear acceleration a, starting condition (at t=0) for the location and velocity.
-        
 
         
-        
-        
-
         Intuition:
          The outcome of the sets interaction should depend on the contact region between sets.The contact region becomes a subset of points, which are shared between the two 
          isometry sets. Suppose one set is a driver, that is its move drives the contact points of the other set. Using the rigid body mechanics, 
@@ -434,6 +457,9 @@ class plan_type
          - semiautomatic, which is the automatic method augmented with heuristics learned from analysis of the observations and made automatic;
         ais would observe various results of collision depending on the velocities immediately before the contact between set. E.g., the grasping arm slows down to the 
         speed of the grasped object, and then proceeds to push or carry the object. 
+        ais observations will depend on the phase (before the contact, contact, after the contact), intelligence of sets (none,1,or both sets are intelligent),material
+         elasticity, friction coefficient), shape, location of the contact area, magnitude and direction of the contact forces, external forces (gravity, air resistance)        
+        
 
         1. Rigid body dynamics:https://en.wikipedia.org/wiki/Rigid_body_dynamics      
         2. Preservation of linear and angular momentums:(https://en.wikipedia.org/wiki/Angular_momentum,https://en.wikipedia.org/wiki/Momentum).
