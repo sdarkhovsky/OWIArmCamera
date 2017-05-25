@@ -434,8 +434,13 @@ L1:     Isometry transformation is calcualted as X = R*(X-Xc)+Xc+T where C is th
         must preserve the distances to the previous 2 and the fourth point must preserve distances to the previous 3. So the first of the 4 points have 3 degrees 
         of freedom (DOF), the second is 2 DOFs, the third is 1 DOFs, the fourth is 0 (?).
         
-        Predicting in carrying the grasped objects:
-        The task routinely performed by humans is to move a connected set of points from one location to another. ais should be able to learn how to accomplish the task.
+        Predicting point set movements: 
+        The task routinely performed by humans is to move an isometry set (rigid body) of points from one location to another. ais should be able to learn how to accomplish the task.
+        If a constraint on point transformation, which is used for point identification, is defined on multiple points, then a prediction of an individual point brings 
+        a region-prediction (similar to interval-prediction) for the points linked by the constraint with the individual point. Therefore, in addition to or instead of 
+        estimation of one point, ais can consider movements of the constrained set of the points. While the prediction of an individual point is still useful,
+        the set of points linked by the identification constraint also becomes the unit of prediction. The prediction of an individual point is {p(t), based on p(tau), tau < t}.
+        The prediction of the set is {any p(t) from the set, based on p(tau), tau < t and any q(tau), tau <= t; q != p, q belongs to the set}.
         
                  
                  
