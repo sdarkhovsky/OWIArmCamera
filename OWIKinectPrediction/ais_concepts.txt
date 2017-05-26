@@ -421,7 +421,7 @@ L1:     Isometry transformation is calcualted as X = R*(X-Xc)+Xc+T where C is th
                  each point of a rigid body, translating by a vector, translates by the same vector.
         
         Predicting individual points:
-        According to (L1) all points of an isometry set transform as X(t+dt) = R(t)*(X(t)-Xc(t))+Xc(t)+T(t+dt)-T(t); Xc(t+dt)=Xc(t)+T(t+dt)-T(t)
+L2:     According to (L1) all points of an isometry set transform as X(t+dt) = R(t)*(X(t)-Xc(t))+Xc(t)+T(t+dt)-T(t); Xc(t+dt)=Xc(t)+T(t+dt)-T(t)
         or  Xc(t+dt)=Xc(t)+T(t+dt)-T(t);   X(t+dt)-Xc(t+dt)=R(t)*(X(t)-Xc(t));   
         Note Xc(t) does not depend on which rigid body point we want to track. The trace of a point is defined by X(t).
         For all the rigid body points, to get the location of the point at (t+dt), rotate by the same R(t) the vector X(t)-Xc(t) and add Xc(t+dt), 
@@ -436,15 +436,10 @@ L1:     Isometry transformation is calcualted as X = R*(X-Xc)+Xc+T where C is th
         
         Predicting point set movements: 
         The task routinely performed by humans is to move an isometry set (rigid body) of points from one location to another. ais should be able to learn how to accomplish the task.
-        If a constraint on point transformation, which is used for point identification, is defined on multiple points, then a prediction of an individual point brings 
-        a region-prediction (similar to interval-prediction) for the points linked by the constraint with the individual point. Therefore, in addition to or instead of 
-        estimation of one point, ais can consider movements of the constrained set of the points. While the prediction of an individual point is still useful,
-        the set of points linked by the identification constraint also becomes the unit of prediction. The prediction of an individual point is {p(t), based on p(tau), tau < t}.
-        The prediction of the set is {any p(t) from the set, based on p(tau), tau < t and any q(tau), tau <= t; q != p, q belongs to the set}.
+        A constraint on point transformation can be used for both point identification, and prediction. E.g. with the isometry constraint, a point X(t) can be predicted at t+dt as 
+        X(t+dt) = argmin_X(sum_i[(|X-Xi(t+dt)| - |X(t)-Xi(t)|)^2]), i>=3   or  
+        X(t+dt)= Xc(t+dt) + R(t)*(X(t)-Xc(t)), here Xc(t) is the center of rotation at time t, R(t) is rotation during [t, t+dt]. Xc(t+dt),R(t) have to be predicted before X(t+dt) calculation.
         
-                 
-                 
-
         
         An isolated rigid body is described by Force-torque equations[1]:
         F=m*a    T=[IR]*alpha+omega x [IR]*omega, where a is the acceleration of a reference point, omega is the angular velocity, alpha is the angular acceleration,
