@@ -434,17 +434,26 @@ L2:     According to (L1) all points of an isometry set transform as X(t+dt) = R
         must preserve the distances to the previous 2 and the fourth point must preserve distances to the previous 3. So the first of the 4 points have 3 degrees 
         of freedom (DOF), the second is 2 DOFs, the third is 1 DOFs, the fourth is 0 (?).
         
-        Predicting point set movements: 
+L3:     Predicting movement of an isolated point set: 
         The task routinely performed by humans is to move an isometry set (rigid body) of points from one location to another. ais should be able to learn how to accomplish the task.
-        A constraint on point transformation can be used for both point identification, and prediction. E.g. with the isometry constraint, a point X(t) can be predicted at t+dt as 
+        A constraint on point transformation can be used for both point identification, and prediction. E.g. with the isometry constraint, a set point X(t) can be predicted at t+dt as 
         X(t+dt) = argmin_X(sum_i[(|X-Xi(t+dt)| - |X(t)-Xi(t)|)^2]), i>=3   or  
         X(t+dt)= Xc(t+dt) + R(t)*(X(t)-Xc(t)), here Xc(t) is the center of rotation at time t, R(t) is rotation during [t, t+dt]. Xc(t+dt),R(t) have to be predicted before X(t+dt) calculation.
+        R(t) = exp(w~(t)); w~(t) = [0  -w3  w2; w3  0  w1; -w2  w1  0]; where w=(w1,w2,w3)' is an angular velocity.
+        The dynamic of a rigid body is described by Force-torque equations[1]: F=m*a    T=Ir*alpha+w*Ir*w, where a is the acceleration of a reference point, w is the angular velocity, 
+        alpha is the angular acceleration, Ir is the inertia matrix. 
         
         
-        An isolated rigid body is described by Force-torque equations[1]:
-        F=m*a    T=[IR]*alpha+omega x [IR]*omega, where a is the acceleration of a reference point, omega is the angular velocity, alpha is the angular acceleration,
-        IR is the inertia matrix. From these equations, the parameters defining the movement of the rigid body are angular acceleration alpha (or angular velocity omega),
-        linear acceleration a, starting condition (at t=0) for the location and velocity.
+        Predicting movement of a point set driven by another via a contact region:
+        Suppose at time t the locations, velocities and accelerations of the points of the rigid bodies i=1,2 are Xi(t), Xic(t),Xi'(t), Xic'(t), Xi''(t), Xic''(t) and the contact region 
+        is intersection of {X1(t)} and {X2(t)} (Instead of knowing velocities and acceleration, we could postulate the knowledge of the the point location for tau <= t).
+        ais can extend the prediction of the parameters used in the prediction of an isolated point set (L3) to the joint prediction of the parameters for the rigid bodies in contact,
+        e.g., the prediction of Xci(t) and Ri(t), i=1,2. These prediction should depend in part on the shape of the rigid bodies (via inertia matrix[3]), forces and torques in the 
+        contact region.
+        
+        
+        
+        
 
         
         Intuition:
@@ -463,6 +472,7 @@ L2:     According to (L1) all points of an isometry set transform as X(t+dt) = R
 
         1. Rigid body dynamics:https://en.wikipedia.org/wiki/Rigid_body_dynamics      
         2. Preservation of linear and angular momentums:(https://en.wikipedia.org/wiki/Angular_momentum,https://en.wikipedia.org/wiki/Momentum).
+        3. https://en.wikipedia.org/wiki/Moment_of_inertia
         
     */           
 
