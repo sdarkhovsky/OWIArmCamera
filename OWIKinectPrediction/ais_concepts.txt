@@ -438,7 +438,7 @@ L3:     Predicting movement of an isolated point set:
         The task routinely performed by humans is to move an isometry set (rigid body) of points from one location to another. ais should be able to learn how to accomplish the task.
         A constraint on point transformation can be used for both point identification, and prediction. E.g. with the isometry constraint, a set point X(t) can be predicted at t+dt as 
         X(t+dt) = argmin_X(sum_i[(|X-Xi(t+dt)| - |X(t)-Xi(t)|)^2]), i>=3   or  
-        X(t+dt)= Xc(t+dt) + R(t)*(X(t)-Xc(t)), here Xc(t) is the center of rotation at time t, R(t) is rotation during [t, t+dt]. Xc(t+dt),R(t) have to be predicted before X(t+dt) calculation.
+L4:     X(t+dt)= Xc(t+dt) + R(t)*(X(t)-Xc(t)), here Xc(t) is the center of rotation at time t, R(t) is rotation during [t, t+dt]. Xc(t+dt),R(t) have to be predicted before X(t+dt) calculation.
         R(t) = exp(w~(t)); w~(t) = [0  -w3  w2; w3  0  w1; -w2  w1  0]; where w=(w1,w2,w3)' is an angular velocity.
         The dynamic of a rigid body is described by Force-torque equations[1]: F=m*a    T=Ir*alpha+w*Ir*w, where a is the acceleration of a reference point, w is the angular velocity, 
         alpha is the angular acceleration, Ir is the inertia matrix. 
@@ -446,12 +446,20 @@ L3:     Predicting movement of an isolated point set:
         - for any point of the set point.color(t1) = point.color(t2)), t2 > t1. This constraint predicts the color of a point.
         - for any two points of the set abs(point1.location(t1) - point2.location(t1)) = abs(point1.location(t2) - point2.location(t2)), t2 > t1. This constraint predicts the location
         of a point, given at least 3 (or 4) non-coplanar points.
-        The prediction of a feature from a constraint is possible if the constraint includes the value of the feature with same or other features at earlier times.
+        The prediction of a feature from a constraint is possible if the constraint includes the predicted feature with features at earlier times.
         A prediction narrows down the set of possible values of the predicted variable. The union of constraints narrows down the set of possible values even more. The maximally narrowed 
         set of possible values is a prediction estimate, which may become a point estimate: union_i(constraint_i(feature_value)).
         If the constraint, besides the predicted feature, includes some features for the same or later time, then those features need to be predicted without using the same constraint. 
         E.g. to predict X(t+dt) from |X(t+dt)-Xi(t+dt)| = |X(t)-Xi(t)|), Xi(t+dt) needs to be predicted from other considerations. To get the point estimate of X(t+dt), Xi(t+dt), i=1,...4
-        need to be known. Similarly with X(t+dt)= Xc(t+dt) + R(t)*(X(t)-Xc(t))
+        need to be known. 
+        The constraint can be found equivalent to a generative expression, which calculates the predicted feature as a function of hidden features, 
+        e.g. X(t+dt)= Xc(t+dt) + R(t)*(X(t)-Xc(t)) (see L4). The features Xc(t) and R(t) (rotation during [t,t+dt]) need to be predicted. The features Xi(t) of the same time t cannot 
+        be used for prediction to avoid a prediction loop. But the values at earlier times and other features not creating a loop can be used. The values of Xc(t) and R(t) for some time 
+        period are needed for prediction analyzis. Suppose (but it's not necessary) that the mass center of the set is selected as a center of rotation. Then Xc(t)=sum(Xi(t),i)/count(Xi(t),i);
+        To find R(t) denote the matrix  A:=[Xi(t+dt) - Xc(t+dt), columns i=1,N]  B:=[Xi(t)-Xc(t), columns i=1,N]. Then A=R(t)*B. The solution is R(t) = (A*B')*inverse(B*B').
+        
+        
+        
         
         
         Predicting movement of a point set driven by another via a contact region:
