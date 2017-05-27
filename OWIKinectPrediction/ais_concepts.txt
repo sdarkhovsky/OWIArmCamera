@@ -442,6 +442,16 @@ L3:     Predicting movement of an isolated point set:
         R(t) = exp(w~(t)); w~(t) = [0  -w3  w2; w3  0  w1; -w2  w1  0]; where w=(w1,w2,w3)' is an angular velocity.
         The dynamic of a rigid body is described by Force-torque equations[1]: F=m*a    T=Ir*alpha+w*Ir*w, where a is the acceleration of a reference point, w is the angular velocity, 
         alpha is the angular acceleration, Ir is the inertia matrix. 
+        Selecting constraints for identification:
+        - for any point of the set point.color(t1) = point.color(t2)), t2 > t1. This constraint predicts the color of a point.
+        - for any two points of the set abs(point1.location(t1) - point2.location(t1)) = abs(point1.location(t2) - point2.location(t2)), t2 > t1. This constraint predicts the location
+        of a point, given at least 3 (or 4) non-coplanar points.
+        The prediction of a feature from a constraint is possible if the constraint includes the value of the feature with same or other features at earlier times.
+        A prediction narrows down the set of possible values of the predicted variable. The union of constraints narrows down the set of possible values even more. The maximally narrowed 
+        set of possible values is a prediction estimate, which may become a point estimate: union_i(constraint_i(feature_value)).
+        If the constraint, besides the predicted feature, includes some features for the same or later time, then those features need to be predicted without using the same constraint. 
+        E.g. to predict X(t+dt) from |X(t+dt)-Xi(t+dt)| = |X(t)-Xi(t)|), Xi(t+dt) needs to be predicted from other considerations. To get the point estimate of X(t+dt), Xi(t+dt), i=1,...4
+        need to be known. Similarly with X(t+dt)= Xc(t+dt) + R(t)*(X(t)-Xc(t))
         
         
         Predicting movement of a point set driven by another via a contact region:
@@ -450,9 +460,6 @@ L3:     Predicting movement of an isolated point set:
         ais can extend the prediction of the parameters used in the prediction of an isolated point set (L3) to the joint prediction of the parameters for the rigid bodies in contact,
         e.g., the prediction of Xci(t) and Ri(t), i=1,2. These prediction should depend in part on the shape of the rigid bodies (via inertia matrix[3]), forces and torques in the 
         contact region.
-        
-        
-        
         
 
         
