@@ -455,19 +455,17 @@ L4:     X(t+dt)= Xc(t+dt) + R(t)*(X(t)-Xc(t)), here Xc(t) is the center of rotat
         The constraint can be found equivalent to a generative expression, which calculates the predicted feature as a function of hidden features, 
         e.g. X(t+dt)= Xc(t+dt) + R(t)*(X(t)-Xc(t)) (see L4). The features Xc(t) and R(t) (rotation during [t,t+dt]) need to be predicted. The features Xi(t) of the same time t cannot 
         be used for prediction to avoid a prediction loop. But the values at earlier times and other features not creating a loop can be used. The values of Xc(t) and R(t) for some time 
-        period are needed for prediction analyzis. Suppose (but it's not necessary) that the mass center of the set is selected as a center of rotation. Then Xc(t)=sum(Xi(t),i)/count(Xi(t),i);
+L5:     period are needed for prediction analyzis. Suppose (but it's not necessary) that the mass center of the set is selected as a center of rotation. Then Xc(t)=sum(Xi(t),i)/count(Xi(t),i);
         To find R(t) denote the matrix  A:=[Xi(t+dt) - Xc(t+dt), columns i=1,N]  B:=[Xi(t)-Xc(t), columns i=1,N]. Then A=R(t)*B. The solution is R(t) = (A*B')*inverse(B*B').
-        
-        
-        
+        When the only external force acting on the body is the gravity, then the angular momentum of the body about the mass center Hg=sum(r_i x (w x r_i)*dm_i) = I* w = const [4,p.891, p.923]
+L6:     R(t) = exp(w^ * t)*R(0) [5, p.26], w^ is a skew-symmetric matrix from w.  w^ = dR/dt*inverse(R(t))
+        ais can calculate w(t) and Xc(t) from L5, L6.
         
         
         Predicting movement of a point set driven by another via a contact region:
-        Suppose at time t the locations, velocities and accelerations of the points of the rigid bodies i=1,2 are Xi(t), Xic(t),Xi'(t), Xic'(t), Xi''(t), Xic''(t) and the contact region 
-        is intersection of {X1(t)} and {X2(t)} (Instead of knowing velocities and acceleration, we could postulate the knowledge of the the point location for tau <= t).
-        ais can extend the prediction of the parameters used in the prediction of an isolated point set (L3) to the joint prediction of the parameters for the rigid bodies in contact,
-        e.g., the prediction of Xci(t) and Ri(t), i=1,2. These prediction should depend in part on the shape of the rigid bodies (via inertia matrix[3]), forces and torques in the 
-        contact region.
+        Suppose ais observes the points of the rigid bodies RBi, i=1,2 and calculates Xc and w as described in L3. ais learnes to predict Xc and w during and after the contacts of the rigid bodies.
+        These prediction should depend on the shape of the rigid bodies (via inertia tensor[3],[4]), forces and torques in the contact region.
+        The expected learned dependency is .........................................
         
 
         
@@ -485,9 +483,11 @@ L4:     X(t+dt)= Xc(t+dt) + R(t)*(X(t)-Xc(t)), here Xc(t) is the center of rotat
          elasticity, friction coefficient), shape, location of the contact area, magnitude and direction of the contact forces, external forces (gravity, air resistance)        
         
 
-        1. Rigid body dynamics:https://en.wikipedia.org/wiki/Rigid_body_dynamics      
-        2. Preservation of linear and angular momentums:(https://en.wikipedia.org/wiki/Angular_momentum,https://en.wikipedia.org/wiki/Momentum).
+        1. Rigid body dynamics: https://en.wikipedia.org/wiki/Rigid_body_dynamics      
+        2. Preservation of linear and angular momentums: https://en.wikipedia.org/wiki/Angular_momentum  https://en.wikipedia.org/wiki/Momentum
         3. https://en.wikipedia.org/wiki/Moment_of_inertia
+        4. Beer, Johnston, Vector Mechanics for Enginners, Statics and Dynamics, 5th ed., 1988
+        5. An invitation to 3-d vision, Ma,Soatto,Kosecka, Sastry, 2006
         
     */           
 
