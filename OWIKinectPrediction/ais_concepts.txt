@@ -130,7 +130,6 @@ class event_type
         if (control_signal_event)
         {
             send(control_signal.joint, control_signal.value);
-            return;
         }
     }
 }
@@ -466,7 +465,6 @@ L6:     R(t) = exp(w^ * t)*R(0) [5, p.26], w^ is a skew-symmetric matrix from w.
         Suppose ais observes the points of the rigid bodies RBi, i=1,2 and calculates Xc and w as described in L3. ais learnes to predict Xc and w during and after the contacts of the rigid bodies.
         These prediction should depend on the shape of the rigid bodies (via inertia tensor[3],[4]), forces and torques in the contact region.
         The expected learned dependency is .........................................
-        
 
         
         Intuition:
@@ -481,6 +479,37 @@ L6:     R(t) = exp(w^ * t)*R(0) [5, p.26], w^ is a skew-symmetric matrix from w.
         speed of the grasped object, and then proceeds to push or carry the object. 
         ais observations will depend on the phase (before the contact, contact, after the contact), intelligence of sets (none,1,or both sets are intelligent),material
          elasticity, friction coefficient), shape, location of the contact area, magnitude and direction of the contact forces, external forces (gravity, air resistance)        
+         
+L7:        Prediction improvement: 
+        ais builds prediction rules for the rigid body movement from observation in multiple layers:
+        - using a prediction function X(t+dt)=Pred_Func_1(X(t),p1) with a parameter p1;
+        - refinement of the above prediction function Pred_Func_1 X(t+dt)=Pred_Func_1(X(t),p1) for the case C1;
+        - generalization of Pred_Func for a new parameter X(t+dt)=Pred_Func_2(X(t),p1, p2)
+        - when the existing prediction rules still calculate unsatisfactory prediction, a refinement needs to be made. The refinement would find additional factors and 
+          generalaize the prediction formula to account for the factors. Then Pred_Func X(t+dt)=Pred_Func_1(X(t),p1) is generalized to X(t+dt)=Pred_Func_2(X(t),p1, p2), 
+          such that  Pred_Func_1(X(t),p1) = Pred_Func_2(X(t),p1, p2) for some value of p2.
+          This will result in the generalization tree:
+          X(t+dt)=Pred_Func(X(t))
+          X(t+dt)=Pred_Func_1(X(t), p1)
+          X(t+dt)=Pred_Func_2(X(t), p1, p2)
+          ...
+          X(t+dt)=Pred_Func_N(X(t), p1,...,pN)
+          For example, prediction of the movement of a toy top point can be attempted as:
+                velocity(point,t)=cross_product(angular_velocity, radius_vector(point,t)), 
+                radius_vector(point,t+dt)=radius_vector(point,t)+velocity(point,t)*dt
+          The radius_vector is calculated in an inertial system centered in the top's bottom tip. The angular_velocity is assumed a constant.
+          This could give a reasonable approximation and could be used as initial intuitive (automatic) prediction. Then the deviations would be observed, such as
+          the angular_velocity changes. The intuitive prediction wouldn't work. A conscious decision would need to be made to find a better prediction. The ais would 
+          search for additional cause-effect links, the causes being new factors.
+
+L8:         Consciousness:
+                Has access to the results of the intuitive predictions. 
+                Able to estimate if the predictions are satisfactory, comparing prediction results with observations.
+                Decides whether to improve a prediction and if so, makes it a goal.
+                Looks for a cause for a particular effect.
+            Subconsciousness:
+                default intuitive prediction
+                finding a previously acquired cause-effect link for given cause or effect
         
 
         1. Rigid body dynamics: https://en.wikipedia.org/wiki/Rigid_body_dynamics      
@@ -518,20 +547,34 @@ L6:     R(t) = exp(w^ * t)*R(0) [5, p.26], w^ is a skew-symmetric matrix from w.
             if (effect.occurred())
                 return;
             
-            // todo: modify plan and possible plans to account for the unexpected plan outcome
-            
-            return;
+            throw_exception(plan_failed, plan);
         }
         for (plan_step in plan_steps)
         {
             plan_step.execute_and_monitor();
             
-            if (effect.occurred())
+            if (plan_step.effect.occurred())
                 continue;
             
-            // todo: modify plan and possible plans to account for the unexpected plan outcome
+            throw_exception(plan_failed, plan);
         }
     }
+}
+
+handle_exceptions(exception_type, exception_args)
+{
+    switch(exception_type):
+    {
+        case plan_failed:
+        {
+            // decide whether to drop plan or modify plan and continue
+            // decide whether to refine the failed cause-effect link and if yes, then add the goal to do it
+            // see L7 and L8
+continue here
+            
+        }
+    }
+
 }
 
 class observed_scene_type

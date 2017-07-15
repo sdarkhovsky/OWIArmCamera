@@ -1,3 +1,11 @@
+Q: [1] assumes the impulse of the force between colliding bodies is perpendicular to the body face in vertex-face collision
+and there is no friction related component along the face. Are these assumptions reasonable?
+
+
+
+
+
+
 The following equations and assumptions are used to find the velocities of the bodies after the collision:
 - conservation of the linear [1], [2, collision];
 - conservation of the angular momentums [1];
@@ -8,3 +16,8 @@ The following equations and assumptions are used to find the velocities of the b
 Reference
 1. An Introduction to Physically Based Modeling: Rigid Body Simulation, David Baraff, Robotics Institute, Carnegie Mellon University, 1997, http://www.cs.cmu.edu/~baraff/sigcourse/
 2. University Physics, Young, 8th ed
+
+
+
+
+
