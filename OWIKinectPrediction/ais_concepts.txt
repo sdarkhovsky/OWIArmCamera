@@ -374,7 +374,20 @@ class plan_type
                The visual proof is the following: x is at distance d_i from p_i. Then x is at the intersection of the spheres (p_1,d_1) and (p_2,d_2), which is a point or a curve C12.
                x is also at the intersection of the curve C12 and the sphere (p_3,d_3), which is a point or 2 points. Finally x is selected as one of 2 points by selecting the one which 
                distance to the p_4 is d_4.
-        
+
+        Identifying points of an expanding points set:
+        Some points between the cloud state at times t1 and t2 can be matched based on boundary and color features. If the cloud expanding, then the isometry constraint is no longer valid.
+        Instead the morphism (homeomorphism or diffeomorphisms) constraint postulating that the map is the morphism, mapping previously identified (from boundary and color features) points.
+        The morphism constraint includes the isometry constraint as a special case. Then the ais has to solve a problem: find a morphism f: X(t1) -> X(t2), where X(t1) and X(t2) are point 
+        sets, such that:
+        - f maps previously identified points X(i,t1) -> X(i,t2)
+        - f belongs to a class of transformations, f.e. diffeomorphism, homeomorphism,etc.
+        - number of points transformed by f is maximal.
+        A found transformation identifies sets of points mapped by it. For example, moved rigid or deformed bodies, static background.
+        When a set is moved by a transformation during a time interval [t1,t2], there are number of parameters (degrees of freedom), describing the transformation.
+        For example, the tranformation for a moving rigid body will map (mass_center(3),orientation(3))(t1) -> (mass_center(3),orientation(3))(t2).
+
+               
         An isometry of a set is a combination of a rotation (orthogonal transformation) and translation. Both rotation and translation are defined by 3 parameters, 
         so the isometry is defined by 6 parameters.
 L1:     Isometry transformation is calcualted as X = R*(X-Xc)+Xc+T where C is the point, which is a center of rotation, Xc its coordinate in the world reference frame,  
@@ -393,7 +406,7 @@ L1:     Isometry transformation is calcualted as X = R*(X-Xc)+Xc+T where C is th
         Each such candidate point Q forms 2-point isometry set with P. The isometry needs to be verified for the times tau > t+delta. The 2-point isometry may be 
         extendable to more points. A point may belong to 2 isometry sets. For example, a hinge(pivot) point is a common point of both the still base and the rotating part.
         
-        Now assume all scene points satsify the color preservation (not necessarily unique) constraint. Also assume that all the scene points satisfy isometry constraint 
+        Now assume all scene points satisy the color preservation (not necessarily unique) constraint. Also assume that all the scene points satisfy isometry constraint 
         within some subsets. Then the points of non-unique color are identified only up to belonging to the set of the same color, if using only the color preservation 
         constraint. The location isometry constraint can be used to identify such points by distance to the unique color points of the same isometry set.
 
@@ -419,7 +432,13 @@ L1:     Isometry transformation is calcualted as X = R*(X-Xc)+Xc+T where C is th
         Example: each point of a rigid body, rotating around an axis, moves in a circle; 
                  each point of a rigid body, translating by a vector, translates by the same vector.
         
-        Predicting individual points:
+        Predicting movement of a particle:        
+        A particle moves according to F=m*d2x/dt2. v(t1) = integral(t0,t1,F(t)/m)+ v(t0); x(t2) = integral(t0,t2,v(t))+x(t0)
+        ais may look for constancy in velocity or acceleration and use it as a basis for the prediction.
+        ais may look for periodicity in the particle movement.
+
+        
+        Predicting movement of individual points:
 L2:     According to (L1) all points of an isometry set transform as X(t+dt) = R(t)*(X(t)-Xc(t))+Xc(t)+T(t+dt)-T(t); Xc(t+dt)=Xc(t)+T(t+dt)-T(t)
         or  Xc(t+dt)=Xc(t)+T(t+dt)-T(t);   X(t+dt)-Xc(t+dt)=R(t)*(X(t)-Xc(t));   
         Note Xc(t) does not depend on which rigid body point we want to track. The trace of a point is defined by X(t).
@@ -570,8 +589,8 @@ handle_exceptions(exception_type, exception_args)
             // decide whether to drop plan or modify plan and continue
             // decide whether to refine the failed cause-effect link and if yes, then add the goal to do it
             // see L7 and L8
-continue here
-            
+            // todo: 
+           
         }
     }
 
