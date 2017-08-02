@@ -378,14 +378,17 @@ class plan_type
         Identifying points of an expanding points set:
         Some points between the cloud state at times t1 and t2 can be matched based on boundary and color features. If the cloud expanding, then the isometry constraint is no longer valid.
         Instead the morphism (homeomorphism or diffeomorphisms) constraint postulating that the map is the morphism, mapping previously identified (from boundary and color features) points.
-        The morphism constraint includes the isometry constraint as a special case. Then the ais has to solve a problem: find a morphism f: X(t1) -> X(t2), where X(t1) and X(t2) are point 
+        The morphism constraint includes the isometry and affine transformations as special cases. Then the ais has to solve a problem: find a morphism f: X(t1) -> X(t2), where X(t1) and X(t2) are point 
         sets, such that:
         - f maps previously identified points X(i,t1) -> X(i,t2)
-        - f belongs to a class of transformations, f.e. diffeomorphism, homeomorphism,etc.
+        - f belongs to a class of transformations, f.e. diffeomorphism, homeomorphism, affine transformation, etc.
         - number of points transformed by f is maximal.
         When a set is moved by a transformation during a time interval [t1,t2], there are number of parameters (degrees of freedom), describing the transformation.
-        For example, a tranformation for a moving rigid body maps the point coordinates: X ->  R*(X-Xc)+T
-        An affine transformation f(x)=Mx+b includes  scaling, shearing, etc [6]. It has about 12 degrees of freedom for x from R3.
+        For example, the tranformation for a moving rigid body will map (mass_center(3),orientation(3))(t1) -> (mass_center(3),orientation(3))(t2). 
+        An affine transformation X(t)=M(t)*X(0)+b(t) includes  scaling, shearing, etc [6]. To predict the movement, ais would need to predict M(t) and b(t).
+        For isometry transformation X(t)=R(t)*X(0)+b(t), R(t) is orthogonal. The prediction can be made using equations [9,p.16]. 
+        For F(t)=0 and tau(t)=0, P(t)=P0 (constant), L(t)=L0 (constant), db/dt=P(t)/M; dR/dt=omega_hat(t)*R(t), where omega(t)=inverse(I(t))*L(t),I(t)=R(t)*Ib*transpose(R(t))
+        So the prediction is b(t+dt)=b(t)+P(t)/M*dt and R(t+dt)=R(t)+omega_hat(t)*R(t)*dt. P(t)/M is a constant and b(t) is a linear function of its 3 parameters.        
         A found transformation describes a set of points mapped by it. For example, moved rigid or deformed bodies, static background.
         Predictions of the movement of points of such set are interdependent. The parameters of the transformation can be found from mapping of a number of points, which in turn allows to 
         predict the movement of each point of the set.
@@ -585,6 +588,7 @@ L8:         Consciousness:
         6. Affine transformation. https://en.wikipedia.org/wiki/Affine_transformation
         7. Classical Mechanics, Goldstein, Poole, Safko, 3rd Ed, 2000
         8. http://mourafiq.com/2016/05/15/predicting-sequences-using-rnn-in-tensorflow.html
+        9. An Introduction to Physically Based Modeling: Rigid Body Simulation I—Unconstrained Rigid Body Dynamics, D.Baraff, 1997, https://www.cs.cmu.edu/~baraff/sigcourse/notesd1.pdf
     */           
 
     bool terminal_node = false;
