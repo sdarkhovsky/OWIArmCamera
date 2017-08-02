@@ -383,9 +383,39 @@ class plan_type
         - f maps previously identified points X(i,t1) -> X(i,t2)
         - f belongs to a class of transformations, f.e. diffeomorphism, homeomorphism,etc.
         - number of points transformed by f is maximal.
-        A found transformation identifies sets of points mapped by it. For example, moved rigid or deformed bodies, static background.
         When a set is moved by a transformation during a time interval [t1,t2], there are number of parameters (degrees of freedom), describing the transformation.
-        For example, the tranformation for a moving rigid body will map (mass_center(3),orientation(3))(t1) -> (mass_center(3),orientation(3))(t2).
+        For example, a tranformation for a moving rigid body maps the point coordinates: X ->  R*(X-Xc)+T
+        An affine transformation f(x)=Mx+b includes  scaling, shearing, etc [6]. It has about 12 degrees of freedom for x from R3.
+        A found transformation describes a set of points mapped by it. For example, moved rigid or deformed bodies, static background.
+        Predictions of the movement of points of such set are interdependent. The parameters of the transformation can be found from mapping of a number of points, which in turn allows to 
+        predict the movement of each point of the set.
+        Questions:
+        1. Calculations of point parameters necessary for identification, such as the location, the color or the material.
+        2. Identification of points through time using the parameters in Q.1
+        3. Predicting the movement of identified points and sets.
+        Identifying a point means mapping a point observed at time t1 to a point observed at time t2 > t1: f:X(t1)->X(t2)
+        The mapping can be implemented as a set of constraints, g(i,x(t1),x(t2))=0; x(t) belongs to X(t). The process of mapping x(t1) to x(t2) may involve narrowing candidates for x(t1) by 
+        mupltiple application of the constraints, for example: 
+        - the color constraint can be found to find a few 'sure' candidates. 
+        - the affine transformation constraint can be found to map a set including some of the previous 'sure' candidates, and narrowing location of the point of the set at t2
+        - the color constraint is applied again to map the points with unique color in the narrowed location.
+        Question:
+        1. Can there be more than one location constraint? The constraint f(x(t1))-x(t2)=0 directly calculates x(t2) for given x(t1). Suppose, instead there are constraints 
+L0_9:   g(i,x(t1),x(t2))=0  or g(i,x(t1),x(t2))<0, i=1,...N. 
+        Suppose, that as result of the constraints x(t2) is localized to a region Rgn(t2) and that total number of degrees of freedom of all constraints L0_9 is M. Then the M parameters 
+        have to be predicted to predict x(t2).
+        
+        Automatic selection of constraints in points identification:
+        Loop 
+        {
+            select_constraints();  // g(i,x(t1),x(t2))=0
+            calculate_identification_map_from_constraints(); // an x(t1) may still be mapped to multiple x(t2)
+            calculate_prediction_cause_effect_functions_from_points_and_set_trajectories()  // 3 parameters is needed to predict a point location 
+                                                                                            // number of degrees of freedom of the set transformation
+                                                                                            // is the number of parameters needed to predict the set location
+                                                                                            // the transformation constraint is f(x(t1))-x(t2)=0
+            verify_predictions()
+        }
 
                
         An isometry of a set is a combination of a rotation (orthogonal transformation) and translation. Both rotation and translation are defined by 3 parameters, 
@@ -453,6 +483,22 @@ L2:     According to (L1) all points of an isometry set transform as X(t+dt) = R
         of freedom (DOF), the second is 2 DOFs, the third is 1 DOFs, the fourth is 0 (?).
         
 L3:     Predicting movement of an isolated point set: 
+        The transformation constraint generated a set of points mapped by this transformation, thereby producing an entity (the set), which state can be predicted by varying the parameters 
+        of the transformation, f.e. 6 parameters for the isometry (rigid body) transformation.
+        Absence of external forces (and therefore torques), acting on a rigid body, means absence of an external_cause-effect link related to the motion of the body.
+        Even if an external force is present, it's not intuitevly apparent how the force acts on a body, e.g. Earth's attraction of the Moon.
+        According to the classical mechanics, the mass center of a rigid body moves at constant velocity in an inertial reference frame, but the angular velocity may have a complex 
+        unintuitive trajectory [7, p.200]. On the other hand, a period in the movement can be observed and use for the prediction without explicitely mentioning the force, which caused 
+L3.1:   the periodic behaviour. When the prediction of an object state is based only on the history of an object, then the prediction function is {x(t1), t1 < t} -> x(t). 
+        In case of periodic x(t), L3.1 looks like   x(t) := x(t%period) and x(0:period) is stored in memory.
+        Let's consider an open set of classes (library) of functions ais could use to predict the parameters of movement:
+        1. x(t) = x(t0)+v0*(t-t0)+a0*(t-t0)^2/2. The parameters of the movement v0 and a0 can be found from non-linear regression of x by t.
+        2. periodicity [8]
+     
+        
+        
+        
+Continue here        
         The task routinely performed by humans is to move an isometry set (rigid body) of points from one location to another. ais should be able to learn how to accomplish the task.
         A constraint on point transformation can be used for both point identification, and prediction. E.g. with the isometry constraint, a set point X(t) can be predicted at t+dt as 
         X(t+dt) = argmin_X(sum_i[(|X-Xi(t+dt)| - |X(t)-Xi(t)|)^2]), i>=3   or  
@@ -536,7 +582,9 @@ L8:         Consciousness:
         3. https://en.wikipedia.org/wiki/Moment_of_inertia
         4. Beer, Johnston, Vector Mechanics for Enginners, Statics and Dynamics, 5th ed., 1988
         5. An invitation to 3-d vision, Ma,Soatto,Kosecka, Sastry, 2006
-        
+        6. Affine transformation. https://en.wikipedia.org/wiki/Affine_transformation
+        7. Classical Mechanics, Goldstein, Poole, Safko, 3rd Ed, 2000
+        8. http://mourafiq.com/2016/05/15/predicting-sequences-using-rnn-in-tensorflow.html
     */           
 
     bool terminal_node = false;
